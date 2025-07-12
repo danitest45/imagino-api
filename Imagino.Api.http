@@ -1,0 +1,6 @@
+@Imagino.Api_HostAddress = http://localhost:5086
+
+GET {{Imagino.Api_HostAddress}}/swagger/
+Accept: application/json
+
+###

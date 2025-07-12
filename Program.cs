@@ -1,7 +1,14 @@
 
 using Imagino.Api.DependencyInjection;
+using Imagino.Api.Services.ImageGeneration;
+using Imagino.Api.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddTransient<IImageGenerationService, ImageGenerationService>();
+
+builder.Services.Configure<ImageGeneratorSettings>(
+    builder.Configuration.GetSection("ImageGeneratorSettings"));
 
 // Registrar serviços da aplicação
 builder.Services.AddAppServices(builder.Configuration);
@@ -12,6 +19,7 @@ builder.Services.AddControllers();
 // Adicionar Swagger (para testes de API)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 
 var app = builder.Build();
 

@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Swagger auto-generated files (caso configure output local)
+swagger/
+swagger-output/

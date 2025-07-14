@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35825.156 d17.13
+VisualStudioVersion = 17.13.35825.156
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imagino.Api", "Imagino.Api.csproj", "{DC4BAD70-38E6-453F-AF70-6DEC0AC6C725}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imagino.Api.Tests", "..\Imagino.Api.Test\Imagino.Api.Tests.csproj", "{436863AA-BE7F-4649-B347-21E421E65440}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{DC4BAD70-38E6-453F-AF70-6DEC0AC6C725}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DC4BAD70-38E6-453F-AF70-6DEC0AC6C725}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DC4BAD70-38E6-453F-AF70-6DEC0AC6C725}.Release|Any CPU.Build.0 = Release|Any CPU
+		{436863AA-BE7F-4649-B347-21E421E65440}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{436863AA-BE7F-4649-B347-21E421E65440}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{436863AA-BE7F-4649-B347-21E421E65440}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{436863AA-BE7F-4649-B347-21E421E65440}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

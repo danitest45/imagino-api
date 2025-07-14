@@ -1,4 +1,5 @@
-﻿using Imagino.Api.Services.ImageGeneration;
+﻿using Imagino.Api.Repository;
+using Imagino.Api.Services.ImageGeneration;
 using Imagino.Api.Settings;
 
 namespace Imagino.Api.DependencyInjection
@@ -7,11 +8,11 @@ namespace Imagino.Api.DependencyInjection
     {
         public static IServiceCollection AddAppServices(this IServiceCollection services, IConfiguration configuration)
         {
-            services.Configure<ImageGeneratorSettings>(
-                configuration.GetSection("ImageGenerator")
-            );
 
             services.AddHttpClient<IImageGenerationService, ImageGenerationService>();
+            services.AddTransient<IImageGenerationService, ImageGenerationService>();
+            services.AddTransient<IImageJobRepository, ImageJobRepository>();
+
 
             return services;
         }

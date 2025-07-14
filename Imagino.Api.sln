@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imagino.Api", "Imagino.Api.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imagino.Api.Tests", "..\Imagino.Api.Test\Imagino.Api.Tests.csproj", "{436863AA-BE7F-4649-B347-21E421E65440}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Imagino.Poller", "..\Imagino.Poller\Imagino.Poller.csproj", "{CFD82D71-19AC-4B49-B52A-E39C0B551A5E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{436863AA-BE7F-4649-B347-21E421E65440}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{436863AA-BE7F-4649-B347-21E421E65440}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{436863AA-BE7F-4649-B347-21E421E65440}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CFD82D71-19AC-4B49-B52A-E39C0B551A5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFD82D71-19AC-4B49-B52A-E39C0B551A5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFD82D71-19AC-4B49-B52A-E39C0B551A5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFD82D71-19AC-4B49-B52A-E39C0B551A5E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

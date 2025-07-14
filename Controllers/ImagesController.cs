@@ -1,6 +1,8 @@
 ﻿using Imagino.Api.DTOs;
 using Imagino.Api.Services.ImageGeneration;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace Imagino.Api.Controllers
 {

@@ -1,14 +1,23 @@
 
 using Imagino.Api.DependencyInjection;
+using Imagino.Api.Repository;
 using Imagino.Api.Services.ImageGeneration;
 using Imagino.Api.Settings;
+using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddTransient<IImageGenerationService, ImageGenerationService>();
-
 builder.Services.Configure<ImageGeneratorSettings>(
-    builder.Configuration.GetSection("ImageGeneratorSettings"));
+builder.Configuration.GetSection("ImageGeneratorSettings"));
+builder.Services.AddSingleton<ImageJobRepository>();
+
+builder.Services.AddSingleton<IMongoClient>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var conn = config.GetSection("ImageGeneratorSettings")["MongoConnection"];
+    return new MongoClient(conn);
+});
+
 
 // Registrar serviços da aplicação
 builder.Services.AddAppServices(builder.Configuration);

@@ -10,7 +10,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Imagino.Api.Services.ImageGeneration
 {
-    public class ImageGenerationService(HttpClient httpClient, IOptions<ImageGeneratorSettings> settings, IImageJobRepository jobRepository) : IImageGenerationService
+    public class JobsService(HttpClient httpClient,
+        IOptions<ImageGeneratorSettings> settings,
+        IImageJobRepository jobRepository) : IJobsService
     {
         private readonly HttpClient _httpClient = httpClient;
         private readonly ImageGeneratorSettings _settings = settings.Value;
@@ -32,9 +34,9 @@ namespace Imagino.Api.Services.ImageGeneration
                         cfg_scale = request.CfgScale,
                         width = request.Width,
                         height = request.Height,
-                        sampler_name = "Euler"
+                        sampler_name = request.SamplerName
                     },
-                    webhook = _settings.WebhookUrl // ex: https://seusite.com/webhook/runpod
+                    webhook = _settings.WebhookUrl
                 };
 
                 var json = JsonSerializer.Serialize(payload);
@@ -47,20 +49,17 @@ namespace Imagino.Api.Services.ImageGeneration
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    result.AddError($"API returned error: {response.StatusCode}");
+                    result.AddError($"RunPod API returned error: {response.StatusCode}");
                     return result;
                 }
 
                 var responseBody = await response.Content.ReadAsStringAsync();
-                result.Content = responseBody;
-
                 var runpodRaw = JsonSerializer.Deserialize<RunPodContentResponse>(responseBody);
-
 
                 var imageJob = new ImageJob
                 {
                     Prompt = request.Prompt,
-                    JobId = runpodRaw.id,
+                    JobId = runpodRaw!.id,
                     Status = runpodRaw.status.ToLower(),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
@@ -68,13 +67,22 @@ namespace Imagino.Api.Services.ImageGeneration
                 };
 
                 await _jobRepository.InsertAsync(imageJob);
+
+                result.Content = new JobCreatedResponse
+                {
+                    JobId = imageJob.JobId,
+                    Status = imageJob.Status,
+                    CreatedAt = imageJob.CreatedAt
+                };
             }
             catch (Exception ex)
             {
-                result.AddError($"Exception: {ex.Message}");
+                result.AddError("Unexpected error during image generation.");
+                Console.Error.WriteLine(ex); // ou usar _logger.LogError
             }
 
             return result;
         }
     }
+
 }

@@ -1,35 +1,39 @@
 ﻿using Imagino.Api.DTOs;
+using Imagino.Api.Models;
 using Imagino.Api.Services.WebhookImage;
 using Microsoft.AspNetCore.Mvc;
 
+namespace Imagino.Api.Controllers;
+
+/// <summary>
+/// Handles webhook callbacks from third-party services such as RunPod.
+/// </summary>
 [ApiController]
-[Route("webhook")]
-public class WebhookController : ControllerBase
+[Route("api/webhooks")]
+public class WebhooksController(ILogger<WebhooksController> logger, IWebhookImageService webhookService) : ControllerBase
 {
-    private readonly ILogger<WebhookController> _logger;
-    private readonly WebhookImageService _webhookService;
+    private readonly ILogger<WebhooksController> _logger = logger;
+    private readonly IWebhookImageService _webhookService = webhookService;
 
-    public WebhookController(ILogger<WebhookController> logger, WebhookImageService webhookImageService)
-    {
-        _logger = logger;
-        _webhookService = webhookImageService;
-    }
-
+    /// <summary>
+    /// Receives a callback from RunPod when a job is completed.
+    /// </summary>
+    /// <param name="payload">Payload sent by RunPod with job details.</param>
+    /// <returns>A standardized result with job status and image URL if available.</returns>
+    /// <response code="200">Webhook processed successfully.</response>
+    /// <response code="400">Failed to process the webhook payload.</response>
     [HttpPost("runpod")]
-    public IActionResult ReceiveRunPodWebhook([FromBody] RunPodContentResponse payload)
+    [ProducesResponseType(typeof(RequestResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(RequestResult), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ReceiveRunPodWebhook([FromBody] RunPodContentResponse payload)
     {
-        _logger.LogInformation("🔔 Webhook recebido do RunPod: JobId={JobId}, Status={Status}", payload.id, payload.status);
+        _logger.LogInformation("🔔 Webhook received: JobId={JobId}, Status={Status}", payload.id, payload.status);
 
-        if (payload.status == "COMPLETED" && payload.output?.images?.Any() == true)
-        {
-            var base64Image = payload.output.images[0];
+        var result = await _webhookService.ProcessarWebhookAsync(payload);
 
-            _logger.LogInformation("🖼️ Imagem base64 gerada para visualização.");
+        if (!result.Success)
+            return BadRequest(result);
 
-            // Retorna diretamente a imagem embutida em base64
-            return Ok(new { imageBase64 = base64Image });
-        }
-
-        return Ok(new { message = "Imagem não disponível ou job incompleto." });
+        return Ok(result);
     }
 }

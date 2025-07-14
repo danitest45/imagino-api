@@ -3,7 +3,7 @@ using Imagino.Api.Models;
 
 namespace Imagino.Api.Services.ImageGeneration
 {
-    public interface IImageGenerationService
+    public interface IJobsService
     {
         Task<RequestResult> GenerateImageAsync(ImageGenerationRequest request);
     }

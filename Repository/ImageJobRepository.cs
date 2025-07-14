@@ -20,5 +20,17 @@ namespace Imagino.Api.Repository
             await _collection.InsertOneAsync(job);
         }
 
+        public async Task<ImageJob> GetByJobIdAsync(string jobId)
+        {
+            return await _collection
+                .Find(job => job.JobId == jobId)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task UpdateAsync(ImageJob job)
+        {
+            var filter = Builders<ImageJob>.Filter.Eq(j => j.JobId, job.JobId);
+            await _collection.ReplaceOneAsync(filter, job);
+        }
     }
 }

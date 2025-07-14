@@ -43,6 +43,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseStaticFiles(); // pra servir a pasta wwwroot
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

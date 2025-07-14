@@ -9,8 +9,8 @@ namespace Imagino.Api.DependencyInjection
         public static IServiceCollection AddAppServices(this IServiceCollection services, IConfiguration configuration)
         {
 
-            services.AddHttpClient<IImageGenerationService, ImageGenerationService>();
-            services.AddTransient<IImageGenerationService, ImageGenerationService>();
+            services.AddHttpClient<JobsService, JobsService>();
+            services.AddTransient<JobsService, JobsService>();
             services.AddTransient<IImageJobRepository, ImageJobRepository>();
 
 

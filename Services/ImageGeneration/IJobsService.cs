@@ -6,5 +6,6 @@ namespace Imagino.Api.Services.ImageGeneration
     public interface IJobsService
     {
         Task<RequestResult> GenerateImageAsync(ImageGenerationRequest request);
+        Task<RequestResult> GetJobByIdAsync(string jobId);
     }
 }

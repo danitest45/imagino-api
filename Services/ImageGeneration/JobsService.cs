@@ -83,6 +83,28 @@ namespace Imagino.Api.Services.ImageGeneration
 
             return result;
         }
+
+        public async Task<RequestResult> GetJobByIdAsync(string jobId)
+        {
+            var result = new RequestResult();
+
+            var job = await _jobRepository.GetByJobIdAsync(jobId);
+            if (job == null)
+            {
+                result.AddError($"Job with ID '{jobId}' not found.");
+                return result;
+            }
+
+            result.Content = new JobStatusResponse
+            {
+                JobId = job.JobId,
+                Status = job.Status,
+                ImageUrl = job.ImageUrl,
+                UpdatedAt = job.UpdatedAt
+            };
+
+            return result;
+        }
     }
 
 }

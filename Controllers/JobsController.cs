@@ -35,13 +35,18 @@ public class JobsController(IJobsService imageService) : ControllerBase
     }
 
     /// <summary>
-    /// Placeholder for retrieving job by ID (to be implemented).
+    /// Retrieves the status of an image generation job by JobId.
     /// </summary>
-    /// <param name="jobId">The job ID.</param>
-    /// <returns>A dummy 501 response.</returns>
+    /// <param name="jobId">The ID of the job to retrieve</param>
+    /// <returns>Status and metadata of the job</returns>
     [HttpGet("{jobId}")]
-    public IActionResult GetJobById(string jobId)
+    public async Task<IActionResult> GetJobById(string jobId)
     {
-        return StatusCode(501, "Not implemented yet.");
+        var result = await _imageService.GetJobByIdAsync(jobId);
+
+        if (!result.Success)
+            return NotFound(result);
+
+        return Ok(result);
     }
 }

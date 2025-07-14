@@ -19,8 +19,6 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
     return new MongoClient(conn);
 });
 
-builder.Services.AddScoped<WebhookImageService>();
-
 builder.WebHost.UseKestrel()
     .UseUrls("http://0.0.0.0:5000", "https://0.0.0.0:44362");
 

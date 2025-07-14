@@ -6,6 +6,7 @@
         public string RunPodApiKey { get; set; } = string.Empty;
         public string MongoConnection { get; set; } = string.Empty;
         public string MongoDatabase { get; set; } = string.Empty;
+        public string WebhookUrl { get; set; } = string.Empty;
         public string JobsCollection { get; set; } = "image_jobs";
     }
 }

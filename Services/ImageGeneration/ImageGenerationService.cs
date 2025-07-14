@@ -33,7 +33,8 @@ namespace Imagino.Api.Services.ImageGeneration
                         width = request.Width,
                         height = request.Height,
                         sampler_name = "Euler"
-                    }
+                    },
+                    webhook = _settings.WebhookUrl // ex: https://seusite.com/webhook/runpod
                 };
 
                 var json = JsonSerializer.Serialize(payload);

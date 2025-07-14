@@ -2,6 +2,7 @@
 using Imagino.Api.DependencyInjection;
 using Imagino.Api.Repository;
 using Imagino.Api.Services.ImageGeneration;
+using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Settings;
 using MongoDB.Driver;
 
@@ -18,6 +19,10 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
     return new MongoClient(conn);
 });
 
+builder.Services.AddScoped<WebhookImageService>();
+
+builder.WebHost.UseKestrel()
+    .UseUrls("http://0.0.0.0:5000", "https://0.0.0.0:44362");
 
 // Registrar serviços da aplicação
 builder.Services.AddAppServices(builder.Configuration);

@@ -3,7 +3,7 @@
     /// <summary>
     /// Represents a request to generate an image using a text prompt and custom settings.
     /// </summary>
-    public class ImageGenerationRequest
+    public class ImageGenerationRunPodRequest
     {
         /// <summary>
         /// The main prompt describing what the image should contain.

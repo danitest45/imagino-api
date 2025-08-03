@@ -10,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<ImageGeneratorSettings>(
 builder.Configuration.GetSection("ImageGeneratorSettings"));
+
+builder.Services.Configure<ReplicateSettings>(
+builder.Configuration.GetSection("ReplicateSettings"));
 builder.Services.AddSingleton<ImageJobRepository>();
 
 builder.Services.AddSingleton<IMongoClient>(sp =>
@@ -17,6 +20,19 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
     var config = sp.GetRequiredService<IConfiguration>();
     var conn = config.GetSection("ImageGeneratorSettings")["MongoConnection"];
     return new MongoClient(conn);
+});
+
+var corsPolicyName = "AllowFrontend";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: corsPolicyName,
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:3000")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
 });
 
 builder.Services.AddScoped<WebhookImageService>();
@@ -36,6 +52,8 @@ builder.Services.AddSwaggerGen();
 
 
 var app = builder.Build();
+
+app.UseCors(corsPolicyName);
 
 // Habilitar Swagger em ambiente de dev
 if (app.Environment.IsDevelopment())

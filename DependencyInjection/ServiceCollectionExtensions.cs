@@ -1,5 +1,6 @@
 ﻿using Imagino.Api.Repository;
 using Imagino.Api.Services.ImageGeneration;
+using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Settings;
 
 namespace Imagino.Api.DependencyInjection
@@ -10,8 +11,10 @@ namespace Imagino.Api.DependencyInjection
         {
 
             services.AddHttpClient<JobsService, JobsService>();
-            services.AddTransient<JobsService, JobsService>();
+            services.AddTransient<IJobsService, JobsService>();
             services.AddTransient<IImageJobRepository, ImageJobRepository>();
+            services.AddTransient<IReplicateJobsService, ReplicateJobsService>();
+            services.AddTransient<IWebhookImageService, WebhookImageService>();
 
 
             return services;

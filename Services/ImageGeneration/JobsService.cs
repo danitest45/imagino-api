@@ -18,7 +18,7 @@ namespace Imagino.Api.Services.ImageGeneration
         private readonly ImageGeneratorSettings _settings = settings.Value;
         private readonly IImageJobRepository _jobRepository = jobRepository;
 
-        public async Task<RequestResult> GenerateImageAsync(ImageGenerationRequest request)
+        public async Task<RequestResult> GenerateImageAsync(ImageGenerationRunPodRequest request)
         {
             var result = new RequestResult();
 
@@ -78,8 +78,29 @@ namespace Imagino.Api.Services.ImageGeneration
             catch (Exception ex)
             {
                 result.AddError("Unexpected error during image generation.");
-                Console.Error.WriteLine(ex); // ou usar _logger.LogError
+                Console.Error.WriteLine(ex);
             }
+
+            return result;
+        }
+        public async Task<RequestResult> GetJobByIdAsync(string jobId)
+        {
+            var result = new RequestResult();
+
+            var job = await _jobRepository.GetByJobIdAsync(jobId);
+            if (job == null)
+            {
+                result.AddError($"Job with ID '{jobId}' not found.");
+                return result;
+            }
+
+            result.Content = new JobStatusResponse
+            {
+                JobId = job.JobId,
+                Status = job.Status,
+                ImageUrl = job.ImageUrl,
+                UpdatedAt = job.UpdatedAt
+            };
 
             return result;
         }

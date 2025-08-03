@@ -10,7 +10,7 @@ namespace Imagino.Api.Services.WebhookImage
         private readonly IImageJobRepository _repository = repository;
         private readonly ILogger<WebhookImageService> _logger = logger;
 
-        public async Task<RequestResult> ProcessarWebhookAsync(RunPodContentResponse payload)
+        public async Task<RequestResult> ProcessarWebhookRunPodAsync(RunPodContentResponse payload)
         {
             var result = new RequestResult();
 
@@ -80,6 +80,74 @@ namespace Imagino.Api.Services.WebhookImage
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao salvar imagem do job {JobId}", jobId);
+                return null;
+            }
+        }
+
+        public async Task<RequestResult> ProcessarWebhookReplicateAsync(ReplicateWebhookRequest payload)
+        {
+            var result = new RequestResult();
+
+            _logger.LogInformation("🔁 Processando webhook Replicate: JobId={JobId}", payload.Id);
+
+            if (string.IsNullOrWhiteSpace(payload.Status) || payload.Status.ToLower() != "succeeded" || string.IsNullOrWhiteSpace(payload.Output))
+            {
+                result.AddError("Payload incompleto ou job ainda não finalizado.");
+                return result;
+            }
+
+            var job = await _repository.GetByJobIdAsync(payload.Id);
+            if (job == null)
+            {
+                result.AddError($"JobId '{payload.Id}' não encontrado no banco.");
+                return result;
+            }
+
+            var imageUrl = await BaixarImagemReplicateAsync(payload.Output, payload.Id);
+            if (imageUrl == null)
+            {
+                result.AddError("Erro ao baixar a imagem.");
+                return result;
+            }
+
+            job.Status = "COMPLETED";
+            job.ImageUrl = imageUrl;
+            job.UpdatedAt = DateTime.UtcNow;
+
+            await _repository.UpdateAsync(job);
+
+            result.Content = new
+            {
+                job.JobId,
+                job.Status,
+                job.ImageUrl,
+                job.UpdatedAt
+            };
+
+            _logger.LogInformation("✅ Job Replicate finalizado com sucesso: {JobId}", job.JobId);
+            return result;
+        }
+
+        private async Task<string?> BaixarImagemReplicateAsync(string imageUrl, string jobId)
+        {
+            try
+            {
+                using var client = new HttpClient();
+                var bytes = await client.GetByteArrayAsync(imageUrl);
+
+                var pasta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                if (!Directory.Exists(pasta))
+                    Directory.CreateDirectory(pasta);
+
+                var nomeArquivo = $"{jobId}.png";
+                var caminho = Path.Combine(pasta, nomeArquivo);
+                await File.WriteAllBytesAsync(caminho, bytes);
+
+                return $"/images/{nomeArquivo}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao baixar imagem do Replicate para o job {JobId}", jobId);
                 return null;
             }
         }

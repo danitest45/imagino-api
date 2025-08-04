@@ -32,5 +32,12 @@ namespace Imagino.Api.Repository
             var filter = Builders<ImageJob>.Filter.Eq(j => j.JobId, job.JobId);
             await _collection.ReplaceOneAsync(filter, job);
         }
+        public async Task<List<ImageJob>> GetByUserIdAsync(string userId)
+        {
+            return await _collection.Find(job => job.UserId == userId)
+                                    .SortByDescending(job => job.CreatedAt)
+                                    .ToListAsync();
+        }
+
     }
 }

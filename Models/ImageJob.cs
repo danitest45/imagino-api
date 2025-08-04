@@ -15,6 +15,9 @@ namespace Imagino.Api.Models
         [BsonElement("jobId")]
         public string? JobId { get; set; }
 
+        [BsonElement("userId")]
+        public string? UserId { get; set; }
+
         [BsonElement("status")]
         public string? Status { get; set; }
 

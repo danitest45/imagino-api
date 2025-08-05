@@ -40,32 +40,45 @@ builder.Services.AddScoped<WebhookImageService>();
 builder.WebHost.UseKestrel()
     .UseUrls("http://0.0.0.0:5000", "https://0.0.0.0:44362");
 
-// Registrar serviços da aplicação
 builder.Services.AddAppServices(builder.Configuration);
 
-// Adicionar serviços MVC (Controllers)
 builder.Services.AddControllers();
 
-// Adicionar Swagger (para testes de API)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddAuthentication("Bearer");
+    //.AddJwtBearer("Bearer", options =>
+    //{
+    //    options.TokenValidationParameters = new TokenValidationParameters
+    //    {
+    //        ValidateIssuer = true,
+    //        ValidateAudience = true,
+    //        ValidateLifetime = true,
+    //        ValidateIssuerSigningKey = true,
+    //        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+    //        ValidAudience = builder.Configuration["Jwt:Audience"],
+    //        IssuerSigningKey = new SymmetricSecurityKey(
+    //            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]))
+    //    };
+    //});
+builder.Services.AddAuthorization();
+
 
 var app = builder.Build();
 
 app.UseCors(corsPolicyName);
 
-// Habilitar Swagger em ambiente de dev
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseStaticFiles(); // pra servir a pasta wwwroot
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
-// Mapeia os endpoints dos controllers
 app.MapControllers();
 
 app.Run();

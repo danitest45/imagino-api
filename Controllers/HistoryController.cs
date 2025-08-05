@@ -21,7 +21,7 @@ public class HistoryController : ControllerBase
         var userId = User.FindFirst("sub")?.Value;
         if (userId == null) return Unauthorized();
 
-        var jobs = await _repo.GetByUserIdAsync(userId);
+        var jobs = await _repo.GetByJobIdAsync(userId);
         return Ok(jobs);
     }
 }

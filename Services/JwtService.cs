@@ -7,7 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Imagino.Api.Services
 {
-    public class JwtService
+    public class JwtService : IJwtService
     {
         private readonly string _secret;
         private readonly string _issuer;

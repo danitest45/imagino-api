@@ -4,9 +4,17 @@ using Imagino.Api.Repository;
 using Imagino.Api.Services.ImageGeneration;
 using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Settings;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddUserSecrets<Program>();
+}
 
 builder.Services.Configure<ImageGeneratorSettings>(
 builder.Configuration.GetSection("ImageGeneratorSettings"));
@@ -48,20 +56,31 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddAuthentication("Bearer");
-    //.AddJwtBearer("Bearer", options =>
-    //{
-    //    options.TokenValidationParameters = new TokenValidationParameters
-    //    {
-    //        ValidateIssuer = true,
-    //        ValidateAudience = true,
-    //        ValidateLifetime = true,
-    //        ValidateIssuerSigningKey = true,
-    //        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-    //        ValidAudience = builder.Configuration["Jwt:Audience"],
-    //        IssuerSigningKey = new SymmetricSecurityKey(
-    //            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]))
-    //    };
-    //});
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var key = Encoding.UTF8.GetBytes(jwtSettings["Secret"]);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(key)
+    };
+});
+
+
 builder.Services.AddAuthorization();
 
 
@@ -75,6 +94,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseStaticFiles();
+app.UseAuthentication();
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

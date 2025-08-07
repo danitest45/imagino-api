@@ -12,10 +12,10 @@ namespace Imagino.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IUserRepository _users;
-        private readonly JwtService _jwt;
+        private readonly IJwtService _jwt;
         private readonly IConfiguration _config;
 
-        public AuthController(IUserRepository users, JwtService jwt, IConfiguration config)
+        public AuthController(IUserRepository users, IJwtService jwt, IConfiguration config)
         {
             _users = users;
             _jwt = jwt;
@@ -32,7 +32,6 @@ namespace Imagino.Api.Controllers
             if (existing != null)
                 return BadRequest(new { message = "Email already in use" });
 
-            // gera o hash da senha com BCrypt (usa salt interno)
             var hash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
             var user = new User

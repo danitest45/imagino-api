@@ -86,7 +86,9 @@ namespace Imagino.Api.Controllers
             }
 
             var token = _jwt.GenerateToken(user.Id, user.Email);
-            return Ok(new { token });
+
+            var redirectUrl = $"http://localhost:3000/google-auth?token={token}";
+            return Redirect(redirectUrl);
         }
     }
 }

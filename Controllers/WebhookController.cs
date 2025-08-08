@@ -1,6 +1,7 @@
 ﻿using Imagino.Api.DTOs;
 using Imagino.Api.Models;
 using Imagino.Api.Services.WebhookImage;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Imagino.Api.Controllers;
@@ -10,6 +11,7 @@ namespace Imagino.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/webhooks")]
+[Authorize]
 public class WebhooksController(ILogger<WebhooksController> logger, IWebhookImageService webhookService) : ControllerBase
 {
     private readonly ILogger<WebhooksController> _logger = logger;

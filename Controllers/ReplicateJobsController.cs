@@ -1,6 +1,7 @@
 ﻿using Imagino.Api.DTOs;
 using Imagino.Api.Models;
 using Imagino.Api.Services.ImageGeneration;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Imagino.Api.Controllers;
@@ -10,6 +11,7 @@ namespace Imagino.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/replicate/jobs")]
+[Authorize]
 public class ReplicateJobsController(IReplicateJobsService replicateService) : ControllerBase
 {
     private readonly IReplicateJobsService _replicateService = replicateService;

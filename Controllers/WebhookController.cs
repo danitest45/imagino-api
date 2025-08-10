@@ -11,7 +11,6 @@ namespace Imagino.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/webhooks")]
-[Authorize]
 public class WebhooksController(ILogger<WebhooksController> logger, IWebhookImageService webhookService) : ControllerBase
 {
     private readonly ILogger<WebhooksController> _logger = logger;

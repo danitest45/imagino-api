@@ -37,7 +37,7 @@ namespace Imagino.Api.Services.WebhookImage
             }
 
             job.Status = "COMPLETED";
-            job.ImageUrl = imageUrl;
+            job.ImageUrls.Add(imageUrl);
             job.UpdatedAt = DateTime.UtcNow;
 
             await _repository.UpdateAsync(job);
@@ -46,7 +46,7 @@ namespace Imagino.Api.Services.WebhookImage
             {
                 job.JobId,
                 job.Status,
-                job.ImageUrl,
+                job.ImageUrls,
                 job.UpdatedAt
             };
 
@@ -60,16 +60,13 @@ namespace Imagino.Api.Services.WebhookImage
         {
             try
             {
-                // Remove prefixo base64
                 var base64 = Regex.Replace(base64Data, @"^data:image\/[a-zA-Z]+;base64,", string.Empty);
                 var bytes = Convert.FromBase64String(base64);
 
-                // Garante a pasta wwwroot/images
                 var pasta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
                 if (!Directory.Exists(pasta))
                     Directory.CreateDirectory(pasta);
 
-                // Caminho e nome do arquivo
                 var nomeArquivo = $"{jobId}.png";
                 var caminho = Path.Combine(pasta, nomeArquivo);
 
@@ -111,7 +108,7 @@ namespace Imagino.Api.Services.WebhookImage
             }
 
             job.Status = "COMPLETED";
-            job.ImageUrl = imageUrl;
+            job.ImageUrls.Add(imageUrl);
             job.UpdatedAt = DateTime.UtcNow;
 
             await _repository.UpdateAsync(job);
@@ -120,7 +117,7 @@ namespace Imagino.Api.Services.WebhookImage
             {
                 job.JobId,
                 job.Status,
-                job.ImageUrl,
+                job.ImageUrls,
                 job.UpdatedAt
             };
 

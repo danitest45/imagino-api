@@ -63,7 +63,7 @@ namespace Imagino.Api.Services.ImageGeneration
                     Status = runpodRaw.status.ToLower(),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
-                    ImageUrl = null
+                    ImageUrls = null
                 };
 
                 await _jobRepository.InsertAsync(imageJob);
@@ -98,7 +98,7 @@ namespace Imagino.Api.Services.ImageGeneration
             {
                 JobId = job.JobId,
                 Status = job.Status,
-                ImageUrl = job.ImageUrl,
+                ImageUrls = job.ImageUrls,
                 UpdatedAt = job.UpdatedAt
             };
 

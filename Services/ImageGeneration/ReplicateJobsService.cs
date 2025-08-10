@@ -15,7 +15,7 @@ namespace Imagino.Api.Services.ImageGeneration
         private readonly ReplicateSettings _settings = settings.Value;
         private readonly IImageJobRepository _jobRepository = jobRepository;
 
-        public async Task<RequestResult> GenerateImageAsync(ImageGenerationReplicateRequest request)
+        public async Task<RequestResult> GenerateImageAsync(ImageGenerationReplicateRequest request, string userId)
         {
             var result = new RequestResult();
 
@@ -73,6 +73,7 @@ namespace Imagino.Api.Services.ImageGeneration
                     Status = replicateResponse.status.ToLower(),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
+                    UserId = userId
                 };
 
                 await _jobRepository.InsertAsync(imageJob);
@@ -82,6 +83,8 @@ namespace Imagino.Api.Services.ImageGeneration
                     imageJob.JobId,
                     imageJob.Status,
                 };
+
+                return result;
             }
             catch (Exception ex)
             {

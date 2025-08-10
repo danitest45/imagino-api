@@ -11,7 +11,6 @@ namespace Imagino.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/jobs")]
-[Authorize]
 public class JobsController(IJobsService imageService) : ControllerBase
 {
     private readonly IJobsService _imageService = imageService;

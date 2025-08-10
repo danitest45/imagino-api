@@ -3,6 +3,7 @@ using Imagino.Api.Models;
 using Imagino.Api.Services.ImageGeneration;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Imagino.Api.Controllers;
 
@@ -11,7 +12,6 @@ namespace Imagino.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/replicate/jobs")]
-[Authorize]
 public class ReplicateJobsController(IReplicateJobsService replicateService) : ControllerBase
 {
     private readonly IReplicateJobsService _replicateService = replicateService;
@@ -26,7 +26,9 @@ public class ReplicateJobsController(IReplicateJobsService replicateService) : C
     [ProducesResponseType(typeof(RequestResult), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateReplicateJob([FromBody] ImageGenerationReplicateRequest request)
     {
-        var result = await _replicateService.GenerateImageAsync(request);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        var result = await _replicateService.GenerateImageAsync(request, userId!);
 
         if (!result.Success)
             return BadRequest(result);

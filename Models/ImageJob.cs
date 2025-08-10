@@ -21,8 +21,8 @@ namespace Imagino.Api.Models
         [BsonElement("status")]
         public string? Status { get; set; }
 
-        [BsonElement("imageUrl")]
-        public string? ImageUrl { get; set; }
+        [BsonElement("imageUrls")]
+        public List<string> ImageUrls { get; set; } = new();
 
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

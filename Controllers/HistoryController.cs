@@ -2,6 +2,8 @@
 using Imagino.Api.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.JsonWebTokens;
+using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -15,13 +17,16 @@ public class HistoryController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize] // garante que só usuários autenticados acessem
-    public async Task<IActionResult> GetHistory()
+    public async Task<IActionResult> GetUserHistory()
     {
-        var userId = User.FindFirst("sub")?.Value;
-        if (userId == null) return Unauthorized();
+        var userId =
+        User.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
+        User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        var jobs = await _repo.GetByJobIdAsync(userId);
-        return Ok(jobs);
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized("UserId not found in token.");
+
+        var jobs = await _repo.GetByUserIdAsync(userId);
+        return Ok(jobs.OrderByDescending(j => j.CreatedAt));
     }
 }

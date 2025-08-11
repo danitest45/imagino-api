@@ -12,6 +12,8 @@ namespace Imagino.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/replicate/jobs")]
+[Authorize]
+
 public class ReplicateJobsController(IReplicateJobsService replicateService) : ControllerBase
 {
     private readonly IReplicateJobsService _replicateService = replicateService;

@@ -3,6 +3,8 @@ using Imagino.Api.Models;
 using Imagino.Api.Services.ImageGeneration;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.JsonWebTokens;
+using System.Security.Claims;
 
 namespace Imagino.Api.Controllers;
 
@@ -11,6 +13,8 @@ namespace Imagino.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/jobs")]
+[Authorize]
+
 public class JobsController(IJobsService imageService) : ControllerBase
 {
     private readonly IJobsService _imageService = imageService;
@@ -27,7 +31,12 @@ public class JobsController(IJobsService imageService) : ControllerBase
     [ProducesResponseType(typeof(RequestResult), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateJob([FromBody] ImageGenerationRunPodRequest request)
     {
-        var result = await _imageService.GenerateImageAsync(request);
+        var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                 ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized("User ID not found");
+
+        var result = await _imageService.GenerateImageAsync(request, userId);
 
         if (!result.Success)
             return BadRequest(result);

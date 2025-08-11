@@ -6,7 +6,8 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/history")]
+[Authorize]
 public class HistoryController : ControllerBase
 {
     private readonly IImageJobRepository _repo;
@@ -17,14 +18,14 @@ public class HistoryController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetUserHistory()
+    public async Task<IActionResult> Get()
     {
         var userId =
-        User.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
-        User.FindFirstValue(ClaimTypes.NameIdentifier);
+           User.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
+           User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (string.IsNullOrEmpty(userId))
-            return Unauthorized("UserId not found in token.");
+            return Unauthorized("User ID not found");
 
         var jobs = await _repo.GetByUserIdAsync(userId);
         return Ok(jobs.OrderByDescending(j => j.CreatedAt));

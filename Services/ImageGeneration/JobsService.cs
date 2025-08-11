@@ -18,7 +18,7 @@ namespace Imagino.Api.Services.ImageGeneration
         private readonly ImageGeneratorSettings _settings = settings.Value;
         private readonly IImageJobRepository _jobRepository = jobRepository;
 
-        public async Task<RequestResult> GenerateImageAsync(ImageGenerationRunPodRequest request)
+        public async Task<RequestResult> GenerateImageAsync(ImageGenerationRunPodRequest request, string userId)
         {
             var result = new RequestResult();
 
@@ -61,9 +61,10 @@ namespace Imagino.Api.Services.ImageGeneration
                     Prompt = request.Prompt,
                     JobId = runpodRaw!.id,
                     Status = runpodRaw.status.ToLower(),
+                    UserId = userId,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
-                    ImageUrls = null
+                    ImageUrls = new List<string>()
                 };
 
                 await _jobRepository.InsertAsync(imageJob);

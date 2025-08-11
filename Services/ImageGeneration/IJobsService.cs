@@ -5,7 +5,7 @@ namespace Imagino.Api.Services.ImageGeneration
 {
     public interface IJobsService
     {
-        Task<RequestResult> GenerateImageAsync(ImageGenerationRunPodRequest request);
+        Task<RequestResult> GenerateImageAsync(ImageGenerationRunPodRequest request, string userId);
         Task<RequestResult> GetJobByIdAsync(string jobId);
     }
 }

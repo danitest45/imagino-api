@@ -5,6 +5,7 @@ using Imagino.Api.Services.ImageGeneration;
 using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using System.Text;
@@ -67,6 +68,8 @@ builder.Services.AddAuthentication(options =>
 {
     options.RequireHttpsMetadata = false;
     options.SaveToken = true;
+    options.TokenValidationParameters.NameClaimType = JwtRegisteredClaimNames.Sub;
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,

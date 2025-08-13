@@ -17,6 +17,7 @@ namespace Imagino.Api.DependencyInjection
             services.AddTransient<IReplicateJobsService, ReplicateJobsService>();
             services.AddTransient<IWebhookImageService, WebhookImageService>();
             services.AddTransient<IUserRepository, UserRepository>();
+            services.AddTransient<IUserService, UserService>();
             services.AddTransient<IJwtService, JwtService>();
 
 

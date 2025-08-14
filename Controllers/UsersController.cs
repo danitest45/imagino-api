@@ -60,8 +60,10 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpPost("{id}/profile-image")]
-        public async Task<ActionResult> UploadProfileImage(string id, [FromForm] IFormFile file)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> UploadProfileImage(string id, [FromForm] UploadProfileImageDto form)
         {
+            var file = form.File;
             if (file == null || file.Length == 0)
                 return BadRequest(new { message = "File not provided" });
 

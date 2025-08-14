@@ -1,6 +1,7 @@
 ﻿using Imagino.Api.Models;
 using Imagino.Api.Repository;
 using Imagino.Api.Services;
+using Imagino.Api.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
@@ -12,17 +13,19 @@ namespace Imagino.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IUserRepository _users;
+        private readonly IUserService _userService;
         private readonly IJwtService _jwt;
         private readonly IConfiguration _config;
 
-        public AuthController(IUserRepository users, IJwtService jwt, IConfiguration config)
+        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config)
         {
             _users = users;
+            _userService = userService;
             _jwt = jwt;
             _config = config;
         }
 
-        public record RegisterRequest(string Email, string Password, string Username, string? PhoneNumber, SubscriptionType Subscription, int Credits);
+        public record RegisterRequest(string Email, string Password, string? Username, string? PhoneNumber, SubscriptionType Subscription, int Credits);
         public record LoginRequest(string Email, string Password);
 
         [HttpPost("register")]
@@ -32,26 +35,26 @@ namespace Imagino.Api.Controllers
             if (existingEmail != null)
                 return BadRequest(new { message = "Email already in use" });
 
-            var existingUsername = await _users.GetByUsernameAsync(request.Username);
-            if (existingUsername != null)
-                return BadRequest(new { message = "Username already in use" });
-
-            var hash = BCrypt.Net.BCrypt.HashPassword(request.Password);
-
-            var user = new User
+            try
             {
-                Email = request.Email,
-                PasswordHash = hash,
-                Username = request.Username,
-                PhoneNumber = request.PhoneNumber,
-                Subscription = request.Subscription,
-                Credits = request.Credits
-            };
+                var dto = new CreateUserDto
+                {
+                    Email = request.Email,
+                    Password = request.Password,
+                    Username = request.Username,
+                    PhoneNumber = request.PhoneNumber,
+                    Subscription = request.Subscription,
+                    Credits = request.Credits
+                };
 
-            await _users.CreateAsync(user);
-
-            var token = _jwt.GenerateToken(user.Id, user.Email);
-            return Ok(new { token });
+                var user = await _userService.CreateAsync(dto);
+                var token = _jwt.GenerateToken(user.Id, user.Email);
+                return Ok(new { token, username = user.Username });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPost("login")]
@@ -64,7 +67,7 @@ namespace Imagino.Api.Controllers
             if (!valid) return Unauthorized();
 
             var token = _jwt.GenerateToken(user.Id, user.Email);
-            return Ok(new { token });
+            return Ok(new { token, username = user.Username });
         }
 
         // Endpoint de callback do Google
@@ -85,17 +88,21 @@ namespace Imagino.Api.Controllers
             if (user == null)
             {
                 // cria novo usuário
+                var username = await _userService.GenerateUsernameFromEmailAsync(payload.Email);
                 user = new User
                 {
                     GoogleId = payload.Subject,
-                    Email = payload.Email
+                    Email = payload.Email,
+                    Username = username,
+                    Subscription = SubscriptionType.Free,
+                    Credits = 0
                 };
                 await _users.CreateAsync(user);
             }
 
             var token = _jwt.GenerateToken(user.Id, user.Email);
 
-            var redirectUrl = $"http://localhost:3000/google-auth?token={token}";
+            var redirectUrl = $"http://localhost:3000/google-auth?token={token}&username={user.Username}";
             return Redirect(redirectUrl);
         }
     }

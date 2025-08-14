@@ -4,6 +4,7 @@ using Imagino.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -40,8 +41,15 @@ namespace Imagino.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<UserDto>> Create([FromBody] CreateUserDto dto)
         {
-            var user = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = user.Id }, ToDto(user));
+            try
+            {
+                var user = await _service.CreateAsync(dto);
+                return CreatedAtAction(nameof(GetById), new { id = user.Id }, ToDto(user));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPut("{id}")]
@@ -74,7 +82,7 @@ namespace Imagino.Api.Controllers
         }
 
         private static UserDto ToDto(User user) =>
-            new(user.Id!, user.Email, user.GoogleId, user.ProfileImageUrl, user.CreatedAt, user.UpdatedAt);
+            new(user.Id!, user.Email, user.GoogleId, user.ProfileImageUrl, user.Username, user.PhoneNumber, user.Subscription, user.Credits, user.CreatedAt, user.UpdatedAt);
     }
 }
 

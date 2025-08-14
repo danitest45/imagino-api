@@ -22,22 +22,30 @@ namespace Imagino.Api.Controllers
             _config = config;
         }
 
-        public record RegisterRequest(string Email, string Password);
+        public record RegisterRequest(string Email, string Password, string Username, string? PhoneNumber, SubscriptionType Subscription, int Credits);
         public record LoginRequest(string Email, string Password);
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            var existing = await _users.GetByEmailAsync(request.Email);
-            if (existing != null)
+            var existingEmail = await _users.GetByEmailAsync(request.Email);
+            if (existingEmail != null)
                 return BadRequest(new { message = "Email already in use" });
+
+            var existingUsername = await _users.GetByUsernameAsync(request.Username);
+            if (existingUsername != null)
+                return BadRequest(new { message = "Username already in use" });
 
             var hash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
             var user = new User
             {
                 Email = request.Email,
-                PasswordHash = hash
+                PasswordHash = hash,
+                Username = request.Username,
+                PhoneNumber = request.PhoneNumber,
+                Subscription = request.Subscription,
+                Credits = request.Credits
             };
 
             await _users.CreateAsync(user);

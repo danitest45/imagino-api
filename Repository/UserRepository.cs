@@ -3,6 +3,7 @@ using Imagino.Api.Repository;
 using Imagino.Api.Settings;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Imagino.Api.Repository
@@ -24,7 +25,19 @@ namespace Imagino.Api.Repository
         public async Task<User> GetByGoogleIdAsync(string googleId) =>
             await _collection.Find(u => u.GoogleId == googleId).FirstOrDefaultAsync();
 
+        public async Task<User?> GetByIdAsync(string id) =>
+            await _collection.Find(u => u.Id == id).FirstOrDefaultAsync();
+
+        public async Task<IEnumerable<User>> GetAllAsync() =>
+            await _collection.Find(_ => true).ToListAsync();
+
         public async Task CreateAsync(User user) =>
             await _collection.InsertOneAsync(user);
+
+        public async Task UpdateAsync(User user) =>
+            await _collection.ReplaceOneAsync(u => u.Id == user.Id, user);
+
+        public async Task DeleteAsync(string id) =>
+            await _collection.DeleteOneAsync(u => u.Id == id);
     }
 }

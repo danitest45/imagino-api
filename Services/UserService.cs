@@ -26,10 +26,18 @@ namespace Imagino.Api.Services
 
         public async Task<User> CreateAsync(CreateUserDto dto)
         {
+            var existing = await _repository.GetByUsernameAsync(dto.Username);
+            if (existing != null)
+                throw new ArgumentException("Username already in use");
+
             var user = new User
             {
                 Email = dto.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                Username = dto.Username,
+                PhoneNumber = dto.PhoneNumber,
+                Subscription = dto.Subscription,
+                Credits = dto.Credits
             };
 
             await _repository.CreateAsync(user);
@@ -49,6 +57,23 @@ namespace Imagino.Api.Services
 
             if (!string.IsNullOrEmpty(dto.ProfileImageUrl))
                 user.ProfileImageUrl = dto.ProfileImageUrl;
+
+            if (!string.IsNullOrEmpty(dto.Username))
+            {
+                var existing = await _repository.GetByUsernameAsync(dto.Username);
+                if (existing != null && existing.Id != user.Id)
+                    throw new ArgumentException("Username already in use");
+                user.Username = dto.Username;
+            }
+
+            if (!string.IsNullOrEmpty(dto.PhoneNumber))
+                user.PhoneNumber = dto.PhoneNumber;
+
+            if (dto.Subscription.HasValue)
+                user.Subscription = dto.Subscription.Value;
+
+            if (dto.Credits.HasValue)
+                user.Credits = dto.Credits.Value;
 
             user.UpdatedAt = DateTime.UtcNow;
 

@@ -6,6 +6,7 @@ namespace Imagino.Api.Repository
     {
         Task<User> GetByEmailAsync(string email);
         Task<User> GetByGoogleIdAsync(string googleId);
+        Task<User?> GetByUsernameAsync(string username);
         Task<User?> GetByIdAsync(string id);
         Task<IEnumerable<User>> GetAllAsync();
         Task CreateAsync(User user);

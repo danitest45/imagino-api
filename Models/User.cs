@@ -15,6 +15,12 @@ namespace Imagino.Api.Models
         public string? PasswordHash { get; set; }
         public string? GoogleId { get; set; }
         public string? ProfileImageUrl { get; set; }
+        public string Username { get; set; } = default!;
+        public string? PhoneNumber { get; set; }
+
+        [BsonRepresentation(BsonType.String)]
+        public SubscriptionType Subscription { get; set; } = SubscriptionType.Free;
+        public int Credits { get; set; } = 0;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }

@@ -25,6 +25,9 @@ namespace Imagino.Api.Repository
         public async Task<User> GetByGoogleIdAsync(string googleId) =>
             await _collection.Find(u => u.GoogleId == googleId).FirstOrDefaultAsync();
 
+        public async Task<User?> GetByUsernameAsync(string username) =>
+            await _collection.Find(u => u.Username.ToLower() == username.ToLower()).FirstOrDefaultAsync();
+
         public async Task<User?> GetByIdAsync(string id) =>
             await _collection.Find(u => u.Id == id).FirstOrDefaultAsync();
 

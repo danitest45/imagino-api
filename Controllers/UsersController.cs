@@ -4,9 +4,11 @@ using Imagino.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.JsonWebTokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Imagino.Api.Controllers
@@ -24,10 +26,16 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserDto>>> Get()
+        public ActionResult Get()
         {
-            var users = await _service.GetAllAsync();
-            return Ok(users.Select(ToDto));
+            var userId =
+               User.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
+               User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("User ID not found");
+
+            return Ok(userId);
         }
 
         [HttpGet("{id}")]

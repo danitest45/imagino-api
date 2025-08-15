@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Imagino.Api.Services
@@ -26,15 +27,23 @@ namespace Imagino.Api.Services
 
         public async Task<User> CreateAsync(CreateUserDto dto)
         {
-            var existing = await _repository.GetByUsernameAsync(dto.Username);
-            if (existing != null)
-                throw new ArgumentException("Username already in use");
+            var username = dto.Username;
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                username = await GenerateUniqueUsernameAsync(dto.Email);
+            }
+            else
+            {
+                var existing = await _repository.GetByUsernameAsync(username);
+                if (existing != null)
+                    throw new ArgumentException("Username already in use");
+            }
 
             var user = new User
             {
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Username = dto.Username,
+                Username = username!,
                 PhoneNumber = dto.PhoneNumber,
                 Subscription = dto.Subscription,
                 Credits = dto.Credits
@@ -42,6 +51,26 @@ namespace Imagino.Api.Services
 
             await _repository.CreateAsync(user);
             return user;
+        }
+
+        public Task<string> GenerateUsernameFromEmailAsync(string email) =>
+            GenerateUniqueUsernameAsync(email);
+
+        private async Task<string> GenerateUniqueUsernameAsync(string seed)
+        {
+            var prefix = seed.Split('@')[0];
+            var baseName = Regex.Replace(prefix.ToLowerInvariant(), "[^a-z0-9]", "");
+            if (string.IsNullOrEmpty(baseName))
+                baseName = "user";
+
+            var username = baseName;
+            var rnd = new Random();
+            while (await _repository.GetByUsernameAsync(username) != null)
+            {
+                username = $"{baseName}{rnd.Next(1000, 9999)}";
+            }
+
+            return username;
         }
 
         public async Task<User?> UpdateAsync(string id, UpdateUserDto dto)

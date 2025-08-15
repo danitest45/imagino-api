@@ -1,6 +1,8 @@
 ﻿using Imagino.Api.DTOs;
 using Imagino.Api.Models;
 using Imagino.Api.Services.ImageGeneration;
+using Imagino.Api.Repository;
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -15,9 +17,13 @@ namespace Imagino.Api.Controllers;
 [Route("api/jobs")]
 [Authorize]
 
-public class JobsController(IJobsService imageService) : ControllerBase
+public class JobsController(IJobsService imageService,
+                            IImageJobRepository jobRepository,
+                            IUserRepository userRepository) : ControllerBase
 {
     private readonly IJobsService _imageService = imageService;
+    private readonly IImageJobRepository _jobRepository = jobRepository;
+    private readonly IUserRepository _userRepository = userRepository;
 
     /// <summary>
     /// Creates a new image generation job.
@@ -58,5 +64,28 @@ public class JobsController(IJobsService imageService) : ControllerBase
             return NotFound(result);
 
         return Ok(result);
+    }
+
+    [HttpGet("details/{jobId}")]
+    public async Task<IActionResult> GetJobDetails(string jobId)
+    {
+        var job = await _jobRepository.GetByJobIdAsync(jobId);
+        if (job == null)
+            return NotFound();
+
+        var user = string.IsNullOrEmpty(job.UserId)
+            ? null
+            : await _userRepository.GetByIdAsync(job.UserId);
+
+        var response = new
+        {
+            ImageUrl = job.ImageUrls.FirstOrDefault(),
+            job.Prompt,
+            Username = user?.Username,
+            job.CreatedAt,
+            AspectRatio = job.AspectRatio
+        };
+
+        return Ok(response);
     }
 }

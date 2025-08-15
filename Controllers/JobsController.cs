@@ -81,9 +81,9 @@ public class JobsController(IJobsService imageService,
         {
             ImageUrl = job.ImageUrls.FirstOrDefault(),
             job.Prompt,
-            UserName = user?.Username,
+            Username = user?.Username,
             job.CreatedAt,
-            Resolution = job.AspectRatio
+            AspectRatio = job.AspectRatio
         };
 
         return Ok(response);

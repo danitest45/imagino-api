@@ -62,6 +62,7 @@ namespace Imagino.Api.Services.ImageGeneration
                     JobId = runpodRaw!.id,
                     Status = runpodRaw.status.ToLower(),
                     UserId = userId,
+                    AspectRatio = CalculateAspectRatio(request.Width, request.Height),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     ImageUrls = new List<string>()
@@ -104,6 +105,13 @@ namespace Imagino.Api.Services.ImageGeneration
             };
 
             return result;
+        }
+
+        private static string CalculateAspectRatio(int width, int height)
+        {
+            static int Gcd(int a, int b) => b == 0 ? a : Gcd(b, a % b);
+            var gcd = Gcd(width, height);
+            return $"{width / gcd}:{height / gcd}";
         }
     }
 

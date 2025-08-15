@@ -73,7 +73,8 @@ namespace Imagino.Api.Services.ImageGeneration
                     Status = replicateResponse.status.ToLower(),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
-                    UserId = userId
+                    UserId = userId,
+                    AspectRatio = request.AspectRatio
                 };
 
                 await _jobRepository.InsertAsync(imageJob);

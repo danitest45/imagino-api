@@ -24,6 +24,9 @@ namespace Imagino.Api.Models
         [BsonElement("imageUrls")]
         public List<string> ImageUrls { get; set; } = new();
 
+        [BsonElement("aspectRatio")]
+        public string AspectRatio { get; set; } = string.Empty;
+
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

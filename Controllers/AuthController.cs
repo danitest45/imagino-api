@@ -2,8 +2,11 @@
 using Imagino.Api.Repository;
 using Imagino.Api.Services;
 using Imagino.Api.DTOs;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Hosting;
+using System;
 using System.Threading.Tasks;
 
 namespace Imagino.Api.Controllers
@@ -16,13 +19,17 @@ namespace Imagino.Api.Controllers
         private readonly IUserService _userService;
         private readonly IJwtService _jwt;
         private readonly IConfiguration _config;
+        private readonly IRefreshTokenRepository _refreshTokens;
+        private readonly IWebHostEnvironment _env;
 
-        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config)
+        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IWebHostEnvironment env)
         {
             _users = users;
             _userService = userService;
             _jwt = jwt;
             _config = config;
+            _refreshTokens = refreshTokens;
+            _env = env;
         }
 
         public record RegisterRequest(string Email, string Password, string? Username, string? PhoneNumber, SubscriptionType Subscription, int Credits);
@@ -49,6 +56,21 @@ namespace Imagino.Api.Controllers
 
                 var user = await _userService.CreateAsync(dto);
                 var token = _jwt.GenerateToken(user.Id, user.Email);
+                var refreshToken = Guid.NewGuid().ToString("N");
+                await _refreshTokens.CreateAsync(new RefreshToken
+                {
+                    UserId = user.Id!,
+                    Token = refreshToken,
+                    ExpiresAt = DateTime.UtcNow.AddDays(7)
+                });
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = !_env.IsDevelopment(),
+                    SameSite = SameSiteMode.None,
+                    Expires = DateTime.UtcNow.AddDays(7)
+                };
+                Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
                 return Ok(new { token, username = user.Username });
             }
             catch (ArgumentException ex)
@@ -67,7 +89,68 @@ namespace Imagino.Api.Controllers
             if (!valid) return Unauthorized();
 
             var token = _jwt.GenerateToken(user.Id, user.Email);
+            var refreshToken = Guid.NewGuid().ToString("N");
+            await _refreshTokens.CreateAsync(new RefreshToken
+            {
+                UserId = user.Id!,
+                Token = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            });
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = !_env.IsDevelopment(),
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddDays(7)
+            };
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
             return Ok(new { token, username = user.Username });
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh()
+        {
+            if (!Request.Cookies.TryGetValue("refreshToken", out var oldToken))
+                return Unauthorized();
+
+            var existing = await _refreshTokens.GetByTokenAsync(oldToken);
+            if (existing == null || existing.ExpiresAt <= DateTime.UtcNow)
+                return Unauthorized();
+
+            var user = await _users.GetByIdAsync(existing.UserId);
+            if (user == null)
+                return Unauthorized();
+
+            await _refreshTokens.DeleteAsync(oldToken);
+            var newRefresh = Guid.NewGuid().ToString("N");
+            await _refreshTokens.CreateAsync(new RefreshToken
+            {
+                UserId = user.Id!,
+                Token = newRefresh,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            });
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = !_env.IsDevelopment(),
+                SameSite = SameSiteMode.None,
+                Expires = DateTime.UtcNow.AddDays(7)
+            };
+            Response.Cookies.Append("refreshToken", newRefresh, cookieOptions);
+
+            var token = _jwt.GenerateToken(user.Id, user.Email);
+            return Ok(new { token, username = user.Username });
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            if (Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+            {
+                await _refreshTokens.DeleteAsync(refreshToken);
+                Response.Cookies.Delete("refreshToken");
+            }
+            return Ok();
         }
 
         // Endpoint de callback do Google

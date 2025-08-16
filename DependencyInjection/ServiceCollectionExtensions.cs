@@ -19,6 +19,7 @@ namespace Imagino.Api.DependencyInjection
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<IJwtService, JwtService>();
+            services.AddTransient<IRefreshTokenRepository, RefreshTokenRepository>();
 
 
             return services;

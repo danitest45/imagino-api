@@ -98,10 +98,17 @@ namespace Imagino.Api.Controllers
             return Ok(new { credits });
         }
 
-        [HttpGet("{id}/credits")]
-        public async Task<ActionResult> GetCredits(string id)
+        [HttpGet("credits")]
+        public async Task<ActionResult> GetCredits()
         {
-            var credits = await _service.GetCreditsAsync(id);
+            var userId =
+               User.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
+               User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("User ID not found");
+
+            var credits = await _service.GetCreditsAsync(userId);
             if (credits is null) return NotFound();
             return Ok(new { credits });
         }

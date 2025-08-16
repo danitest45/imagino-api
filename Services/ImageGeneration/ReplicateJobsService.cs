@@ -9,11 +9,18 @@ using System.Text.Json;
 
 namespace Imagino.Api.Services.ImageGeneration
 {
-    public class ReplicateJobsService(HttpClient httpClient, IOptions<ReplicateSettings> settings, IImageJobRepository jobRepository) : IReplicateJobsService
+    public class ReplicateJobsService(
+        HttpClient httpClient,
+        IOptions<ReplicateSettings> settings,
+        IImageJobRepository jobRepository,
+        IUserRepository userRepository,
+        IOptions<ImageGeneratorSettings> imageSettings) : IReplicateJobsService
     {
         private readonly HttpClient _httpClient = httpClient;
         private readonly ReplicateSettings _settings = settings.Value;
         private readonly IImageJobRepository _jobRepository = jobRepository;
+        private readonly IUserRepository _userRepository = userRepository;
+        private readonly ImageGeneratorSettings _imageSettings = imageSettings.Value;
 
         public async Task<RequestResult> GenerateImageAsync(ImageGenerationReplicateRequest request, string userId)
         {
@@ -21,6 +28,19 @@ namespace Imagino.Api.Services.ImageGeneration
 
             try
             {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    result.AddError("User not found.");
+                    return result;
+                }
+
+                if (user.Credits < _imageSettings.ImageCost)
+                {
+                    result.AddError("Insufficient credits.");
+                    return result;
+                }
+
                 (int steps, double guidance) = request.QualityLevel switch
                 {
                     1 => (10, 2.0),
@@ -74,7 +94,9 @@ namespace Imagino.Api.Services.ImageGeneration
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     UserId = userId,
-                    AspectRatio = request.AspectRatio
+                    AspectRatio = request.AspectRatio,
+                    ImageUrls = new List<string>(),
+                    TokenConsumed = false
                 };
 
                 await _jobRepository.InsertAsync(imageJob);

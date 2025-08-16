@@ -89,6 +89,23 @@ namespace Imagino.Api.Controllers
             return Ok(new { imageUrl });
         }
 
+        [HttpPost("{id}/credits")]
+        public async Task<IActionResult> AddCredits(string id, [FromBody] UpdateCreditsDto dto)
+        {
+            var success = await _service.IncrementCreditsAsync(id, dto.Amount);
+            if (!success) return NotFound();
+            var credits = await _service.GetCreditsAsync(id);
+            return Ok(new { credits });
+        }
+
+        [HttpGet("{id}/credits")]
+        public async Task<ActionResult> GetCredits(string id)
+        {
+            var credits = await _service.GetCreditsAsync(id);
+            if (credits is null) return NotFound();
+            return Ok(new { credits });
+        }
+
         private static UserDto ToDto(User user) =>
             new(user.Id!, user.Email, user.GoogleId, user.ProfileImageUrl, user.Username, user.PhoneNumber, user.Subscription, user.Credits, user.CreatedAt, user.UpdatedAt);
     }

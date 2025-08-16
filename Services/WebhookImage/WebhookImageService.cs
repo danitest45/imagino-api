@@ -1,14 +1,18 @@
 ﻿using Imagino.Api.DTOs;
 using Imagino.Api.Models;
 using Imagino.Api.Repository;
+using Imagino.Api.Settings;
+using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 
 namespace Imagino.Api.Services.WebhookImage
 {
-    public class WebhookImageService(IImageJobRepository repository, ILogger<WebhookImageService> logger) : IWebhookImageService
+    public class WebhookImageService(IImageJobRepository repository, IUserRepository userRepository, ILogger<WebhookImageService> logger, IOptions<ImageGeneratorSettings> settings) : IWebhookImageService
     {
         private readonly IImageJobRepository _repository = repository;
+        private readonly IUserRepository _userRepository = userRepository;
         private readonly ILogger<WebhookImageService> _logger = logger;
+        private readonly ImageGeneratorSettings _settings = settings.Value;
 
         public async Task<RequestResult> ProcessarWebhookRunPodAsync(RunPodContentResponse payload)
         {
@@ -39,6 +43,14 @@ namespace Imagino.Api.Services.WebhookImage
             job.Status = "COMPLETED";
             job.ImageUrls.Add(imageUrl);
             job.UpdatedAt = DateTime.UtcNow;
+
+            if (!job.TokenConsumed && !string.IsNullOrEmpty(job.UserId))
+            {
+                if (await _userRepository.DecrementCreditsAsync(job.UserId, _settings.ImageCost))
+                    job.TokenConsumed = true;
+                else
+                    _logger.LogWarning("Não foi possível debitar crédito do usuário {UserId}", job.UserId);
+            }
 
             await _repository.UpdateAsync(job);
 
@@ -110,6 +122,14 @@ namespace Imagino.Api.Services.WebhookImage
             job.Status = "COMPLETED";
             job.ImageUrls.Add(imageUrl);
             job.UpdatedAt = DateTime.UtcNow;
+
+            if (!job.TokenConsumed && !string.IsNullOrEmpty(job.UserId))
+            {
+                if (await _userRepository.DecrementCreditsAsync(job.UserId, _settings.ImageCost))
+                    job.TokenConsumed = true;
+                else
+                    _logger.LogWarning("Não foi possível debitar crédito do usuário {UserId}", job.UserId);
+            }
 
             await _repository.UpdateAsync(job);
 

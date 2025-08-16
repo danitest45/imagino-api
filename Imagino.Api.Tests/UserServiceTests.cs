@@ -45,5 +45,30 @@ namespace Imagino.Api.Tests
             Assert.StartsWith("jane", username);
             Assert.NotEqual("jane", username);
         }
+
+        [Fact]
+        public async Task IncrementCreditsAsync_CallsRepository()
+        {
+            var repo = new Mock<IUserRepository>();
+            repo.Setup(r => r.IncrementCreditsAsync("1", 5)).ReturnsAsync(true);
+            var service = new UserService(repo.Object);
+
+            var result = await service.IncrementCreditsAsync("1", 5);
+
+            Assert.True(result);
+            repo.Verify(r => r.IncrementCreditsAsync("1", 5), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetCreditsAsync_ReturnsValue()
+        {
+            var repo = new Mock<IUserRepository>();
+            repo.Setup(r => r.GetCreditsAsync("1")).ReturnsAsync(10);
+            var service = new UserService(repo.Object);
+
+            var credits = await service.GetCreditsAsync("1");
+
+            Assert.Equal(10, credits);
+        }
     }
 }

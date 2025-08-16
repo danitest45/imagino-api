@@ -42,5 +42,30 @@ namespace Imagino.Api.Repository
 
         public async Task DeleteAsync(string id) =>
             await _collection.DeleteOneAsync(u => u.Id == id);
+
+        public async Task<bool> DecrementCreditsAsync(string userId, int amount)
+        {
+            var filter = Builders<User>.Filter.And(
+                Builders<User>.Filter.Eq(u => u.Id, userId),
+                Builders<User>.Filter.Gte(u => u.Credits, amount));
+            var update = Builders<User>.Update.Inc(u => u.Credits, -amount);
+
+            var result = await _collection.UpdateOneAsync(filter, update);
+            return result.ModifiedCount == 1;
+        }
+
+        public async Task<bool> IncrementCreditsAsync(string userId, int amount)
+        {
+            var update = Builders<User>.Update.Inc(u => u.Credits, amount);
+            var result = await _collection.UpdateOneAsync(u => u.Id == userId, update);
+            return result.ModifiedCount == 1;
+        }
+
+        public async Task<int?> GetCreditsAsync(string userId)
+        {
+            var filter = Builders<User>.Filter.Eq(u => u.Id, userId);
+            var result = await _collection.Find(filter).Project(u => (int?)u.Credits).FirstOrDefaultAsync();
+            return result;
+        }
     }
 }

@@ -135,6 +135,12 @@ namespace Imagino.Api.Services
 
             return user.ProfileImageUrl;
         }
+
+        public async Task<bool> IncrementCreditsAsync(string userId, int amount) =>
+            await _repository.IncrementCreditsAsync(userId, amount);
+
+        public async Task<int?> GetCreditsAsync(string userId) =>
+            await _repository.GetCreditsAsync(userId);
     }
 }
 

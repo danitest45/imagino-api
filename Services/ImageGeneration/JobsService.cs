@@ -12,11 +12,13 @@ namespace Imagino.Api.Services.ImageGeneration
 {
     public class JobsService(HttpClient httpClient,
         IOptions<ImageGeneratorSettings> settings,
-        IImageJobRepository jobRepository) : IJobsService
+        IImageJobRepository jobRepository,
+        IUserRepository userRepository) : IJobsService
     {
         private readonly HttpClient _httpClient = httpClient;
         private readonly ImageGeneratorSettings _settings = settings.Value;
         private readonly IImageJobRepository _jobRepository = jobRepository;
+        private readonly IUserRepository _userRepository = userRepository;
 
         public async Task<RequestResult> GenerateImageAsync(ImageGenerationRunPodRequest request, string userId)
         {
@@ -24,6 +26,19 @@ namespace Imagino.Api.Services.ImageGeneration
 
             try
             {
+                var user = await _userRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    result.AddError("User not found.");
+                    return result;
+                }
+
+                if (user.Credits < _settings.ImageCost)
+                {
+                    result.AddError("Insufficient credits.");
+                    return result;
+                }
+
                 var payload = new
                 {
                     input = new
@@ -65,7 +80,8 @@ namespace Imagino.Api.Services.ImageGeneration
                     AspectRatio = CalculateAspectRatio(request.Width, request.Height),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
-                    ImageUrls = new List<string>()
+                    ImageUrls = new List<string>(),
+                    TokenConsumed = false
                 };
 
                 await _jobRepository.InsertAsync(imageJob);

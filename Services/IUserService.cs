@@ -15,6 +15,8 @@ namespace Imagino.Api.Services
         Task DeleteAsync(string id);
         Task<string?> UpdateProfileImageAsync(string id, IFormFile file);
         Task<string> GenerateUsernameFromEmailAsync(string email);
+        Task<bool> IncrementCreditsAsync(string userId, int amount);
+        Task<int?> GetCreditsAsync(string userId);
     }
 }
 

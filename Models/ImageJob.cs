@@ -24,6 +24,9 @@ namespace Imagino.Api.Models
         [BsonElement("imageUrls")]
         public List<string> ImageUrls { get; set; } = new();
 
+        [BsonElement("tokenConsumed")]
+        public bool TokenConsumed { get; set; } = false;
+
         [BsonElement("aspectRatio")]
         public string AspectRatio { get; set; } = string.Empty;
 

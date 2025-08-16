@@ -89,6 +89,30 @@ namespace Imagino.Api.Controllers
             return Ok(new { imageUrl });
         }
 
+        [HttpPost("{id}/credits")]
+        public async Task<IActionResult> AddCredits(string id, [FromBody] UpdateCreditsDto dto)
+        {
+            var success = await _service.IncrementCreditsAsync(id, dto.Amount);
+            if (!success) return NotFound();
+            var credits = await _service.GetCreditsAsync(id);
+            return Ok(new { credits });
+        }
+
+        [HttpGet("credits")]
+        public async Task<ActionResult> GetCredits()
+        {
+            var userId =
+               User.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
+               User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("User ID not found");
+
+            var credits = await _service.GetCreditsAsync(userId);
+            if (credits is null) return NotFound();
+            return Ok(new { credits });
+        }
+
         private static UserDto ToDto(User user) =>
             new(user.Id!, user.Email, user.GoogleId, user.ProfileImageUrl, user.Username, user.PhoneNumber, user.Subscription, user.Credits, user.CreatedAt, user.UpdatedAt);
     }

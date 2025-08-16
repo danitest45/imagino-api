@@ -14,6 +14,7 @@ namespace Imagino.Api.DependencyInjection
             services.AddHttpClient<JobsService, JobsService>();
             services.AddTransient<IJobsService, JobsService>();
             services.AddTransient<IImageJobRepository, ImageJobRepository>();
+            services.AddHttpClient<ReplicateJobsService, ReplicateJobsService>();
             services.AddTransient<IReplicateJobsService, ReplicateJobsService>();
             services.AddTransient<IWebhookImageService, WebhookImageService>();
             services.AddTransient<IUserRepository, UserRepository>();

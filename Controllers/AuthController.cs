@@ -5,6 +5,7 @@ using Imagino.Api.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Hosting;
 using System;
 using System.Threading.Tasks;
 
@@ -19,14 +20,16 @@ namespace Imagino.Api.Controllers
         private readonly IJwtService _jwt;
         private readonly IConfiguration _config;
         private readonly IRefreshTokenRepository _refreshTokens;
+        private readonly IWebHostEnvironment _env;
 
-        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens)
+        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IWebHostEnvironment env)
         {
             _users = users;
             _userService = userService;
             _jwt = jwt;
             _config = config;
             _refreshTokens = refreshTokens;
+            _env = env;
         }
 
         public record RegisterRequest(string Email, string Password, string? Username, string? PhoneNumber, SubscriptionType Subscription, int Credits);
@@ -63,8 +66,8 @@ namespace Imagino.Api.Controllers
                 var cookieOptions = new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
+                    Secure = !_env.IsDevelopment(),
+                    SameSite = SameSiteMode.None,
                     Expires = DateTime.UtcNow.AddDays(7)
                 };
                 Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
@@ -96,8 +99,8 @@ namespace Imagino.Api.Controllers
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
+                Secure = !_env.IsDevelopment(),
+                SameSite = SameSiteMode.None,
                 Expires = DateTime.UtcNow.AddDays(7)
             };
             Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
@@ -129,8 +132,8 @@ namespace Imagino.Api.Controllers
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
+                Secure = !_env.IsDevelopment(),
+                SameSite = SameSiteMode.None,
                 Expires = DateTime.UtcNow.AddDays(7)
             };
             Response.Cookies.Append("refreshToken", newRefresh, cookieOptions);

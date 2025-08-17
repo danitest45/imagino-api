@@ -88,4 +88,30 @@ public class JobsController(IJobsService imageService,
 
         return Ok(response);
     }
+
+    [HttpGet("latest")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetLatestJobs()
+    {
+        var jobs = await _jobRepository.GetLatestAsync(12);
+        var responseTasks = jobs.Select(async job =>
+        {
+            var user = string.IsNullOrEmpty(job.UserId)
+                ? null
+                : await _userRepository.GetByIdAsync(job.UserId);
+
+            return new
+            {
+                Id = job.Id,
+                ImageUrl = job.ImageUrls.FirstOrDefault(),
+                job.Prompt,
+                Username = user?.Username,
+                job.CreatedAt,
+                AspectRatio = job.AspectRatio
+            };
+        });
+
+        var response = await Task.WhenAll(responseTasks);
+        return Ok(response);
+    }
 }

@@ -8,5 +8,6 @@ namespace Imagino.Api.Repository
         Task<ImageJob> GetByJobIdAsync(string jobId);
         Task UpdateAsync(ImageJob job);
         Task<List<ImageJob>> GetByUserIdAsync(string userId);
+        Task<List<ImageJob>> GetLatestAsync(int limit);
     }
 }

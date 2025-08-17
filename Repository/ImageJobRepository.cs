@@ -39,5 +39,13 @@ namespace Imagino.Api.Repository
                                     .ToListAsync();
         }
 
+        public async Task<List<ImageJob>> GetLatestAsync(int limit)
+        {
+            return await _collection.Find(_ => true)
+                                    .SortByDescending(job => job.CreatedAt)
+                                    .Limit(limit)
+                                    .ToListAsync();
+        }
+
     }
 }

@@ -365,3 +365,4 @@ FodyWeavers.xsd
 # Swagger auto-generated files (caso configure output local)
 swagger/
 swagger-output/
+/wwwroot/images

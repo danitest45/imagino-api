@@ -102,6 +102,7 @@ public class JobsController(IJobsService imageService,
 
             return new
             {
+                Id = job.Id,
                 ImageUrl = job.ImageUrls.FirstOrDefault(),
                 job.Prompt,
                 Username = user?.Username,

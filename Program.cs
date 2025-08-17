@@ -35,14 +35,24 @@ var corsPolicyName = "AllowFrontend";
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: corsPolicyName,
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:3000")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials();
-        });
+    options.AddPolicy(corsPolicyName, policy =>
+    {
+        policy
+            .SetIsOriginAllowed(origin =>
+            {
+                if (string.IsNullOrEmpty(origin)) return false;
+                var uri = new Uri(origin);
+                return
+                    (uri.Scheme == "http" || uri.Scheme == "https") &&
+                    (
+                        uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                        uri.Host.EndsWith(".ngrok-free.app", StringComparison.OrdinalIgnoreCase)
+                    );
+            })
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
 });
 
 builder.Services.AddScoped<WebhookImageService>();
@@ -89,7 +99,6 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-app.UseCors(corsPolicyName);
 
 if (app.Environment.IsDevelopment())
 {
@@ -97,6 +106,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 app.UseStaticFiles();
+
+app.UseRouting();
+
+app.UseCors(corsPolicyName);
 app.UseAuthentication();
 
 app.UseHttpsRedirection();

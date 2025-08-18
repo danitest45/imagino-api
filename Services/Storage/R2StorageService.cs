@@ -29,8 +29,8 @@ namespace Imagino.Api.Services.Storage
                 Key = key,
                 InputStream = stream,
                 ContentType = contentType,
-                CannedACL = S3CannedACL.PublicRead,
-                DisablePayloadSigning = true
+                DisablePayloadSigning = true,
+                DisableDefaultChecksumValidation = true
             };
 
             if (stream.CanSeek)
@@ -38,6 +38,7 @@ namespace Imagino.Api.Services.Storage
                 stream.Position = 0;
                 request.Headers.ContentLength = stream.Length;
             }
+
 
             await _client.PutObjectAsync(request);
             return $"{_settings.PublicUrl}/{key}";

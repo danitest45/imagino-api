@@ -2,6 +2,7 @@
 using Imagino.Api.Services;
 using Imagino.Api.Services.ImageGeneration;
 using Imagino.Api.Services.WebhookImage;
+using Imagino.Api.Services.Storage;
 using Imagino.Api.Settings;
 
 namespace Imagino.Api.DependencyInjection
@@ -10,6 +11,8 @@ namespace Imagino.Api.DependencyInjection
     {
         public static IServiceCollection AddAppServices(this IServiceCollection services, IConfiguration configuration)
         {
+
+            services.Configure<R2StorageSettings>(configuration.GetSection("R2Settings"));
 
             services.AddHttpClient<JobsService, JobsService>();
             services.AddTransient<IJobsService, JobsService>();
@@ -21,6 +24,7 @@ namespace Imagino.Api.DependencyInjection
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<IJwtService, JwtService>();
             services.AddTransient<IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddSingleton<IStorageService, R2StorageService>();
 
 
             return services;

@@ -2,17 +2,20 @@
 using Imagino.Api.Models;
 using Imagino.Api.Repository;
 using Imagino.Api.Settings;
+using Imagino.Api.Services.Storage;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
+using System.IO;
 
 namespace Imagino.Api.Services.WebhookImage
 {
-    public class WebhookImageService(IImageJobRepository repository, IUserRepository userRepository, ILogger<WebhookImageService> logger, IOptions<ImageGeneratorSettings> settings) : IWebhookImageService
+    public class WebhookImageService(IImageJobRepository repository, IUserRepository userRepository, ILogger<WebhookImageService> logger, IOptions<ImageGeneratorSettings> settings, IStorageService storage) : IWebhookImageService
     {
         private readonly IImageJobRepository _repository = repository;
         private readonly IUserRepository _userRepository = userRepository;
         private readonly ILogger<WebhookImageService> _logger = logger;
         private readonly ImageGeneratorSettings _settings = settings.Value;
+        private readonly IStorageService _storage = storage;
 
         public async Task<RequestResult> ProcessarWebhookRunPodAsync(RunPodContentResponse payload)
         {
@@ -33,7 +36,7 @@ namespace Imagino.Api.Services.WebhookImage
                 return result;
             }
 
-            var imageUrl = await SalvarImagemComoArquivoAsync(payload.output.images[0], payload.id);
+            var imageUrl = await SalvarImagemAsync(payload.output.images[0], payload.id);
             if (imageUrl == null)
             {
                 result.AddError("Falha ao salvar a imagem em disco.");
@@ -68,23 +71,15 @@ namespace Imagino.Api.Services.WebhookImage
 
 
 
-        private async Task<string?> SalvarImagemComoArquivoAsync(string base64Data, string jobId)
+        private async Task<string?> SalvarImagemAsync(string base64Data, string jobId)
         {
             try
             {
                 var base64 = Regex.Replace(base64Data, @"^data:image\/[a-zA-Z]+;base64,", string.Empty);
                 var bytes = Convert.FromBase64String(base64);
-
-                var pasta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-                if (!Directory.Exists(pasta))
-                    Directory.CreateDirectory(pasta);
-
-                var nomeArquivo = $"{jobId}.png";
-                var caminho = Path.Combine(pasta, nomeArquivo);
-
-                await File.WriteAllBytesAsync(caminho, bytes);
-
-                return $"/images/{nomeArquivo}";
+                using var ms = new MemoryStream(bytes);
+                var key = $"images/{jobId}.png";
+                return await _storage.UploadAsync(ms, key, "image/png");
             }
             catch (Exception ex)
             {
@@ -151,16 +146,9 @@ namespace Imagino.Api.Services.WebhookImage
             {
                 using var client = new HttpClient();
                 var bytes = await client.GetByteArrayAsync(imageUrl);
-
-                var pasta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-                if (!Directory.Exists(pasta))
-                    Directory.CreateDirectory(pasta);
-
-                var nomeArquivo = $"{jobId}.png";
-                var caminho = Path.Combine(pasta, nomeArquivo);
-                await File.WriteAllBytesAsync(caminho, bytes);
-
-                return $"/images/{nomeArquivo}";
+                using var ms = new MemoryStream(bytes);
+                var key = $"images/{jobId}.png";
+                return await _storage.UploadAsync(ms, key, "image/png");
             }
             catch (Exception ex)
             {

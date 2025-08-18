@@ -1,6 +1,7 @@
 using Imagino.Api.DTOs;
 using Imagino.Api.Models;
 using Imagino.Api.Repository;
+using Imagino.Api.Services.Storage;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -13,10 +14,12 @@ namespace Imagino.Api.Services
     public class UserService : IUserService
     {
         private readonly IUserRepository _repository;
+        private readonly IStorageService _storage;
 
-        public UserService(IUserRepository repository)
+        public UserService(IUserRepository repository, IStorageService storage)
         {
             _repository = repository;
+            _storage = storage;
         }
 
         public async Task<IEnumerable<User>> GetAllAsync() =>
@@ -118,18 +121,11 @@ namespace Imagino.Api.Services
             var user = await _repository.GetByIdAsync(id);
             if (user == null) return null;
 
-            var uploads = Path.Combine("wwwroot", "profile-images");
-            Directory.CreateDirectory(uploads);
+            var fileName = $"profile-images/{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+            using var stream = file.OpenReadStream();
+            var url = await _storage.UploadAsync(stream, fileName, file.ContentType);
 
-            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            var filePath = Path.Combine(uploads, fileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            user.ProfileImageUrl = $"/profile-images/{fileName}";
+            user.ProfileImageUrl = url;
             user.UpdatedAt = DateTime.UtcNow;
             await _repository.UpdateAsync(user);
 

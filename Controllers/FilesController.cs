@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Imagino.Api.Controllers
 {
     [ApiController]
-    [Route("api/files/{*key}")]
+    [Route("api/files")]
     public class FilesController : ControllerBase
     {
         private readonly IStorageService _storageService;
@@ -20,7 +20,7 @@ namespace Imagino.Api.Controllers
             _storageService = storageService;
         }
 
-        [HttpGet("download-url")]
+        [HttpGet("download-url/{*key}")]
         [EnableCors(DownloadCorsPolicy)]
         public async Task<IActionResult> GetDownloadUrl([FromRoute] string key, [FromQuery] string? prompt)
         {

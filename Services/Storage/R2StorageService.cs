@@ -1,3 +1,4 @@
+using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Options;
@@ -13,6 +14,8 @@ namespace Imagino.Api.Services.Storage
         public R2StorageService(IOptions<R2StorageSettings> options)
         {
             _settings = options.Value;
+            var prop = typeof(AWSConfigsS3).GetProperty("UseSignatureVersion4");
+            prop?.SetValue(null, true);
             var config = new AmazonS3Config
             {
                 ServiceURL = _settings.ServiceUrl,
@@ -42,6 +45,20 @@ namespace Imagino.Api.Services.Storage
 
             await _client.PutObjectAsync(request);
             return $"{_settings.PublicUrl}/{key}";
+        }
+
+        public Task<string> GetDownloadUrlAsync(string key, string fileName)
+        {
+            var request = new GetPreSignedUrlRequest
+            {
+                BucketName = _settings.BucketName,
+                Key = key,
+                Verb = HttpVerb.GET,
+                Expires = DateTime.UtcNow.AddMinutes(5)
+            };
+            request.ResponseHeaderOverrides.ContentDisposition = $"attachment; filename=\"{fileName}\"";
+            var url = _client.GetPreSignedURL(request);
+            return Task.FromResult(url);
         }
     }
 }

@@ -32,6 +32,7 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
 });
 
 var corsPolicyName = "AllowFrontend";
+var downloadCorsPolicyName = "AllowDownload";
 
 builder.Services.AddCors(options =>
 {
@@ -52,6 +53,31 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
+    });
+    options.AddDefaultPolicy(builder =>
+    {
+        builder
+            .SetIsOriginAllowed(origin =>
+            {
+                if (string.IsNullOrEmpty(origin)) return false;
+                var uri = new Uri(origin);
+                return
+                    (uri.Scheme == "http" || uri.Scheme == "https") &&
+                    (
+                        uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+                        uri.Host.EndsWith(".ngrok-free.app", StringComparison.OrdinalIgnoreCase)
+                    );
+            })
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+    options.AddPolicy(downloadCorsPolicyName, policy =>
+    {
+        policy
+            .AllowAnyOrigin()
+            .WithMethods("GET")
+            .AllowAnyHeader();
     });
 });
 
@@ -109,7 +135,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseCors(corsPolicyName);
+app.UseCors();
 app.UseAuthentication();
 
 app.UseHttpsRedirection();

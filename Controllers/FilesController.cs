@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Imagino.Api.Controllers
 {
     [ApiController]
-    [Route("api/files")]
+    [Route("api/files/{*key}")]
     public class FilesController : ControllerBase
     {
         private readonly IStorageService _storageService;
@@ -20,17 +20,10 @@ namespace Imagino.Api.Controllers
             _storageService = storageService;
         }
 
-        [HttpGet("{*path}")]
+        [HttpGet("download-url")]
         [EnableCors(DownloadCorsPolicy)]
-        public async Task<IActionResult> GetDownloadUrl(string path, [FromQuery] string? prompt)
+        public async Task<IActionResult> GetDownloadUrl([FromRoute] string key, [FromQuery] string? prompt)
         {
-            const string suffix = "/download-url";
-            if (!path.EndsWith(suffix, StringComparison.Ordinal))
-            {
-                return NotFound();
-            }
-
-            var key = path.Substring(0, path.Length - suffix.Length);
             var fileName = BuildFileName(key, prompt);
             var url = await _storageService.GetDownloadUrlAsync(key, fileName);
             return Ok(new { url });
@@ -38,20 +31,18 @@ namespace Imagino.Api.Controllers
 
         private static string BuildFileName(string key, string? prompt)
         {
-            string baseName;
             if (!string.IsNullOrWhiteSpace(prompt))
             {
                 var words = prompt.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
                     .Take(6);
                 var joined = string.Join(" ", words);
-                baseName = Slugify(joined);
-            }
-            else
-            {
-                baseName = Path.GetFileNameWithoutExtension(key);
+                var baseName = Slugify(joined);
+                return $"{baseName}.png";
             }
 
-            return $"{baseName}.png";
+            var fileName = Path.GetFileName(key);
+            var changed = Path.ChangeExtension(fileName, ".png");
+            return changed ?? "image.png";
         }
 
         private static string Slugify(string phrase)

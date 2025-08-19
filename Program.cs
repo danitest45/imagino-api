@@ -54,24 +54,6 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowCredentials();
     });
-    options.AddDefaultPolicy(builder =>
-    {
-        builder
-            .SetIsOriginAllowed(origin =>
-            {
-                if (string.IsNullOrEmpty(origin)) return false;
-                var uri = new Uri(origin);
-                return
-                    (uri.Scheme == "http" || uri.Scheme == "https") &&
-                    (
-                        uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
-                        uri.Host.EndsWith(".ngrok-free.app", StringComparison.OrdinalIgnoreCase)
-                    );
-            })
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
-    });
     options.AddPolicy(downloadCorsPolicyName, policy =>
     {
         policy
@@ -135,7 +117,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseCors();
+app.UseCors(corsPolicyName);
 app.UseAuthentication();
 
 app.UseHttpsRedirection();

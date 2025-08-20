@@ -185,7 +185,7 @@ namespace Imagino.Api.Controllers
 
             var token = _jwt.GenerateToken(user.Id, user.Email);
 
-            var redirectUrl = $"https://6b8fe982ccf8.ngrok-free.app/google-auth?token={token}&username={user.Username}";
+            var redirectUrl = $"http://localhost:3000/google-auth?token={token}&username={user.Username}";
             return Redirect(redirectUrl);
         }
     }

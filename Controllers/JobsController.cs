@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
+using System.Net.Http;
+using System.IO;
+using System;
 
 namespace Imagino.Api.Controllers;
 
@@ -87,6 +90,40 @@ public class JobsController(IJobsService imageService,
         };
 
         return Ok(response);
+    }
+
+    [HttpGet("{jobId}/download")]
+    [AllowAnonymous]
+    public async Task<IActionResult> DownloadImage(string jobId)
+    {
+        var job = await _jobRepository.GetByJobIdAsync(jobId);
+        if (job == null || job.ImageUrls.Count == 0)
+            return NotFound();
+
+        var imageUrl = job.ImageUrls.First();
+
+        try
+        {
+            using var client = new HttpClient();
+            var bytes = await client.GetByteArrayAsync(imageUrl);
+
+            var extension = Path.GetExtension(new Uri(imageUrl).AbsolutePath).ToLowerInvariant();
+            var contentType = extension switch
+            {
+                ".png" => "image/png",
+                ".jpg" => "image/jpeg",
+                ".jpeg" => "image/jpeg",
+                ".gif" => "image/gif",
+                _ => "application/octet-stream"
+            };
+
+            var fileName = $"{jobId}{extension}";
+            return File(bytes, contentType, fileName);
+        }
+        catch (Exception)
+        {
+            return NotFound();
+        }
     }
 
     [HttpGet("latest")]

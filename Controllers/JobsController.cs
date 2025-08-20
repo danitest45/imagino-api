@@ -117,7 +117,12 @@ public class JobsController(IJobsService imageService,
                 _ => "application/octet-stream"
             };
 
-            var fileName = $"{jobId}{extension}";
+            var promptWords = (job.Prompt ?? string.Empty)
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var promptPrefix = string.Join("-", promptWords.Take(6));
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var safePrompt = new string(promptPrefix.Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray());
+            var fileName = $"{safePrompt}{extension}";
             return File(bytes, contentType, fileName);
         }
         catch (Exception)

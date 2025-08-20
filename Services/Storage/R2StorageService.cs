@@ -1,3 +1,4 @@
+using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Options;
@@ -42,6 +43,23 @@ namespace Imagino.Api.Services.Storage
 
             await _client.PutObjectAsync(request);
             return $"{_settings.PublicUrl}/{key}";
+        }
+
+        public string GetPresignedDownloadUrl(string key, string fileName, string contentType = "image/png")
+        {
+            typeof(AWSConfigsS3).GetProperty("UseSignatureVersion4")?.SetValue(null, true);
+            var req = new GetPreSignedUrlRequest
+            {
+                BucketName = _settings.BucketName,
+                Key = key,
+                Expires = DateTime.UtcNow.AddMinutes(5),
+                ResponseHeaderOverrides = new ResponseHeaderOverrides
+                {
+                    ContentDisposition = $"attachment; filename=\"{fileName}\"",
+                    ContentType = contentType
+                }
+            };
+            return _client.GetPreSignedURL(req);
         }
     }
 }

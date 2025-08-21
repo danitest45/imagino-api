@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # copy csproj and restore as distinct layers
-COPY Imagino.Api.csproj ./
+COPY ["Imagino.Api.csproj", "./"]
 RUN dotnet restore
 
 # copy everything else and build

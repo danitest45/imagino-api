@@ -1,0 +1,6 @@
+**/bin/
+**/obj/
+.git
+**/*.user
+**/*.suo
+Imagino.Api.Tests/

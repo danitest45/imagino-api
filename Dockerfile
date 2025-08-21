@@ -8,7 +8,7 @@ RUN dotnet restore
 
 # copy everything else and build
 COPY . ./
-RUN dotnet publish -c Release -o /app --no-restore
+RUN dotnet publish "Imagino.Api.csproj" -c Release -o /app --no-restore
 
 # runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final

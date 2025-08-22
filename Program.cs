@@ -17,7 +17,7 @@ if (builder.Environment.IsDevelopment())
     builder.Configuration.AddUserSecrets<Program>();
 }
 
-// Configurações
+// ConfiguraÃ§Ãµes
 builder.Services.Configure<ImageGeneratorSettings>(builder.Configuration.GetSection("ImageGeneratorSettings"));
 builder.Services.Configure<ReplicateSettings>(builder.Configuration.GetSection("ReplicateSettings"));
 builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("Frontend"));
@@ -32,37 +32,29 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
     return new MongoClient(conn);
 });
 
-// Configuração de CORS
+// ConfiguraÃ§Ã£o de CORS
 var corsPolicyName = "AllowFrontend";
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(corsPolicyName, policy =>
     {
         policy
-            .SetIsOriginAllowed(origin =>
-            {
-                if (string.IsNullOrEmpty(origin)) return false;
-                var uri = new Uri(origin);
-                return
-                    (uri.Scheme == "http" || uri.Scheme == "https") &&
-                    (
-                        uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
-                        uri.Host.EndsWith(".ngrok-free.app", StringComparison.OrdinalIgnoreCase) ||
-                        uri.Host.Equals("imagino-front.vercel.app", StringComparison.OrdinalIgnoreCase)
-                    );
-            })
+            .WithOrigins(allowedOrigins)
+            .SetIsOriginAllowedToAllowWildcardSubdomains()
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
     });
 });
 
-// Porta configurável (para Render)
+// Porta configurÃ¡vel (para Render)
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 builder.WebHost.UseKestrel()
     .UseUrls($"http://0.0.0.0:{port}");
 
-// Adicionar serviços do projeto
+// Adicionar serviÃ§os do projeto
 builder.Services.AddAppServices(builder.Configuration);
 
 // Controllers, Swagger, Endpoints
@@ -100,7 +92,7 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Swagger e HTTPS só no desenvolvimento
+// Swagger e HTTPS sÃ³ no desenvolvimento
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

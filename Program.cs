@@ -46,7 +46,8 @@ builder.Services.AddCors(options =>
                     (uri.Scheme == "http" || uri.Scheme == "https") &&
                     (
                         uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
-                        uri.Host.EndsWith(".ngrok-free.app", StringComparison.OrdinalIgnoreCase)
+                        uri.Host.EndsWith(".ngrok-free.app", StringComparison.OrdinalIgnoreCase) ||
+                        uri.Host.Equals("imagino-front.vercel.app", StringComparison.OrdinalIgnoreCase)
                     );
             })
             .AllowAnyHeader()
@@ -57,8 +58,9 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<WebhookImageService>();
 
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 builder.WebHost.UseKestrel()
-    .UseUrls("http://0.0.0.0:5000", "https://0.0.0.0:44362");
+    .UseUrls($"http://0.0.0.0:{port}");
 
 builder.Services.AddAppServices(builder.Configuration);
 
@@ -104,6 +106,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseHttpsRedirection();
 }
 app.UseStaticFiles();
 
@@ -112,7 +115,6 @@ app.UseRouting();
 app.UseCors(corsPolicyName);
 app.UseAuthentication();
 
-app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();

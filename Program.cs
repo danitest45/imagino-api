@@ -34,15 +34,14 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
 
 // Configuração de CORS
 var corsPolicyName = "AllowFrontend";
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+var frontendUrl = builder.Configuration["Frontend:BaseUrl"] ?? string.Empty;
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(corsPolicyName, policy =>
     {
         policy
-            .WithOrigins(allowedOrigins)
-            .SetIsOriginAllowedToAllowWildcardSubdomains()
+            .WithOrigins(frontendUrl)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

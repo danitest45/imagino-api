@@ -22,6 +22,8 @@ builder.Configuration.GetSection("ImageGeneratorSettings"));
 
 builder.Services.Configure<ReplicateSettings>(
 builder.Configuration.GetSection("ReplicateSettings"));
+builder.Services.Configure<FrontendSettings>(
+builder.Configuration.GetSection("Frontend"));
 builder.Services.AddSingleton<ImageJobRepository>();
 
 builder.Services.AddSingleton<IMongoClient>(sp =>

@@ -2,10 +2,12 @@
 using Imagino.Api.Repository;
 using Imagino.Api.Services;
 using Imagino.Api.DTOs;
+using Imagino.Api.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Options;
 using System;
 using System.Threading.Tasks;
 
@@ -21,8 +23,9 @@ namespace Imagino.Api.Controllers
         private readonly IConfiguration _config;
         private readonly IRefreshTokenRepository _refreshTokens;
         private readonly IWebHostEnvironment _env;
+        private readonly FrontendSettings _frontendSettings;
 
-        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IWebHostEnvironment env)
+        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IWebHostEnvironment env, IOptions<FrontendSettings> frontendSettings)
         {
             _users = users;
             _userService = userService;
@@ -30,6 +33,7 @@ namespace Imagino.Api.Controllers
             _config = config;
             _refreshTokens = refreshTokens;
             _env = env;
+            _frontendSettings = frontendSettings.Value;
         }
 
         public record RegisterRequest(string Email, string Password, string? Username, string? PhoneNumber, SubscriptionType Subscription, int Credits);
@@ -185,7 +189,7 @@ namespace Imagino.Api.Controllers
 
             var token = _jwt.GenerateToken(user.Id, user.Email);
 
-            var redirectUrl = $"http://localhost:3000/google-auth?token={token}&username={user.Username}";
+            var redirectUrl = $"{_frontendSettings.BaseUrl}/google-auth?token={token}&username={user.Username}";
             return Redirect(redirectUrl);
         }
     }

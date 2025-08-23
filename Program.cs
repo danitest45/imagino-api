@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using System.Text;
+using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,14 +35,16 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
 
 // Configuração de CORS
 var corsPolicyName = "AllowFrontend";
-var frontendUrl = builder.Configuration["Frontend:BaseUrl"] ?? string.Empty;
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(corsPolicyName, policy =>
     {
         policy
-            .WithOrigins(frontendUrl)
+            .SetIsOriginAllowed(origin =>
+                allowedOrigins.Any(pattern =>
+                    Regex.IsMatch(origin, "^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$", RegexOptions.IgnoreCase)))
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

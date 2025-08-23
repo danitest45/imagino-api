@@ -41,7 +41,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(corsPolicyName, policy =>
     {
         policy
-            .WithOrigins(frontendUrl)
+            .WithOrigins("https://imagino-front.vercel.app")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

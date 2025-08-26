@@ -35,21 +35,64 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
 
 // Configuração de CORS
 var corsPolicyName = "AllowFrontend";
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
+// Lê lista de origens permitidas (array) via envs: Cors__AllowedOrigins__0, __1, ...
+var allowedPatterns = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? Array.Empty<string>();
+
+// Fallback: se vier vazio, usa Frontend:BaseUrl (caso você ainda use isso em algum lugar)
+if (allowedPatterns.Length == 0)
+{
+    var fb = builder.Configuration["Frontend:BaseUrl"];
+    if (!string.IsNullOrWhiteSpace(fb))
+        allowedPatterns = new[] { fb };
+}
+
+// Log para facilitar debug no Render
+Console.WriteLine("CORS AllowedOrigins => " + string.Join(", ", allowedPatterns));
+
+// Função de match por host com suporte a wildcard "*."
+static bool OriginMatches(string? origin, string[] patterns)
+{
+    if (string.IsNullOrEmpty(origin)) return false;
+    if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false;
+    var host = uri.Host.ToLowerInvariant();
+
+    foreach (var raw in patterns)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) continue;
+
+        var p = raw.Trim().ToLowerInvariant()
+                   .Replace("https://", "")
+                   .Replace("http://", "")
+                   .TrimEnd('/');
+
+        if (p.StartsWith("*.")) // ex: *.vercel.app
+        {
+            var suffix = p.Substring(2); // "vercel.app"
+            if (host == suffix || host.EndsWith("." + suffix)) return true;
+        }
+        else
+        {
+            if (host == p) return true; // origem exata, ex: imagino-front.vercel.app
+        }
+    }
+    return false;
+}
 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(corsPolicyName, policy =>
     {
         policy
-            .SetIsOriginAllowed(origin =>
-                allowedOrigins.Any(pattern =>
-                    Regex.IsMatch(origin, "^" + Regex.Escape(pattern).Replace("\\*", ".*") + "$", RegexOptions.IgnoreCase)))
+            .SetIsOriginAllowed(origin => OriginMatches(origin, allowedPatterns))
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
     });
 });
+
 
 // Porta configurável (para Render)
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";

@@ -202,6 +202,26 @@ namespace Imagino.Api.Controllers
             }
 
             var token = _jwt.GenerateToken(user.Id, user.Email);
+            var refreshToken = Guid.NewGuid().ToString("N");
+            var settings = _cookieSettings.Value;
+            await _refreshTokens.CreateAsync(new RefreshToken
+            {
+                UserId = user.Id!,
+                Token = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddDays(settings.ExpiresDays)
+            });
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = settings.HttpOnly,
+                Secure = settings.SameSite.Equals("None", StringComparison.OrdinalIgnoreCase) ? true : settings.Secure,
+                SameSite = Enum.Parse<SameSiteMode>(settings.SameSite, true),
+                Expires = DateTime.UtcNow.AddDays(settings.ExpiresDays)
+            };
+            if (!string.IsNullOrWhiteSpace(settings.Domain))
+            {
+                cookieOptions.Domain = settings.Domain;
+            }
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
 
             var redirectUrl = $"{_frontendSettings.BaseUrl}/google-auth?token={token}&username={user.Username}";
             return Redirect(redirectUrl);

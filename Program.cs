@@ -36,12 +36,10 @@ builder.Services.AddSingleton<IMongoClient>(sp =>
 // Configuração de CORS
 var corsPolicyName = "AllowFrontend";
 
-// Lê lista de origens permitidas (array) via envs: Cors__AllowedOrigins__0, __1, ...
 var allowedPatterns = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
     .Get<string[]>() ?? Array.Empty<string>();
 
-// Fallback: se vier vazio, usa Frontend:BaseUrl (caso você ainda use isso em algum lugar)
 if (allowedPatterns.Length == 0)
 {
     var fb = builder.Configuration["Frontend:BaseUrl"];
@@ -49,37 +47,56 @@ if (allowedPatterns.Length == 0)
         allowedPatterns = new[] { fb };
 }
 
-// Log para facilitar debug no Render
 Console.WriteLine("CORS AllowedOrigins => " + string.Join(", ", allowedPatterns));
 
-// Função de match por host com suporte a wildcard "*."
 static bool OriginMatches(string? origin, string[] patterns)
 {
     if (string.IsNullOrEmpty(origin)) return false;
     if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false;
+
     var host = uri.Host.ToLowerInvariant();
+    var port = uri.IsDefaultPort ? (int?)null : uri.Port;
 
     foreach (var raw in patterns)
     {
         if (string.IsNullOrWhiteSpace(raw)) continue;
 
+        // normaliza padrão: remove esquema, e separa host[:porta]
         var p = raw.Trim().ToLowerInvariant()
                    .Replace("https://", "")
                    .Replace("http://", "")
                    .TrimEnd('/');
 
-        if (p.StartsWith("*.")) // ex: *.vercel.app
+        string patternHost = p;
+        int? patternPort = null;
+
+        var col = p.IndexOf(':');
+        if (col >= 0)
         {
-            var suffix = p.Substring(2); // "vercel.app"
-            if (host == suffix || host.EndsWith("." + suffix)) return true;
+            patternHost = p[..col];
+            if (int.TryParse(p[(col + 1)..], out var parsed))
+                patternPort = parsed;
+        }
+
+        if (patternHost.StartsWith("*.")) // wildcard: *.vercel.app
+        {
+            var suffix = patternHost[2..]; // "vercel.app"
+            if (host == suffix || host.EndsWith("." + suffix))
+            {
+                if (patternPort is null || patternPort == port) return true;
+            }
         }
         else
         {
-            if (host == p) return true; // origem exata, ex: imagino-front.vercel.app
+            if (host == patternHost)
+            {
+                if (patternPort is null || patternPort == port) return true;
+            }
         }
     }
     return false;
 }
+
 
 builder.Services.AddCors(options =>
 {
@@ -93,11 +110,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-
-// Porta configurável (para Render)
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-builder.WebHost.UseKestrel()
-    .UseUrls($"http://0.0.0.0:{port}");
 
 // Adicionar serviços do projeto
 builder.Services.AddAppServices(builder.Configuration);
@@ -135,9 +147,23 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+if (builder.Environment.IsDevelopment())
+{
+    builder.WebHost.ConfigureKestrel(o =>
+    {
+        o.ListenLocalhost(5080);
+        o.ListenLocalhost(44362, lo => lo.UseHttps());
+    });
+}
+else
+{
+    // Produção (Render/contêiner)
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+    builder.WebHost.UseKestrel().UseUrls($"http://0.0.0.0:{port}");
+}
+
 var app = builder.Build();
 
-// Swagger e HTTPS só no desenvolvimento
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

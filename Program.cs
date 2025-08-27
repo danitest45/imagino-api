@@ -22,6 +22,7 @@ if (builder.Environment.IsDevelopment())
 builder.Services.Configure<ImageGeneratorSettings>(builder.Configuration.GetSection("ImageGeneratorSettings"));
 builder.Services.Configure<ReplicateSettings>(builder.Configuration.GetSection("ReplicateSettings"));
 builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("Frontend"));
+builder.Services.Configure<RefreshTokenCookieSettings>(builder.Configuration.GetSection("RefreshTokenCookie"));
 
 builder.Services.AddSingleton<ImageJobRepository>();
 builder.Services.AddScoped<WebhookImageService>();

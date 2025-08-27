@@ -6,7 +6,6 @@ using Imagino.Api.Settings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using System;
 using System.Threading.Tasks;
@@ -22,18 +21,18 @@ namespace Imagino.Api.Controllers
         private readonly IJwtService _jwt;
         private readonly IConfiguration _config;
         private readonly IRefreshTokenRepository _refreshTokens;
-        private readonly IWebHostEnvironment _env;
         private readonly FrontendSettings _frontendSettings;
+        private readonly IOptions<RefreshTokenCookieSettings> _cookieSettings;
 
-        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IWebHostEnvironment env, IOptions<FrontendSettings> frontendSettings)
+        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IOptions<FrontendSettings> frontendSettings, IOptions<RefreshTokenCookieSettings> cookieSettings)
         {
             _users = users;
             _userService = userService;
             _jwt = jwt;
             _config = config;
             _refreshTokens = refreshTokens;
-            _env = env;
             _frontendSettings = frontendSettings.Value;
+            _cookieSettings = cookieSettings;
         }
 
         public record RegisterRequest(string Email, string Password, string? Username, string? PhoneNumber, SubscriptionType Subscription, int Credits);
@@ -67,13 +66,18 @@ namespace Imagino.Api.Controllers
                     Token = refreshToken,
                     ExpiresAt = DateTime.UtcNow.AddDays(7)
                 });
+                var settings = _cookieSettings.Value;
                 var cookieOptions = new CookieOptions
                 {
-                    HttpOnly = true,
-                    Secure = !_env.IsDevelopment(),
-                    SameSite = SameSiteMode.None,
-                    Expires = DateTime.UtcNow.AddDays(7)
+                    HttpOnly = settings.HttpOnly,
+                    Secure = settings.SameSite.Equals("None", StringComparison.OrdinalIgnoreCase) ? true : settings.Secure,
+                    SameSite = Enum.Parse<SameSiteMode>(settings.SameSite, true),
+                    Expires = DateTime.UtcNow.AddDays(settings.ExpiresDays)
                 };
+                if (!string.IsNullOrWhiteSpace(settings.Domain))
+                {
+                    cookieOptions.Domain = settings.Domain;
+                }
                 Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
                 return Ok(new { token, username = user.Username });
             }
@@ -100,13 +104,18 @@ namespace Imagino.Api.Controllers
                 Token = refreshToken,
                 ExpiresAt = DateTime.UtcNow.AddDays(7)
             });
+            var settings = _cookieSettings.Value;
             var cookieOptions = new CookieOptions
             {
-                HttpOnly = true,
-                Secure = !_env.IsDevelopment(),
-                SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddDays(7)
+                HttpOnly = settings.HttpOnly,
+                Secure = settings.SameSite.Equals("None", StringComparison.OrdinalIgnoreCase) ? true : settings.Secure,
+                SameSite = Enum.Parse<SameSiteMode>(settings.SameSite, true),
+                Expires = DateTime.UtcNow.AddDays(settings.ExpiresDays)
             };
+            if (!string.IsNullOrWhiteSpace(settings.Domain))
+            {
+                cookieOptions.Domain = settings.Domain;
+            }
             Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
             return Ok(new { token, username = user.Username });
         }
@@ -133,13 +142,18 @@ namespace Imagino.Api.Controllers
                 Token = newRefresh,
                 ExpiresAt = DateTime.UtcNow.AddDays(7)
             });
+            var settings = _cookieSettings.Value;
             var cookieOptions = new CookieOptions
             {
-                HttpOnly = true,
-                Secure = !_env.IsDevelopment(),
-                SameSite = SameSiteMode.None,
-                Expires = DateTime.UtcNow.AddDays(7)
+                HttpOnly = settings.HttpOnly,
+                Secure = settings.SameSite.Equals("None", StringComparison.OrdinalIgnoreCase) ? true : settings.Secure,
+                SameSite = Enum.Parse<SameSiteMode>(settings.SameSite, true),
+                Expires = DateTime.UtcNow.AddDays(settings.ExpiresDays)
             };
+            if (!string.IsNullOrWhiteSpace(settings.Domain))
+            {
+                cookieOptions.Domain = settings.Domain;
+            }
             Response.Cookies.Append("refreshToken", newRefresh, cookieOptions);
 
             var token = _jwt.GenerateToken(user.Id, user.Email);
@@ -188,6 +202,26 @@ namespace Imagino.Api.Controllers
             }
 
             var token = _jwt.GenerateToken(user.Id, user.Email);
+            var refreshToken = Guid.NewGuid().ToString("N");
+            var settings = _cookieSettings.Value;
+            await _refreshTokens.CreateAsync(new RefreshToken
+            {
+                UserId = user.Id!,
+                Token = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddDays(settings.ExpiresDays)
+            });
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = settings.HttpOnly,
+                Secure = settings.SameSite.Equals("None", StringComparison.OrdinalIgnoreCase) ? true : settings.Secure,
+                SameSite = Enum.Parse<SameSiteMode>(settings.SameSite, true),
+                Expires = DateTime.UtcNow.AddDays(settings.ExpiresDays)
+            };
+            if (!string.IsNullOrWhiteSpace(settings.Domain))
+            {
+                cookieOptions.Domain = settings.Domain;
+            }
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
 
             var redirectUrl = $"{_frontendSettings.BaseUrl}/google-auth?token={token}&username={user.Username}";
             return Redirect(redirectUrl);

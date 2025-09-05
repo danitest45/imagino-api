@@ -3,6 +3,7 @@ using Imagino.Api.Services;
 using Imagino.Api.Services.ImageGeneration;
 using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Services.Storage;
+using Imagino.Api.Services.Billing;
 using Imagino.Api.Settings;
 
 namespace Imagino.Api.DependencyInjection
@@ -22,6 +23,7 @@ namespace Imagino.Api.DependencyInjection
             services.AddTransient<IWebhookImageService, WebhookImageService>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IUserService, UserService>();
+            services.AddTransient<IBillingService, BillingService>();
             services.AddTransient<IJwtService, JwtService>();
             services.AddTransient<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddSingleton<IStorageService, R2StorageService>();

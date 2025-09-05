@@ -15,5 +15,6 @@ namespace Imagino.Api.Repository
         Task<bool> DecrementCreditsAsync(string userId, int amount);
         Task<bool> IncrementCreditsAsync(string userId, int amount);
         Task<int?> GetCreditsAsync(string userId);
+        Task<User?> GetByStripeCustomerIdAsync(string customerId);
     }
 }

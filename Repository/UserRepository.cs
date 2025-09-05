@@ -67,5 +67,8 @@ namespace Imagino.Api.Repository
             var result = await _collection.Find(filter).Project(u => (int?)u.Credits).FirstOrDefaultAsync();
             return result;
         }
+
+        public async Task<User?> GetByStripeCustomerIdAsync(string customerId) =>
+            await _collection.Find(u => u.StripeCustomerId == customerId).FirstOrDefaultAsync();
     }
 }

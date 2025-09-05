@@ -18,6 +18,12 @@ namespace Imagino.Api.Models
         public string Username { get; set; } = default!;
         public string? PhoneNumber { get; set; }
 
+        public string? StripeCustomerId { get; set; }
+        public string? StripeSubscriptionId { get; set; }
+        public string? Plan { get; set; }
+        public string? SubscriptionStatus { get; set; }
+        public DateTimeOffset? CurrentPeriodEnd { get; set; }
+
         [BsonRepresentation(BsonType.String)]
         public SubscriptionType Subscription { get; set; } = SubscriptionType.Free;
         public int Credits { get; set; } = 0;

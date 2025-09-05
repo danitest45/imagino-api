@@ -24,6 +24,7 @@ namespace Imagino.Api.DependencyInjection
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<IBillingService, BillingService>();
+            services.AddTransient<IStripeEventRepository, StripeEventRepository>();
             services.AddTransient<IJwtService, JwtService>();
             services.AddTransient<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddSingleton<IStorageService, R2StorageService>();

@@ -18,12 +18,14 @@ namespace Imagino.Api.Controllers
     public class StripeWebhookController : ControllerBase
     {
         private readonly IUserRepository _users;
+        private readonly IStripeEventRepository _events;
         private readonly StripeSettings _settings;
         private readonly ILogger<StripeWebhookController> _logger;
 
-        public StripeWebhookController(IUserRepository users, IOptions<StripeSettings> settings, ILogger<StripeWebhookController> logger)
+        public StripeWebhookController(IUserRepository users, IStripeEventRepository events, IOptions<StripeSettings> settings, ILogger<StripeWebhookController> logger)
         {
             _users = users;
+            _events = events;
             _settings = settings.Value;
             _logger = logger;
         }
@@ -35,8 +37,13 @@ namespace Imagino.Api.Controllers
             var json = await new StreamReader(Request.Body).ReadToEndAsync();
             try
             {
-                var signature = Request.Headers["Stripe-Signature"];
+                if (!Request.Headers.TryGetValue("Stripe-Signature", out var signature) || string.IsNullOrEmpty(signature))
+                    return Unauthorized();
+
                 var stripeEvent = EventUtility.ConstructEvent(json, signature, _settings.WebhookSecret);
+
+                if (await _events.ExistsAsync(stripeEvent.Id))
+                    return Ok();
 
                 switch (stripeEvent.Type)
                 {
@@ -51,6 +58,8 @@ namespace Imagino.Api.Controllers
                         break;
                 }
 
+                await _events.CreateAsync(new Models.StripeEventRecord { EventId = stripeEvent.Id, Created = stripeEvent.Created });
+
                 return Ok();
             }
             catch (StripeException e)
@@ -61,7 +70,7 @@ namespace Imagino.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled webhook error");
-                return Ok();
+                return BadRequest();
             }
         }
 

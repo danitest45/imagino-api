@@ -51,7 +51,7 @@ namespace Imagino.Api.Services.Billing
             {
                 Mode = "subscription",
                 Customer = customerId,
-                SuccessUrl = _settings.SuccessUrl,
+                SuccessUrl = $"{_settings.SuccessUrl}?session_id={{CHECKOUT_SESSION_ID}}",
                 CancelUrl = _settings.CancelUrl,
                 ClientReferenceId = userId,
                 Metadata = new Dictionary<string, string> { { "plan", plan.ToUpper() } },

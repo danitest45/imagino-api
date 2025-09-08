@@ -24,80 +24,69 @@ namespace Imagino.Api.Services.ImageGeneration
         {
             var result = new RequestResult();
 
-            try
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
             {
-                var user = await _userRepository.GetByIdAsync(userId);
-                if (user == null)
-                {
-                    result.AddError("User not found.");
-                    return result;
-                }
-
-                if (user.Credits < _settings.ImageCost)
-                {
-                    result.AddError("Insufficient credits.");
-                    return result;
-                }
-
-                var payload = new
-                {
-                    input = new
-                    {
-                        prompt = request.Prompt,
-                        negative_prompt = request.NegativePrompt,
-                        steps = request.Steps,
-                        cfg_scale = request.CfgScale,
-                        width = request.Width,
-                        height = request.Height,
-                        sampler_name = request.SamplerName
-                    },
-                    webhook = _settings.WebhookUrl
-                };
-
-                var json = JsonSerializer.Serialize(payload);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                _httpClient.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", _settings.RunPodApiKey);
-
-                var response = await _httpClient.PostAsync(_settings.RunPodApiUrl, content);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    result.AddError($"RunPod API returned error: {response.StatusCode}");
-                    return result;
-                }
-
-                var responseBody = await response.Content.ReadAsStringAsync();
-                var runpodRaw = JsonSerializer.Deserialize<RunPodContentResponse>(responseBody);
-
-                var imageJob = new ImageJob
-                {
-                    Prompt = request.Prompt,
-                    JobId = runpodRaw!.id,
-                    Status = runpodRaw.status.ToLower(),
-                    UserId = userId,
-                    AspectRatio = CalculateAspectRatio(request.Width, request.Height),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    ImageUrls = new List<string>(),
-                    TokenConsumed = false
-                };
-
-                await _jobRepository.InsertAsync(imageJob);
-
-                result.Content = new JobCreatedResponse
-                {
-                    JobId = imageJob.JobId,
-                    Status = imageJob.Status,
-                    CreatedAt = imageJob.CreatedAt
-                };
+                throw new Errors.Exceptions.NotFoundAppException("User not found.");
             }
-            catch (Exception ex)
+
+            if (user.Credits < _settings.ImageCost)
             {
-                result.AddError("Unexpected error during image generation.");
-                Console.Error.WriteLine(ex);
+                throw new Errors.Exceptions.InsufficientCreditsException(user.Credits, _settings.ImageCost);
             }
+
+            var payload = new
+            {
+                input = new
+                {
+                    prompt = request.Prompt,
+                    negative_prompt = request.NegativePrompt,
+                    steps = request.Steps,
+                    cfg_scale = request.CfgScale,
+                    width = request.Width,
+                    height = request.Height,
+                    sampler_name = request.SamplerName
+                },
+                webhook = _settings.WebhookUrl
+            };
+
+            var json = JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", _settings.RunPodApiKey);
+
+            var response = await _httpClient.PostAsync(_settings.RunPodApiUrl, content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Errors.Exceptions.UpstreamServiceException("RunPod", response.StatusCode.ToString(), $"RunPod API returned error: {response.StatusCode}");
+            }
+
+            var responseBody = await response.Content.ReadAsStringAsync();
+            var runpodRaw = JsonSerializer.Deserialize<RunPodContentResponse>(responseBody);
+
+            var imageJob = new ImageJob
+            {
+                Prompt = request.Prompt,
+                JobId = runpodRaw!.id,
+                Status = runpodRaw.status.ToLower(),
+                UserId = userId,
+                AspectRatio = CalculateAspectRatio(request.Width, request.Height),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                ImageUrls = new List<string>(),
+                TokenConsumed = false
+            };
+
+            await _jobRepository.InsertAsync(imageJob);
+
+            result.Content = new JobCreatedResponse
+            {
+                JobId = imageJob.JobId,
+                Status = imageJob.Status,
+                CreatedAt = imageJob.CreatedAt
+            };
 
             return result;
         }
@@ -108,8 +97,7 @@ namespace Imagino.Api.Services.ImageGeneration
             var job = await _jobRepository.GetByJobIdAsync(jobId);
             if (job == null)
             {
-                result.AddError($"Job with ID '{jobId}' not found.");
-                return result;
+                throw new Errors.Exceptions.NotFoundAppException($"Job with ID '{jobId}' not found.");
             }
 
             result.Content = new JobStatusResponse

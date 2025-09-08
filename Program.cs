@@ -3,6 +3,9 @@ using Imagino.Api.Repository;
 using Imagino.Api.Services.ImageGeneration;
 using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Settings;
+using Imagino.Api.Errors;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -119,14 +122,36 @@ builder.Services.AddCors(options =>
 // Adicionar serviços do projeto
 builder.Services.AddAppServices(builder.Configuration);
 
+// ProblemDetails
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = ctx =>
+    {
+        ctx.ProblemDetails.Extensions["traceId"] = ctx.HttpContext.TraceIdentifier;
+
+        if (ctx.HttpContext.Items.TryGetValue("error_code", out var code))
+            ctx.ProblemDetails.Extensions["code"] = code;
+
+        if (ctx.HttpContext.Items.TryGetValue("error_meta", out var meta))
+            ctx.ProblemDetails.Extensions["meta"] = meta;
+    };
+});
+
 // Controllers, Swagger, Endpoints
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+    {
+        options.Filters.Add<ValidationFilter>();
+    })
+    .ConfigureApiBehaviorOptions(o => o.SuppressModelStateInvalidFilter = true);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var key = Encoding.UTF8.GetBytes(jwtSettings["Secret"]);
+var secret = jwtSettings["Secret"];
+if (string.IsNullOrEmpty(secret))
+    secret = "dev-secret";
+var key = Encoding.UTF8.GetBytes(secret);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -177,12 +202,36 @@ if (app.Environment.IsDevelopment())
 }
 
 // Middleware pipeline
+app.UseExceptionHandler("/error");
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors(corsPolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+app.Map("/error", (HttpContext http) =>
+{
+    var feature = http.Features.Get<IExceptionHandlerPathFeature>();
+    var ex = feature?.Error;
+
+    var (status, code, title, detail, meta) = ErrorMapper.Map(ex);
+
+    http.Items["error_code"] = code;
+    if (meta != null) http.Items["error_meta"] = meta;
+
+    if (status == StatusCodes.Status429TooManyRequests &&
+        meta?.GetType().GetProperty("retryAfter")?.GetValue(meta) is int ra)
+    {
+        http.Response.Headers["Retry-After"] = ra.ToString();
+    }
+
+    return Results.Problem(
+        title: title,
+        detail: detail,
+        statusCode: status,
+        type: $"https://errors.imagino.ai/{code.ToLowerInvariant()}");
+});
 
 app.Run();
 

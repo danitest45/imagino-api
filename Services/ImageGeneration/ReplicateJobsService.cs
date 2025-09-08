@@ -1,4 +1,5 @@
 ﻿using Imagino.Api.DTOs;
+using Imagino.Api.Errors;
 using Imagino.Api.Models;
 using Imagino.Api.Repository;
 using Imagino.Api.Settings;
@@ -22,24 +23,14 @@ namespace Imagino.Api.Services.ImageGeneration
         private readonly IUserRepository _userRepository = userRepository;
         private readonly ImageGeneratorSettings _imageSettings = imageSettings.Value;
 
-        public async Task<RequestResult> GenerateImageAsync(ImageGenerationReplicateRequest request, string userId)
+        public async Task<JobCreatedResponse> GenerateImageAsync(ImageGenerationReplicateRequest request, string userId)
         {
-            var result = new RequestResult();
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
+                throw new ValidationAppException("User not found");
 
-            try
-            {
-                var user = await _userRepository.GetByIdAsync(userId);
-                if (user == null)
-                {
-                    result.AddError("User not found.");
-                    return result;
-                }
-
-                if (user.Credits < _imageSettings.ImageCost)
-                {
-                    result.AddError("Insufficient credits.");
-                    return result;
-                }
+            if (user.Credits < _imageSettings.ImageCost)
+                throw new InsufficientCreditsException(user.Credits, _imageSettings.ImageCost);
 
                 (int steps, double guidance) = request.QualityLevel switch
                 {
@@ -70,52 +61,39 @@ namespace Imagino.Api.Services.ImageGeneration
                     webhook_events_filter = new[] { "completed" }
                 };
 
-                var json = JsonSerializer.Serialize(replicateRequest);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var json = JsonSerializer.Serialize(replicateRequest);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", _settings.ApiKey);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", _settings.ApiKey);
 
-                var response = await _httpClient.PostAsync(_settings.ModelUrl, content);
+            var response = await _httpClient.PostAsync(_settings.ModelUrl, content);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    result.AddError($"Replicate API returned error: {response.StatusCode}");
-                    return result;
-                }
+            if (!response.IsSuccessStatusCode)
+                throw new UpstreamServiceException("Replicate", response.StatusCode.ToString(), (int)response.StatusCode);
 
-                var body = await response.Content.ReadAsStringAsync();
-                var replicateResponse = JsonSerializer.Deserialize<ReplicateRawResponse>(body);
+            var body = await response.Content.ReadAsStringAsync();
+            var replicateResponse = JsonSerializer.Deserialize<ReplicateRawResponse>(body);
 
-                var imageJob = new ImageJob
-                {
-                    Prompt = request.Prompt,
-                    JobId = replicateResponse!.id,
-                    Status = replicateResponse.status.ToLower(),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    UserId = userId,
-                    AspectRatio = request.AspectRatio,
-                    ImageUrls = new List<string>(),
-                    TokenConsumed = false
-                };
-
-                await _jobRepository.InsertAsync(imageJob);
-
-                result.Content = new
-                {
-                    imageJob.JobId,
-                    imageJob.Status,
-                };
-
-                return result;
-            }
-            catch (Exception ex)
+            var imageJob = new ImageJob
             {
-                result.AddError("Unexpected error with Replicate.");
-                Console.Error.WriteLine(ex);
-            }
+                Prompt = request.Prompt,
+                JobId = replicateResponse!.id,
+                Status = replicateResponse.status.ToLower(),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                UserId = userId,
+                AspectRatio = request.AspectRatio,
+                ImageUrls = new List<string>(),
+                TokenConsumed = false
+            };
 
-            return result;
+            await _jobRepository.InsertAsync(imageJob);
+
+            return new JobCreatedResponse
+            {
+                JobId = imageJob.JobId,
+                Status = imageJob.Status,
+            };
         }
 
     }

@@ -2,6 +2,7 @@ using Imagino.Api.DependencyInjection;
 using Imagino.Api.Repository;
 using Imagino.Api.Services.ImageGeneration;
 using Imagino.Api.Services.WebhookImage;
+using Imagino.Api.Errors;
 using Imagino.Api.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -9,6 +10,8 @@ using Microsoft.IdentityModel.Tokens;
 using MongoDB.Driver;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -123,6 +126,7 @@ builder.Services.AddAppServices(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddProblemDetails();
 
 // JWT
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -169,6 +173,8 @@ else
 
 var app = builder.Build();
 
+app.UseExceptionHandler("/error");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -183,6 +189,23 @@ app.UseCors(corsPolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+app.Map("/error", (HttpContext httpContext) =>
+{
+    var exception = httpContext.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error
+                    ?? new Exception("Unknown error");
+    var (status, code, title, detail, meta) = ErrorMapper.Map(exception);
+    var problem = new ProblemDetails
+    {
+        Status = status,
+        Title = title,
+        Detail = detail
+    };
+    problem.Extensions["code"] = code;
+    problem.Extensions["traceId"] = httpContext.TraceIdentifier;
+    if (meta != null) problem.Extensions["meta"] = meta;
+    return TypedResults.Problem(problem);
+});
 
 app.Run();
 

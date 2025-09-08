@@ -1,5 +1,4 @@
 ﻿using Imagino.Api.DTOs;
-using Imagino.Api.Models;
 using Imagino.Api.Services.WebhookImage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,16 +23,12 @@ public class WebhooksController(ILogger<WebhooksController> logger, IWebhookImag
     /// <response code="200">Webhook processed successfully.</response>
     /// <response code="400">Failed to process the webhook payload.</response>
     [HttpPost("runpod")]
-    [ProducesResponseType(typeof(RequestResult), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(RequestResult), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(JobStatusResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> ReceiveRunPodWebhook([FromBody] RunPodContentResponse payload)
     {
         _logger.LogInformation("🔔 Webhook received: JobId={JobId}, Status={Status}", payload.id, payload.status);
 
         var result = await _webhookService.ProcessarWebhookRunPodAsync(payload);
-
-        if (!result.Success)
-            return BadRequest(result);
 
         return Ok(result);
     }
@@ -46,16 +41,12 @@ public class WebhooksController(ILogger<WebhooksController> logger, IWebhookImag
     /// <response code="200">Webhook processed successfully.</response>
     /// <response code="400">Failed to process the webhook payload.</response>
     [HttpPost("replicate")]
-    [ProducesResponseType(typeof(RequestResult), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(RequestResult), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(JobStatusResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> ReceiveReplicateWebhook([FromBody] ReplicateWebhookRequest payload)
     {
         _logger.LogInformation("🔔 Webhook Replicate recebido: JobId={JobId}, Status={Status}", payload.Id, payload.Status);
 
         var result = await _webhookService.ProcessarWebhookReplicateAsync(payload);
-
-        if (!result.Success)
-            return BadRequest(result);
 
         return Ok(result);
     }

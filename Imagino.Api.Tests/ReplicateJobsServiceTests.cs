@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Imagino.Api.DTOs;
+using Imagino.Api.Errors;
 using Imagino.Api.Models;
 using Imagino.Api.Repository;
 using Imagino.Api.Services.ImageGeneration;
@@ -16,7 +17,7 @@ namespace Imagino.Api.Tests
     public class ReplicateJobsServiceTests
     {
         [Fact]
-        public async Task GenerateImageAsync_ReturnsError_WhenInsufficientCredits()
+        public async Task GenerateImageAsync_Throws_WhenInsufficientCredits()
         {
             // Arrange
             var httpClient = new HttpClient(new FakeHandler());
@@ -30,12 +31,8 @@ namespace Imagino.Api.Tests
             var service = new ReplicateJobsService(httpClient, replicateSettings, jobRepo.Object, userRepo.Object, imageSettings);
             var request = new ImageGenerationReplicateRequest { Prompt = "test" };
 
-            // Act
-            var result = await service.GenerateImageAsync(request, "user1");
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Contains("Insufficient credits.", result.Errors);
+            // Act & Assert
+            await Assert.ThrowsAsync<InsufficientCreditsException>(() => service.GenerateImageAsync(request, "user1"));
         }
 
         private class FakeHandler : HttpMessageHandler

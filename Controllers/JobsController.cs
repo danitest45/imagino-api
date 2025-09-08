@@ -1,5 +1,4 @@
 ﻿using Imagino.Api.DTOs;
-using Imagino.Api.Models;
 using Imagino.Api.Services.ImageGeneration;
 using Imagino.Api.Repository;
 using System.Linq;
@@ -36,8 +35,7 @@ public class JobsController(IJobsService imageService,
     /// <response code="201">Image generation job created successfully.</response>
     /// <response code="400">Invalid request or error while creating the job.</response>
     [HttpPost]
-    [ProducesResponseType(typeof(RequestResult), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(RequestResult), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(JobCreatedResponse), StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateJob([FromBody] ImageGenerationRunPodRequest request)
     {
         var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
@@ -45,12 +43,9 @@ public class JobsController(IJobsService imageService,
         if (string.IsNullOrEmpty(userId))
             return Unauthorized("User ID not found");
 
-        var result = await _imageService.GenerateImageAsync(request, userId);
+        var job = await _imageService.GenerateImageAsync(request, userId);
 
-        if (!result.Success)
-            return BadRequest(result);
-
-        return CreatedAtAction(nameof(GetJobById), new JobCreatedResponse{ JobId = result.Content?.JobId }, result);
+        return CreatedAtAction(nameof(GetJobById), new JobCreatedResponse{ JobId = job.JobId }, job);
     }
 
     /// <summary>
@@ -61,12 +56,9 @@ public class JobsController(IJobsService imageService,
     [HttpGet("{jobId}")]
     public async Task<IActionResult> GetJobById(string jobId)
     {
-        var result = await _imageService.GetJobByIdAsync(jobId);
+        var job = await _imageService.GetJobByIdAsync(jobId);
 
-        if (!result.Success)
-            return NotFound(result);
-
-        return Ok(result);
+        return Ok(job);
     }
 
     [HttpGet("details/{jobId}")]

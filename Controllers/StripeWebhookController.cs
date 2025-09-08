@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Stripe;
 using Stripe.Checkout;
 using Imagino.Api.Repository;
+using Imagino.Api.Errors;
 using Imagino.Api.Settings;
 using Newtonsoft.Json.Linq;
 
@@ -35,16 +36,25 @@ namespace Imagino.Api.Controllers
         public async Task<IActionResult> Handle()
         {
             var json = await new StreamReader(Request.Body).ReadToEndAsync();
+
+            if (!Request.Headers.TryGetValue("Stripe-Signature", out var signature) || string.IsNullOrEmpty(signature))
+                throw new WebhookSignatureException();
+
+            Event stripeEvent;
             try
             {
-                if (!Request.Headers.TryGetValue("Stripe-Signature", out var signature) || string.IsNullOrEmpty(signature))
-                    return Unauthorized();
+                stripeEvent = EventUtility.ConstructEvent(json, signature, _settings.WebhookSecret);
+            }
+            catch (StripeException e)
+            {
+                throw new WebhookSignatureException(e.Message);
+            }
 
-                var stripeEvent = EventUtility.ConstructEvent(json, signature, _settings.WebhookSecret);
+            if (await _events.ExistsAsync(stripeEvent.Id))
+                return Ok();
 
-                if (await _events.ExistsAsync(stripeEvent.Id))
-                    return Ok();
-
+            try
+            {
                 switch (stripeEvent.Type)
                 {
                     case "checkout.session.completed":
@@ -59,19 +69,19 @@ namespace Imagino.Api.Controllers
                 }
 
                 await _events.CreateAsync(new Models.StripeEventRecord { EventId = stripeEvent.Id, Created = stripeEvent.Created });
-
-                return Ok();
             }
             catch (StripeException e)
             {
                 _logger.LogError(e, "Stripe webhook error");
-                return BadRequest();
+                throw new StripeServiceException(e.Message, e.StripeError?.Code);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unhandled webhook error");
-                return BadRequest();
+                throw new WebhookProcessingException();
             }
+
+            return Ok();
         }
 
         private async Task HandleCheckoutSessionCompleted(Event stripeEvent)

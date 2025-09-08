@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Imagino.Api.Errors.Exceptions;
 
 namespace Imagino.Api.Services.ImageGeneration
 {
@@ -26,94 +27,82 @@ namespace Imagino.Api.Services.ImageGeneration
         {
             var result = new RequestResult();
 
-            try
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null)
             {
-                var user = await _userRepository.GetByIdAsync(userId);
-                if (user == null)
-                {
-                    result.AddError("User not found.");
-                    return result;
-                }
-
-                if (user.Credits < _imageSettings.ImageCost)
-                {
-                    result.AddError("Insufficient credits.");
-                    return result;
-                }
-
-                (int steps, double guidance) = request.QualityLevel switch
-                {
-                    1 => (10, 2.0),
-                    2 => (15, 2.5),
-                    3 => (25, 3.0),
-                    4 => (35, 4.0),
-                    5 => (50, 5.0),
-                    _ => (25, 3.0)
-                };
-                var replicateRequest = new
-                {
-                    input = new
-                    {
-                        steps = steps,
-                        width = 1024,
-                        height = 1024,
-                        prompt = request.Prompt,
-                        guidance = guidance,
-                        interval = 2,
-                        aspect_ratio = request.AspectRatio,
-                        output_format = "png",
-                        output_quality = 100,
-                        safety_tolerance = 2,
-                        prompt_upsampling = false
-                    },
-                    webhook = _settings.WebhookUrl,
-                    webhook_events_filter = new[] { "completed" }
-                };
-
-                var json = JsonSerializer.Serialize(replicateRequest);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", _settings.ApiKey);
-
-                var response = await _httpClient.PostAsync(_settings.ModelUrl, content);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    result.AddError($"Replicate API returned error: {response.StatusCode}");
-                    return result;
-                }
-
-                var body = await response.Content.ReadAsStringAsync();
-                var replicateResponse = JsonSerializer.Deserialize<ReplicateRawResponse>(body);
-
-                var imageJob = new ImageJob
-                {
-                    Prompt = request.Prompt,
-                    JobId = replicateResponse!.id,
-                    Status = replicateResponse.status.ToLower(),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    UserId = userId,
-                    AspectRatio = request.AspectRatio,
-                    ImageUrls = new List<string>(),
-                    TokenConsumed = false
-                };
-
-                await _jobRepository.InsertAsync(imageJob);
-
-                result.Content = new
-                {
-                    imageJob.JobId,
-                    imageJob.Status,
-                };
-
-                return result;
+                throw new NotFoundAppException("User not found.");
             }
-            catch (Exception ex)
+
+            if (user.Credits < _imageSettings.ImageCost)
             {
-                result.AddError("Unexpected error with Replicate.");
-                Console.Error.WriteLine(ex);
+                throw new InsufficientCreditsException(user.Credits, _imageSettings.ImageCost);
             }
+
+            (int steps, double guidance) = request.QualityLevel switch
+            {
+                1 => (10, 2.0),
+                2 => (15, 2.5),
+                3 => (25, 3.0),
+                4 => (35, 4.0),
+                5 => (50, 5.0),
+                _ => (25, 3.0)
+            };
+            var replicateRequest = new
+            {
+                input = new
+                {
+                    steps = steps,
+                    width = 1024,
+                    height = 1024,
+                    prompt = request.Prompt,
+                    guidance = guidance,
+                    interval = 2,
+                    aspect_ratio = request.AspectRatio,
+                    output_format = "png",
+                    output_quality = 100,
+                    safety_tolerance = 2,
+                    prompt_upsampling = false
+                },
+                webhook = _settings.WebhookUrl,
+                webhook_events_filter = new[] { "completed" }
+            };
+
+            var json = JsonSerializer.Serialize(replicateRequest);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", _settings.ApiKey);
+
+            var response = await _httpClient.PostAsync(_settings.ModelUrl, content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new UpstreamServiceException("Replicate", response.StatusCode.ToString(), $"Replicate API returned error: {response.StatusCode}");
+            }
+
+            var body = await response.Content.ReadAsStringAsync();
+            var replicateResponse = JsonSerializer.Deserialize<ReplicateRawResponse>(body);
+
+            var imageJob = new ImageJob
+            {
+                Prompt = request.Prompt,
+                JobId = replicateResponse!.id,
+                Status = replicateResponse.status.ToLower(),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                UserId = userId,
+                AspectRatio = request.AspectRatio,
+                ImageUrls = new List<string>(),
+                TokenConsumed = false
+            };
+
+            await _jobRepository.InsertAsync(imageJob);
+
+            result.Content = new JobCreatedResponse
+            {
+                JobId = imageJob.JobId,
+                Status = imageJob.Status,
+                CreatedAt = imageJob.CreatedAt
+            };
 
             return result;
         }

@@ -18,6 +18,9 @@ namespace Imagino.Api.Models
         public string Username { get; set; } = default!;
         public string? PhoneNumber { get; set; }
 
+        public bool EmailVerified { get; set; } = false;
+        public DateTime? VerifiedAt { get; set; }
+
         public string? StripeCustomerId { get; set; }
         public string? StripeSubscriptionId { get; set; }
         public string? Plan { get; set; }

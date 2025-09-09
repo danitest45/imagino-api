@@ -7,8 +7,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.IO;
 
 namespace Imagino.Api.Controllers
 {
@@ -23,8 +26,12 @@ namespace Imagino.Api.Controllers
         private readonly IRefreshTokenRepository _refreshTokens;
         private readonly FrontendSettings _frontendSettings;
         private readonly IOptions<RefreshTokenCookieSettings> _cookieSettings;
+        private readonly IEmailSender _emailSender;
+        private readonly IEmailTokenRepository _emailTokens;
+        private readonly IMemoryCache _cache;
+        private readonly EmailSettings _emailSettings;
 
-        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IOptions<FrontendSettings> frontendSettings, IOptions<RefreshTokenCookieSettings> cookieSettings)
+        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IOptions<FrontendSettings> frontendSettings, IOptions<RefreshTokenCookieSettings> cookieSettings, IEmailSender emailSender, IEmailTokenRepository emailTokens, IMemoryCache cache, IOptions<EmailSettings> emailSettings)
         {
             _users = users;
             _userService = userService;
@@ -33,10 +40,29 @@ namespace Imagino.Api.Controllers
             _refreshTokens = refreshTokens;
             _frontendSettings = frontendSettings.Value;
             _cookieSettings = cookieSettings;
+            _emailSender = emailSender;
+            _emailTokens = emailTokens;
+            _cache = cache;
+            _emailSettings = emailSettings.Value;
+        }
+
+        private bool CheckRate(string key, int limit, TimeSpan window)
+        {
+            var now = DateTime.UtcNow;
+            var list = _cache.GetOrCreate(key, _ => new List<DateTime>());
+            list.RemoveAll(t => t < now - window);
+            if (list.Count >= limit) return false;
+            list.Add(now);
+            _cache.Set(key, list, now + window);
+            return true;
         }
 
         public record RegisterRequest(string Email, string Password, string? Username, string? PhoneNumber, SubscriptionType Subscription, int Credits);
         public record LoginRequest(string Email, string Password);
+        public record ResendVerificationRequest(string Email);
+        public record VerifyEmailRequest(string Token);
+        public record ForgotPasswordRequest(string Email);
+        public record ResetPasswordRequest(string Token, string NewPassword);
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
@@ -58,33 +84,121 @@ namespace Imagino.Api.Controllers
                 };
 
                 var user = await _userService.CreateAsync(dto);
-                var token = _jwt.GenerateToken(user.Id, user.Email);
-                var refreshToken = Guid.NewGuid().ToString("N");
-                await _refreshTokens.CreateAsync(new RefreshToken
-                {
-                    UserId = user.Id!,
-                    Token = refreshToken,
-                    ExpiresAt = DateTime.UtcNow.AddDays(7)
-                });
-                var settings = _cookieSettings.Value;
-                var cookieOptions = new CookieOptions
-                {
-                    HttpOnly = settings.HttpOnly,
-                    Secure = settings.SameSite.Equals("None", StringComparison.OrdinalIgnoreCase) ? true : settings.Secure,
-                    SameSite = Enum.Parse<SameSiteMode>(settings.SameSite, true),
-                    Expires = DateTime.UtcNow.AddDays(settings.ExpiresDays)
-                };
-                if (!string.IsNullOrWhiteSpace(settings.Domain))
-                {
-                    cookieOptions.Domain = settings.Domain;
-                }
-                Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
-                return Ok(new { token, username = user.Username });
+
+                var raw = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+                await _emailTokens.CreateAsync(user.Id!, "verify_email", raw, TimeSpan.FromMinutes(60), HttpContext.Connection.RemoteIpAddress?.ToString());
+                var link = $"{_frontendSettings.BaseUrl}/verify?token={raw}";
+                var path = _emailSettings.Template.Verify ?? "EmailTemplates/VerifyEmail.html";
+                var template = System.IO.File.ReadAllText(path);
+                var html = template.Replace("{verifyLink}", link);
+                await _emailSender.SendAsync(user.Email!, "Confirme seu e-mail", html);
+
+                return StatusCode(201, new { message = "User created. Please verify your email." });
             }
             catch (ArgumentException ex)
             {
                 return BadRequest(new { message = ex.Message });
             }
+        }
+
+        [HttpPost("resend-verification")]
+        public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationRequest request)
+        {
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
+            if (!CheckRate($"rv_ip_{ip}", 10, TimeSpan.FromHours(1)))
+                return Ok();
+
+            var user = await _users.GetByEmailAsync(request.Email);
+            if (user == null || user.EmailVerified)
+                return Ok();
+
+            if (!CheckRate($"rv_user_{user.Id}", 3, TimeSpan.FromHours(1)))
+                return Ok();
+
+            var raw = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+            await _emailTokens.CreateAsync(user.Id!, "verify_email", raw, TimeSpan.FromMinutes(60), ip);
+            var link = $"{_frontendSettings.BaseUrl}/verify?token={raw}";
+            var path = _emailSettings.Template.Verify ?? "EmailTemplates/VerifyEmail.html";
+            var template = System.IO.File.ReadAllText(path);
+            var html = template.Replace("{verifyLink}", link);
+            await _emailSender.SendAsync(user.Email!, "Confirme seu e-mail", html);
+
+            return Ok();
+        }
+
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
+        {
+            var token = await _emailTokens.GetActiveByRawTokenAsync("verify_email", request.Token);
+            if (token == null)
+                return BadRequest(new { title = "Invalid token", code = "TOKEN_INVALID" });
+
+            if (token.ExpiresAt < DateTime.UtcNow)
+                return BadRequest(new { title = "Token expired", code = "TOKEN_EXPIRED" });
+
+            if (token.ConsumedAt != null)
+                return BadRequest(new { title = "Token consumed", code = "TOKEN_CONSUMED" });
+
+            var user = await _users.GetByIdAsync(token.UserId);
+            if (user == null)
+                return BadRequest(new { title = "Invalid token", code = "TOKEN_INVALID" });
+
+            user.EmailVerified = true;
+            user.VerifiedAt = DateTime.UtcNow;
+            await _users.UpdateAsync(user);
+            await _emailTokens.InvalidateByUserAsync(user.Id!, "verify_email");
+
+            return Ok();
+        }
+
+        [HttpPost("password/forgot")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
+            if (!CheckRate($"fp_ip_{ip}", 10, TimeSpan.FromHours(1)))
+                return Ok();
+
+            var user = await _users.GetByEmailAsync(request.Email);
+            if (user == null)
+                return Ok();
+
+            if (!CheckRate($"fp_user_{user.Id}", 3, TimeSpan.FromHours(1)))
+                return Ok();
+
+            var raw = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+            await _emailTokens.CreateAsync(user.Id!, "reset_password", raw, TimeSpan.FromMinutes(30), ip);
+            var link = $"{_frontendSettings.BaseUrl}/reset-password?token={raw}";
+            var path = _emailSettings.Template.Reset ?? "EmailTemplates/ResetPassword.html";
+            var template = System.IO.File.ReadAllText(path);
+            var html = template.Replace("{resetLink}", link);
+            await _emailSender.SendAsync(user.Email!, "Redefinir senha", html);
+            return Ok();
+        }
+
+        [HttpPost("password/reset")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            var token = await _emailTokens.GetActiveByRawTokenAsync("reset_password", request.Token);
+            if (token == null)
+                return BadRequest(new { title = "Invalid token", code = "TOKEN_INVALID" });
+            if (token.ExpiresAt < DateTime.UtcNow)
+                return BadRequest(new { title = "Token expired", code = "TOKEN_EXPIRED" });
+            if (token.ConsumedAt != null)
+                return BadRequest(new { title = "Token consumed", code = "TOKEN_CONSUMED" });
+
+            if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+                return BadRequest(new { title = "Weak password", code = "WEAK_PASSWORD" });
+
+            var user = await _users.GetByIdAsync(token.UserId);
+            if (user == null)
+                return BadRequest(new { title = "Invalid token", code = "TOKEN_INVALID" });
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            await _users.UpdateAsync(user);
+            await _emailTokens.InvalidateByUserAsync(user.Id!, "reset_password");
+            await _refreshTokens.DeleteByUserIdAsync(user.Id!);
+
+            return Ok();
         }
 
         [HttpPost("login")]
@@ -95,6 +209,9 @@ namespace Imagino.Api.Controllers
 
             var valid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
             if (!valid) return Unauthorized();
+
+            if (!user.EmailVerified)
+                return StatusCode(403, new { title = "Email not verified", code = "EMAIL_NOT_VERIFIED" });
 
             var token = _jwt.GenerateToken(user.Id, user.Email);
             var refreshToken = Guid.NewGuid().ToString("N");
@@ -196,9 +313,17 @@ namespace Imagino.Api.Controllers
                     Email = payload.Email,
                     Username = username,
                     Subscription = SubscriptionType.Free,
-                    Credits = 0
+                    Credits = 0,
+                    EmailVerified = payload.EmailVerified,
+                    VerifiedAt = payload.EmailVerified ? DateTime.UtcNow : null
                 };
                 await _users.CreateAsync(user);
+            }
+            else if (payload.EmailVerified && !user.EmailVerified)
+            {
+                user.EmailVerified = true;
+                user.VerifiedAt = DateTime.UtcNow;
+                await _users.UpdateAsync(user);
             }
 
             var token = _jwt.GenerateToken(user.Id, user.Email);

@@ -5,6 +5,7 @@ using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Services.Storage;
 using Imagino.Api.Services.Billing;
 using Imagino.Api.Settings;
+using Imagino.Api.Services;
 
 namespace Imagino.Api.DependencyInjection
 {
@@ -14,6 +15,7 @@ namespace Imagino.Api.DependencyInjection
         {
 
             services.Configure<R2StorageSettings>(configuration.GetSection("R2Settings"));
+            services.Configure<EmailSettings>(configuration.GetSection("Email"));
 
             services.AddHttpClient<JobsService, JobsService>();
             services.AddTransient<IJobsService, JobsService>();
@@ -27,7 +29,9 @@ namespace Imagino.Api.DependencyInjection
             services.AddTransient<IStripeEventRepository, StripeEventRepository>();
             services.AddTransient<IJwtService, JwtService>();
             services.AddTransient<IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddTransient<IEmailTokenRepository, EmailTokenRepository>();
             services.AddSingleton<IStorageService, R2StorageService>();
+            services.AddHttpClient<IEmailSender, ResendEmailSender>();
 
 
             return services;

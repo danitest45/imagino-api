@@ -121,6 +121,7 @@ builder.Services.AddCors(options =>
 
 // Adicionar serviços do projeto
 builder.Services.AddAppServices(builder.Configuration);
+builder.Services.AddMemoryCache();
 
 // Controllers, Swagger, Endpoints
 builder.Services.AddControllers();

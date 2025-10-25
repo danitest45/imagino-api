@@ -11,6 +11,7 @@ using Imagino.Api.Settings;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
+using System.Collections.Generic;
 
 namespace Imagino.Api.Tests
 {
@@ -21,7 +22,21 @@ namespace Imagino.Api.Tests
         {
             // Arrange
             var httpClient = new HttpClient(new FakeHandler());
-            var replicateSettings = Options.Create(new ReplicateSettings { ApiKey = "k", ModelUrl = "http://localhost", WebhookUrl = "http://localhost" });
+            var replicateSettings = Options.Create(new ReplicateSettings
+            {
+                ApiKey = "k",
+                WebhookUrl = "http://localhost",
+                Models = new List<ReplicateModel>
+                {
+                    new()
+                    {
+                        Id = "flux-dev",
+                        Title = "Flux Dev",
+                        Description = "",
+                        ModelUrl = "http://localhost"
+                    }
+                }
+            });
             var imageSettings = Options.Create(new ImageGeneratorSettings { ImageCost = 5 });
 
             var jobRepo = new Mock<IImageJobRepository>();

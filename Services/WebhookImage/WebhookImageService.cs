@@ -8,16 +8,20 @@ using Imagino.Api.Services.Storage;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 using System.IO;
+using Imagino.Api.Hubs;
+using Microsoft.AspNetCore.SignalR;
+using Imagino.Api.Models;
 
 namespace Imagino.Api.Services.WebhookImage
 {
-    public class WebhookImageService(IImageJobRepository repository, IUserRepository userRepository, ILogger<WebhookImageService> logger, IOptions<ImageGeneratorSettings> settings, IStorageService storage) : IWebhookImageService
+    public class WebhookImageService(IImageJobRepository repository, IUserRepository userRepository, ILogger<WebhookImageService> logger, IOptions<ImageGeneratorSettings> settings, IStorageService storage, IHubContext<JobHub> hubContext) : IWebhookImageService
     {
         private readonly IImageJobRepository _repository = repository;
         private readonly IUserRepository _userRepository = userRepository;
         private readonly ILogger<WebhookImageService> _logger = logger;
         private readonly ImageGeneratorSettings _settings = settings.Value;
         private readonly IStorageService _storage = storage;
+        private readonly IHubContext<JobHub> _hubContext = hubContext;
 
         public async Task<JobStatusResponse> ProcessarWebhookRunPodAsync(RunPodContentResponse payload)
         {
@@ -45,6 +49,8 @@ namespace Imagino.Api.Services.WebhookImage
             }
 
             await _repository.UpdateAsync(job);
+
+            await NotifyJobCompletedAsync(job);
 
             _logger.LogInformation("✅ Job atualizado com sucesso: {JobId}", job.JobId);
 
@@ -83,6 +89,8 @@ namespace Imagino.Api.Services.WebhookImage
             }
 
             await _repository.UpdateAsync(job);
+
+            await NotifyJobCompletedAsync(job);
 
             _logger.LogInformation("✅ Job Replicate finalizado com sucesso: {JobId}", job.JobId);
 
@@ -136,6 +144,33 @@ namespace Imagino.Api.Services.WebhookImage
             {
                 _logger.LogError(ex, "Erro ao baixar imagem do Replicate para o job {JobId}", jobId);
                 throw new StorageUploadException(provider: "R2");
+            }
+        }
+
+        private async Task NotifyJobCompletedAsync(ImageJob job)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(job.UserId))
+                {
+                    _logger.LogWarning("Job {JobId} não possui UserId associado para notificação SignalR.", job.JobId);
+                    return;
+                }
+
+                await _hubContext.Clients.User(job.UserId)
+                    .SendAsync("JobCompleted", new
+                    {
+                        JobId = job.JobId,
+                        Status = job.Status,
+                        ImageUrls = job.ImageUrls,
+                        AspectRatio = job.AspectRatio,
+                        CreatedAt = job.CreatedAt,
+                        Prompt = job.Prompt
+                    });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao enviar notificação SignalR para o job {JobId}", job.JobId);
             }
         }
     }

@@ -12,6 +12,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Imagino.Api.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -118,6 +119,8 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddSignalR();
+
 
 // Adicionar serviços do projeto
 builder.Services.AddAppServices(builder.Configuration);
@@ -190,6 +193,7 @@ app.UseCors(corsPolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<JobHub>("/jobsHub");
 
 app.Map("/error", (HttpContext httpContext) =>
 {

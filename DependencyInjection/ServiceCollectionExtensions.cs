@@ -1,5 +1,8 @@
 ﻿using Imagino.Api.Repository;
 using Imagino.Api.Services;
+using Imagino.Api.Repositories.Image;
+using Imagino.Api.Repository.Image;
+using Imagino.Api.Services.Image;
 using Imagino.Api.Services.ImageGeneration;
 using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Services.Storage;
@@ -20,8 +23,16 @@ namespace Imagino.Api.DependencyInjection
             services.AddHttpClient<JobsService, JobsService>();
             services.AddTransient<IJobsService, JobsService>();
             services.AddTransient<IImageJobRepository, ImageJobRepository>();
+            services.AddTransient<IImageModelProviderRepository, ImageModelProviderRepository>();
+            services.AddTransient<IImageModelRepository, ImageModelRepository>();
+            services.AddTransient<IImageModelVersionRepository, ImageModelVersionRepository>();
+            services.AddTransient<IImageModelPresetRepository, ImageModelPresetRepository>();
+            services.AddTransient<IModelResolverService, ModelResolverService>();
+            services.AddTransient<IImageJobCreationService, ImageJobCreationService>();
+            services.AddTransient<ImageCatalogSeeder>();
             services.AddHttpClient<ReplicateJobsService, ReplicateJobsService>();
             services.AddTransient<IReplicateJobsService, ReplicateJobsService>();
+            services.AddHttpClient("ImageModelProvider");
             services.AddTransient<IWebhookImageService, WebhookImageService>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IUserService, UserService>();

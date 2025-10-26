@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -21,7 +22,12 @@ namespace Imagino.Api.Tests
         {
             // Arrange
             var httpClient = new HttpClient(new FakeHandler());
-            var replicateSettings = Options.Create(new ReplicateSettings { ApiKey = "k", ModelUrl = "http://localhost", WebhookUrl = "http://localhost" });
+            var replicateSettings = Options.Create(new ReplicateSettings
+            {
+                ApiKey = "k",
+                WebhookUrl = "http://localhost",
+                Models = new Dictionary<string, string> { ["flux"] = "http://localhost" }
+            });
             var imageSettings = Options.Create(new ImageGeneratorSettings { ImageCost = 5 });
 
             var jobRepo = new Mock<IImageJobRepository>();

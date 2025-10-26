@@ -4,6 +4,7 @@ using Imagino.Api.Models;
 using Imagino.Api.Repository;
 using Imagino.Api.Settings;
 using Microsoft.Extensions.Options;
+using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -32,6 +33,48 @@ namespace Imagino.Api.Services.ImageGeneration
             if (user.Credits < _imageSettings.ImageCost)
                 throw new InsufficientCreditsException(user.Credits, _imageSettings.ImageCost);
 
+            const string defaultModelKey = "flux";
+            var requestedModelKey = string.IsNullOrWhiteSpace(request.Model) ? defaultModelKey : request.Model.Trim();
+            requestedModelKey = requestedModelKey.ToLowerInvariant();
+            var models = _settings.Models ?? new Dictionary<string, string>();
+
+            if (models.Count == 0)
+                throw new ValidationAppException("Replicate models are not configured.");
+
+            var resolvedModelKey = requestedModelKey;
+            if (!models.TryGetValue(resolvedModelKey, out var modelUrl) || string.IsNullOrWhiteSpace(modelUrl))
+            {
+                resolvedModelKey = defaultModelKey;
+                if (!models.TryGetValue(resolvedModelKey, out modelUrl) || string.IsNullOrWhiteSpace(modelUrl))
+                    throw new ValidationAppException($"Replicate model '{requestedModelKey}' is not configured.");
+            }
+
+            object replicateRequest;
+
+            if (resolvedModelKey == "seedream-4")
+            {
+                var aspectRatio = string.IsNullOrWhiteSpace(request.AspectRatio) ? "4:3" : request.AspectRatio;
+
+                replicateRequest = new
+                {
+                    input = new
+                    {
+                        size = "2K",
+                        width = 2048,
+                        height = 2048,
+                        prompt = request.Prompt,
+                        max_images = 1,
+                        image_input = Array.Empty<object>(),
+                        aspect_ratio = aspectRatio,
+                        enhance_prompt = true,
+                        sequential_image_generation = "disabled"
+                    },
+                    webhook = _settings.WebhookUrl,
+                    webhook_events_filter = new[] { "completed" }
+                };
+            }
+            else
+            {
                 (int steps, double guidance) = request.QualityLevel switch
                 {
                     1 => (10, 2.0),
@@ -41,7 +84,8 @@ namespace Imagino.Api.Services.ImageGeneration
                     5 => (50, 5.0),
                     _ => (25, 3.0)
                 };
-                var replicateRequest = new
+
+                replicateRequest = new
                 {
                     input = new
                     {
@@ -60,13 +104,14 @@ namespace Imagino.Api.Services.ImageGeneration
                     webhook = _settings.WebhookUrl,
                     webhook_events_filter = new[] { "completed" }
                 };
+            }
 
             var json = JsonSerializer.Serialize(replicateRequest);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Token", _settings.ApiKey);
 
-            var response = await _httpClient.PostAsync(_settings.ModelUrl, content);
+            var response = await _httpClient.PostAsync(modelUrl, content);
 
             if (!response.IsSuccessStatusCode)
                 throw new UpstreamServiceException("Replicate", response.StatusCode.ToString(), (int)response.StatusCode);
@@ -84,7 +129,8 @@ namespace Imagino.Api.Services.ImageGeneration
                 UserId = userId,
                 AspectRatio = request.AspectRatio,
                 ImageUrls = new List<string>(),
-                TokenConsumed = false
+                TokenConsumed = false,
+                Model = resolvedModelKey
             };
 
             await _jobRepository.InsertAsync(imageJob);

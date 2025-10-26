@@ -30,6 +30,9 @@ namespace Imagino.Api.Models
         [BsonElement("aspectRatio")]
         public string AspectRatio { get; set; } = string.Empty;
 
+        [BsonElement("model")]
+        public string Model { get; set; } = string.Empty;
+
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

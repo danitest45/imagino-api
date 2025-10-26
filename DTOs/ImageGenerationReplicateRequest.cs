@@ -5,5 +5,6 @@
         public string? Prompt { get; set; }
         public int QualityLevel { get; set; } = 3;
         public string AspectRatio { get; set; } = "1:1";
+        public string Model { get; set; } = "flux";
     }
 }

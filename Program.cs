@@ -1,6 +1,7 @@
 using Imagino.Api.DependencyInjection;
 using Imagino.Api.Repository;
 using Imagino.Api.Services.ImageGeneration;
+using Imagino.Api.Services.ImageGeneration.Models;
 using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Errors;
 using Imagino.Api.Settings;
@@ -122,6 +123,8 @@ builder.Services.AddCors(options =>
 // Adicionar serviços do projeto
 builder.Services.AddAppServices(builder.Configuration);
 builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IReplicateModelRequestBuilder, FluxReplicateModelRequestBuilder>();
+builder.Services.AddSingleton<IReplicateModelRequestBuilder, Seedream4ReplicateModelRequestBuilder>();
 
 // Controllers, Swagger, Endpoints
 builder.Services.AddControllers();

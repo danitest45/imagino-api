@@ -9,6 +9,7 @@ using Imagino.Api.Models;
 using Imagino.Api.Repository;
 using Imagino.Api.Services.ImageGeneration;
 using Imagino.Api.Settings;
+using Imagino.Api.Services.ImageGeneration.Models;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
@@ -34,7 +35,13 @@ namespace Imagino.Api.Tests
             var userRepo = new Mock<IUserRepository>();
             userRepo.Setup(r => r.GetByIdAsync("user1")).ReturnsAsync(new User { Id = "user1", Credits = 1 });
 
-            var service = new ReplicateJobsService(httpClient, replicateSettings, jobRepo.Object, userRepo.Object, imageSettings);
+            var builders = new IReplicateModelRequestBuilder[]
+            {
+                new FluxReplicateModelRequestBuilder(),
+                new Seedream4ReplicateModelRequestBuilder()
+            };
+
+            var service = new ReplicateJobsService(httpClient, replicateSettings, jobRepo.Object, userRepo.Object, imageSettings, builders);
             var request = new ImageGenerationReplicateRequest { Prompt = "test" };
 
             // Act & Assert

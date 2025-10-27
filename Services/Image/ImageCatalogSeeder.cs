@@ -85,7 +85,7 @@ namespace Imagino.Api.Services.Image
                 Id = ObjectId.GenerateNewId().ToString(),
                 ModelId = fluxModel.Id!,
                 VersionTag = "1.1-pro",
-                EndpointUrl = "https://api.replicate.com/v1/predictions",
+                EndpointUrl = "https://api.replicate.com/v1/models/black-forest-labs/flux-1.1-pro/predictions",
                 ParamSchema = BsonDocument.Parse(@"{
   'type': 'object',
   'properties': {
@@ -171,25 +171,29 @@ namespace Imagino.Api.Services.Image
                 Id = ObjectId.GenerateNewId().ToString(),
                 ModelId = seedreamModel.Id!,
                 VersionTag = "2025-10-01",
-                EndpointUrl = "https://api.replicate.com/v1/predictions",
+                EndpointUrl = "https://api.replicate.com/v1/models/bytedance/seedream-4/predictions",
                 ParamSchema = BsonDocument.Parse(@"{
   'type': 'object',
   'properties': {
-    'size': { 'type': 'string' },
-    'width': { 'type': 'integer' },
-    'height': { 'type': 'integer' },
-    'max_images': { 'type': 'integer' },
-    'aspect_ratio': { 'type': 'string' },
+    'prompt': { 'type': 'string' },
+    'size': { 'type': 'string', 'enum': ['1K', '2K', '4K'] },
+    'width': { 'type': 'integer', 'minimum': 512, 'maximum': 4096 },
+    'height': { 'type': 'integer', 'minimum': 512, 'maximum': 4096 },
+    'max_images': { 'type': 'integer', 'minimum': 1, 'maximum': 4 },
+    'aspect_ratio': { 'type': 'string', 'enum': ['1:1', '4:3', '16:9', '9:16'] },
     'enhance_prompt': { 'type': 'boolean' },
-    'sequential_image_generation': { 'type': 'boolean' }
+    'sequential_image_generation': { 'type': 'string', 'enum': ['disabled', 'enabled'] }
   },
-  'required': ['size']
+  'required': ['prompt']
 }".Replace("'", "\"")),
                 Defaults = BsonDocument.Parse(@"{
-  'size': '2048x2048',
+  'size': '2K',
+  'width': 2048,
+  'height': 2048,
+  'max_images': 1,
+  'aspect_ratio': '4:3',
   'enhance_prompt': true,
-  'max_images': 4,
-  'aspect_ratio': '1:1'
+  'sequential_image_generation': 'disabled'
 }".Replace("'", "\"")),
                 Pricing = new ImageModelPricing
                 {
@@ -212,9 +216,12 @@ namespace Imagino.Api.Services.Image
                 Name = "2K Sharp",
                 Description = "Configuração com foco em nitidez 2K",
                 Params = BsonDocument.Parse(@"{
-  'size': '2048x1152',
+  'size': '2K',
+  'width': 2048,
+  'height': 1152,
   'enhance_prompt': true,
-  'max_images': 2
+  'max_images': 2,
+  'aspect_ratio': '16:9'
 }".Replace("'", "\"")),
                 Locks = new List<string> { "size" },
                 Visibility = ImageModelVisibility.Premium,

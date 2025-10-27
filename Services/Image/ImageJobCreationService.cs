@@ -98,7 +98,7 @@ namespace Imagino.Api.Services.Image
                     UserId = userId,
                     ModelSlug = model.Slug,
                     VersionTag = version.VersionTag,
-                    PresetId = resolvedPreset?.Preset.Id,
+                    PresetId = resolvedPreset?.Preset.Id ?? request.PresetId,
                     ResolvedParams = resolvedParams,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
@@ -111,7 +111,10 @@ namespace Imagino.Api.Services.Image
                 {
                     JobId = job.JobId,
                     Status = job.Status,
-                    CreatedAt = job.CreatedAt
+                    CreatedAt = job.CreatedAt,
+                    Model = model.Slug,
+                    Version = version.VersionTag,
+                    PresetId = job.PresetId
                 };
             }
             catch

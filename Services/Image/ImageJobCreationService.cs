@@ -163,8 +163,7 @@ namespace Imagino.Api.Services.Image
 
         private static string BuildPayload(ImageModelVersion version, BsonDocument resolvedParams)
         {
-            var settings = new JsonWriterSettings { OutputMode = JsonOutputMode.Strict };
-            var inputJson = JsonNode.Parse(resolvedParams.ToJson(settings)) ?? new JsonObject();
+            var inputJson = JsonNode.Parse(resolvedParams.ToJson()) ?? new JsonObject();
             var payload = new JsonObject
             {
                 ["input"] = inputJson

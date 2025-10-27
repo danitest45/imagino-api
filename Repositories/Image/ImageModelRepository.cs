@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Imagino.Api.Models.Image;
 using Imagino.Api.Repositories.Image;
 using Imagino.Api.Settings;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Imagino.Api.Repository.Image
@@ -21,8 +24,22 @@ namespace Imagino.Api.Repository.Image
         public async Task<ImageModel?> GetByIdAsync(string id) =>
             await _collection.Find(m => m.Id == id).FirstOrDefaultAsync();
 
-        public async Task<ImageModel?> GetBySlugAsync(string slug) =>
-            await _collection.Find(m => m.Slug == slug).FirstOrDefaultAsync();
+        public async Task<ImageModel?> GetBySlugAsync(string slug)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+            {
+                return null;
+            }
+
+            var pattern = $"^{Regex.Escape(slug.Trim())}$";
+            var filter = Builders<ImageModel>.Filter.Regex(
+                model => model.Slug,
+                new BsonRegularExpression(pattern, "i"));
+
+            return await _collection
+                .Find(filter)
+                .FirstOrDefaultAsync();
+        }
 
         public async Task<List<ImageModel>> GetAsync(ImageModelStatus? status = null, ImageModelVisibility? visibility = null, IEnumerable<string>? ids = null)
         {

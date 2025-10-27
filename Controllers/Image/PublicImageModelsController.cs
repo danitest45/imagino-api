@@ -12,7 +12,6 @@ namespace Imagino.Api.Controllers.Image
 {
     [ApiController]
     [Route("api/image/models")]
-    [AllowAnonymous]
     public class PublicImageModelsController : ControllerBase
     {
         private static readonly HashSet<ImageModelStatus> ListAllowedStatuses = new()
@@ -43,6 +42,7 @@ namespace Imagino.Api.Controllers.Image
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<PublicImageModelSummaryDto>>> List(
             [FromQuery] ImageModelVisibility visibility = ImageModelVisibility.Public,
             [FromQuery(Name = "include")] string? include = null)
@@ -102,6 +102,7 @@ namespace Imagino.Api.Controllers.Image
         }
 
         [HttpGet("{slug}")]
+        [AllowAnonymous]
         public async Task<ActionResult<PublicImageModelDetailsDto>> GetBySlug(
             string slug,
             [FromQuery(Name = "include")] string? include = null)

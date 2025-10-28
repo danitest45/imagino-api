@@ -1,4 +1,6 @@
-﻿using MongoDB.Bson;
+using System;
+using System.Collections.Generic;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace Imagino.Api.Models
@@ -11,6 +13,19 @@ namespace Imagino.Api.Models
 
         [BsonElement("prompt")]
         public string? Prompt { get; set; }
+
+        [BsonElement("modelSlug")]
+        public string? ModelSlug { get; set; }
+
+        [BsonElement("versionTag")]
+        public string? VersionTag { get; set; }
+
+        [BsonElement("presetId")]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? PresetId { get; set; }
+
+        [BsonElement("resolvedParams")]
+        public BsonDocument? ResolvedParams { get; set; }
 
         [BsonElement("jobId")]
         public string? JobId { get; set; }
@@ -25,7 +40,7 @@ namespace Imagino.Api.Models
         public List<string> ImageUrls { get; set; } = new();
 
         [BsonElement("tokenConsumed")]
-        public bool TokenConsumed { get; set; } = false;
+        public bool TokenConsumed { get; set; }
 
         [BsonElement("aspectRatio")]
         public string AspectRatio { get; set; } = string.Empty;

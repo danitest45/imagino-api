@@ -1,6 +1,5 @@
 using Imagino.Api.DependencyInjection;
 using Imagino.Api.Repository;
-using Imagino.Api.Services.Image;
 using Imagino.Api.Services.ImageGeneration;
 using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Errors;
@@ -175,12 +174,6 @@ else
 }
 
 var app = builder.Build();
-
-using (var scope = app.Services.CreateScope())
-{
-    var seeder = scope.ServiceProvider.GetRequiredService<ImageCatalogSeeder>();
-    await seeder.SeedAsync();
-}
 
 app.UseExceptionHandler("/error");
 

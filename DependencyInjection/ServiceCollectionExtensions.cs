@@ -29,7 +29,6 @@ namespace Imagino.Api.DependencyInjection
             services.AddTransient<IImageModelPresetRepository, ImageModelPresetRepository>();
             services.AddTransient<IModelResolverService, ModelResolverService>();
             services.AddTransient<IImageJobCreationService, ImageJobCreationService>();
-            services.AddTransient<ImageCatalogSeeder>();
             services.AddHttpClient<ReplicateJobsService, ReplicateJobsService>();
             services.AddTransient<IReplicateJobsService, ReplicateJobsService>();
             services.AddHttpClient("ImageModelProvider");

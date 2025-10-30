@@ -1,11 +1,14 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Security.Claims;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Imagino.Api.DTOs;
 using Imagino.Api.DTOs.Image;
 using Imagino.Api.Errors;
 using Imagino.Api.Services.Image;
-using Imagino.Api.Services.ImageGeneration;
+using Imagino.Api.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -18,12 +21,17 @@ namespace Imagino.Api.Controllers.Image
     public class ImageJobsController : ControllerBase
     {
         private readonly IImageJobCreationService _jobCreationService;
-        private readonly IJobsService _jobsService;
+        private readonly IImageJobRepository _jobRepository;
+        private readonly IUserRepository _userRepository;
 
-        public ImageJobsController(IImageJobCreationService jobCreationService, IJobsService jobsService)
+        public ImageJobsController(
+            IImageJobCreationService jobCreationService,
+            IImageJobRepository jobRepository,
+            IUserRepository userRepository)
         {
             _jobCreationService = jobCreationService;
-            _jobsService = jobsService;
+            _jobRepository = jobRepository;
+            _userRepository = userRepository;
         }
 
         [HttpPost]
@@ -35,7 +43,6 @@ namespace Imagino.Api.Controllers.Image
                 throw new ValidationAppException("Authenticated user not found");
             }
 
-            request.Params ??= JsonDocument.Parse("{}");
             var result = await _jobCreationService.CreateJobAsync(request, userId);
             return CreatedAtAction(nameof(GetJobById), new { jobId = result.JobId }, result);
         }
@@ -43,8 +50,113 @@ namespace Imagino.Api.Controllers.Image
         [HttpGet("{jobId}")]
         public async Task<ActionResult<JobStatusResponse>> GetJobById(string jobId)
         {
-            var job = await _jobsService.GetJobByIdAsync(jobId);
-            return Ok(job);
+            var job = await _jobRepository.GetByJobIdAsync(jobId);
+            if (job == null)
+            {
+                return NotFound();
+            }
+
+            var response = new JobStatusResponse
+            {
+                JobId = job.JobId,
+                Status = job.Status,
+                ImageUrls = job.ImageUrls,
+                UpdatedAt = job.UpdatedAt
+            };
+
+            return Ok(response);
+        }
+
+        [HttpGet("details/{jobId}")]
+        public async Task<IActionResult> GetJobDetails(string jobId)
+        {
+            var job = await _jobRepository.GetByJobIdAsync(jobId);
+            if (job == null)
+            {
+                return NotFound();
+            }
+
+            var user = string.IsNullOrEmpty(job.UserId)
+                ? null
+                : await _userRepository.GetByIdAsync(job.UserId);
+
+            var response = new
+            {
+                ImageUrl = job.ImageUrls.FirstOrDefault(),
+                job.Prompt,
+                Username = user?.Username,
+                job.CreatedAt,
+                AspectRatio = job.AspectRatio
+            };
+
+            return Ok(response);
+        }
+
+        [HttpGet("{jobId}/download")]
+        [AllowAnonymous]
+        public async Task<IActionResult> DownloadImage(string jobId)
+        {
+            var job = await _jobRepository.GetByJobIdAsync(jobId);
+            if (job == null || job.ImageUrls.Count == 0)
+            {
+                return NotFound();
+            }
+
+            var imageUrl = job.ImageUrls.First();
+
+            try
+            {
+                using var client = new HttpClient();
+                var bytes = await client.GetByteArrayAsync(imageUrl);
+
+                var extension = Path.GetExtension(new Uri(imageUrl).AbsolutePath).ToLowerInvariant();
+                var contentType = extension switch
+                {
+                    ".png" => "image/png",
+                    ".jpg" => "image/jpeg",
+                    ".jpeg" => "image/jpeg",
+                    ".gif" => "image/gif",
+                    _ => "application/octet-stream"
+                };
+
+                var promptWords = (job.Prompt ?? string.Empty)
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var promptPrefix = string.Join("-", promptWords.Take(6));
+                var invalidChars = Path.GetInvalidFileNameChars();
+                var safePrompt = new string(promptPrefix.Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray());
+                var fileName = $"{safePrompt}{extension}";
+                return File(bytes, contentType, fileName);
+            }
+            catch (Exception)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpGet("latest")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetLatestJobs()
+        {
+            var jobs = await _jobRepository.GetLatestAsync(12);
+            var responseTasks = jobs.Select(async job =>
+            {
+                var user = string.IsNullOrEmpty(job.UserId)
+                    ? null
+                    : await _userRepository.GetByIdAsync(job.UserId);
+
+                return new
+                {
+                    Id = job.Id,
+                    ImageUrl = job.ImageUrls.FirstOrDefault(),
+                    job.Prompt,
+                    Username = user?.Username,
+                    job.CreatedAt,
+                    AspectRatio = job.AspectRatio
+                };
+            });
+
+            var response = await Task.WhenAll(responseTasks);
+            return Ok(response);
         }
     }
 }

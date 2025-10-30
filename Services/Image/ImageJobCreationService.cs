@@ -42,11 +42,6 @@ namespace Imagino.Api.Services.Image
             var user = await _userRepository.GetByIdAsync(userId)
                        ?? throw new ValidationAppException("User not found");
 
-            if (request.Params == null)
-            {
-                throw new ValidationAppException("Request params cannot be null");
-            }
-
             ResolvedPreset? resolvedPreset = null;
             ResolvedModelVersion? resolvedModelVersion = null;
 
@@ -56,17 +51,34 @@ namespace Imagino.Api.Services.Image
             }
             else
             {
-                if (string.IsNullOrWhiteSpace(request.Model))
+                if (string.IsNullOrWhiteSpace(request.ModelSlug))
                 {
                     throw new ValidationAppException("Model slug must be provided when presetId is not informed");
                 }
 
-                resolvedModelVersion = await _modelResolverService.ResolveModelAndVersionAsync(request.Model, request.Version, request.Params);
+                resolvedModelVersion = await _modelResolverService.ResolveModelAndVersionAsync(request.ModelSlug, null, request.Params);
             }
 
             var model = resolvedPreset?.Model ?? resolvedModelVersion!.Model;
             var version = resolvedPreset?.Version ?? resolvedModelVersion!.Version;
             var resolvedParams = resolvedPreset?.ResolvedParams ?? resolvedModelVersion!.ResolvedParams;
+
+            if (resolvedParams.TryGetValue("quality", out var qualityVal) && qualityVal.IsInt32)
+            {
+                var (steps, guidance) = qualityVal.AsInt32 switch
+                {
+                    1 => (10, 2.0),
+                    2 => (15, 2.5),
+                    3 => (25, 3.0),
+                    4 => (35, 4.0),
+                    5 => (50, 5.0),
+                    _ => (25, 3.0)
+                };
+
+                resolvedParams["num_inference_steps"] = steps;
+                resolvedParams["guidance"] = guidance;
+                resolvedParams.Remove("quality");
+            }
 
             var provider = await _providerRepository.GetByIdAsync(model.ProviderId)
                            ?? throw new ValidationAppException($"Provider '{model.ProviderId}' not found");
@@ -90,6 +102,10 @@ namespace Imagino.Api.Services.Image
                     ? promptValue.AsString
                     : null;
 
+                var aspectRatio = resolvedParams.TryGetValue("aspect_ratio", out var aspectRatioValue) && aspectRatioValue.IsString
+                    ? aspectRatioValue.AsString
+                    : string.Empty;
+
                 var job = new ImageJob
                 {
                     Prompt = prompt,
@@ -100,6 +116,7 @@ namespace Imagino.Api.Services.Image
                     VersionTag = version.VersionTag,
                     PresetId = resolvedPreset?.Preset.Id ?? request.PresetId,
                     ResolvedParams = resolvedParams,
+                    AspectRatio = aspectRatio,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     TokenConsumed = true

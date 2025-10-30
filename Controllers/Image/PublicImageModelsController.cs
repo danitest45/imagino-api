@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Imagino.Api.DTOs.Image;
 using Imagino.Api.Models.Image;
 using Imagino.Api.Repositories.Image;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 
 namespace Imagino.Api.Controllers.Image
 {
@@ -165,6 +167,53 @@ namespace Imagino.Api.Controllers.Image
             }
 
             return Ok(details);
+        }
+
+        [HttpGet("{slug}/versions/{versionTag}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<PublicImageModelVersionDetailsDto>> GetVersionDetails(string slug, string versionTag)
+        {
+            var model = await _modelRepository.GetBySlugAsync(slug);
+            if (model == null || model.Status == ImageModelStatus.Archived)
+            {
+                return NotFound();
+            }
+
+            var version = await _versionRepository.GetByModelAndTagAsync(model.Id!, versionTag);
+            if (version == null || version.Status == ImageModelVersionStatus.Archived)
+            {
+                return NotFound();
+            }
+
+            static JsonDocument? ToJson(BsonDocument? bson) => bson == null
+                ? null
+                : JsonDocument.Parse(bson.ToJson(new MongoDB.Bson.IO.JsonWriterSettings
+                {
+                    OutputMode = MongoDB.Bson.IO.JsonOutputMode.CanonicalExtendedJson
+                }));
+
+            var dto = new PublicImageModelVersionDetailsDto
+            {
+                ModelSlug = model.Slug,
+                VersionTag = version.VersionTag,
+                Status = version.Status,
+                ParamSchema = ToJson(version.ParamSchema),
+                Defaults = ToJson(version.Defaults),
+                Limits = version.Limits == null ? null : new ImageModelVersionLimitsDto
+                {
+                    MaxWidth = version.Limits.MaxWidth,
+                    MaxHeight = version.Limits.MaxHeight,
+                    Formats = version.Limits.Formats
+                },
+                Pricing = version.Pricing == null ? null : new ImageModelPricingDto
+                {
+                    CreditsPerImage = version.Pricing.CreditsPerImage,
+                    MinCredits = version.Pricing.MinCredits
+                },
+                ReleaseNotes = version.ReleaseNotes
+            };
+
+            return Ok(dto);
         }
 
         private static HashSet<string> ParseInclude(string? include) =>

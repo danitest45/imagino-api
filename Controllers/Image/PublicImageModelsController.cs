@@ -187,7 +187,10 @@ namespace Imagino.Api.Controllers.Image
 
             static JsonDocument? ToJson(BsonDocument? bson) => bson == null
                 ? null
-                : JsonDocument.Parse(bson.ToJson(new MongoDB.Bson.IO.JsonWriterSettings { OutputMode = MongoDB.Bson.IO.JsonOutputMode.Strict }));
+                : JsonDocument.Parse(bson.ToJson(new MongoDB.Bson.IO.JsonWriterSettings
+                {
+                    OutputMode = MongoDB.Bson.IO.JsonOutputMode.CanonicalExtendedJson
+                }));
 
             var dto = new PublicImageModelVersionDetailsDto
             {

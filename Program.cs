@@ -1,6 +1,5 @@
 using Imagino.Api.DependencyInjection;
 using Imagino.Api.Repository;
-using Imagino.Api.Services.ImageGeneration;
 using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Errors;
 using Imagino.Api.Settings;

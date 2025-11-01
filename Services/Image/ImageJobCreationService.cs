@@ -220,10 +220,21 @@ namespace Imagino.Api.Services.Image
 
             payload["webhook"] = webhookUrl;
 
-            if (version.WebhookConfig?.Events?.Count > 0)
+            if (version.WebhookConfig?.Events is { Count: > 0 })
             {
-                payload["webhook_events_filter"] = JsonSerializer.Deserialize<JsonElement>(
-                    JsonSerializer.Serialize(version.WebhookConfig.Events));
+                var eventsArray = new JsonArray();
+                foreach (var evt in version.WebhookConfig.Events)
+                {
+                    if (!string.IsNullOrWhiteSpace(evt))
+                    {
+                        eventsArray.Add(evt);
+                    }
+                }
+
+                if (eventsArray.Count > 0)
+                {
+                    payload["webhook_events_filter"] = eventsArray;
+                }
             }
 
             if (version.Rollout?.CanaryPercent is int canary)

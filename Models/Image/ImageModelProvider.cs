@@ -60,6 +60,9 @@ namespace Imagino.Api.Models.Image
         [BsonElement("auth")]
         public ImageModelProviderAuth Auth { get; set; } = new();
 
+        [BsonElement("webhookRef")]
+        public string? WebhookRef { get; set; }
+
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

@@ -153,7 +153,7 @@ namespace Imagino.Api.Services.Image
             using var message = new HttpRequestMessage(HttpMethod.Post, url);
             ApplyAuth(provider, message);
 
-            var payloadJson = BuildPayload(version, resolvedParams);
+            var payloadJson = BuildPayload(provider, version, resolvedParams);
             message.Content = new StringContent(payloadJson, Encoding.UTF8, "application/json");
 
             var response = await client.SendAsync(message);
@@ -182,7 +182,7 @@ namespace Imagino.Api.Services.Image
             return (jobId!, status.ToLowerInvariant());
         }
 
-        private static string BuildPayload(ImageModelVersion version, BsonDocument resolvedParams)
+        private string BuildPayload(ImageModelProvider provider, ImageModelVersion version, BsonDocument resolvedParams)
         {
             var inputJson = JsonNode.Parse(resolvedParams.ToJson()) ?? new JsonObject();
             var payload = new JsonObject
@@ -190,19 +190,40 @@ namespace Imagino.Api.Services.Image
                 ["input"] = inputJson
             };
 
-            if (version.WebhookConfig?.Url != null)
-            {
-                payload["webhook"] = version.WebhookConfig.Url;
-                if (version.WebhookConfig.Events is { Count: > 0 })
-                {
-                    var eventsArray = new JsonArray();
-                    foreach (var evt in version.WebhookConfig.Events)
-                    {
-                        eventsArray.Add(evt);
-                    }
+            var webhookUrl = version.WebhookConfig?.Url;
 
-                    payload["webhook_events_filter"] = eventsArray;
+            if (string.IsNullOrWhiteSpace(webhookUrl))
+            {
+                var webhookRef = provider.WebhookRef;
+                if (!string.IsNullOrWhiteSpace(webhookRef))
+                {
+                    webhookUrl = _configuration[webhookRef];
                 }
+            }
+
+            if (string.IsNullOrWhiteSpace(webhookUrl))
+            {
+                var providerSlug = provider.Name?.ToLowerInvariant();
+                if (string.IsNullOrWhiteSpace(providerSlug))
+                {
+                    throw new ValidationAppException("Model provider is not configured");
+                }
+
+                var apiBase = _configuration["App:PublicBaseUrl"];
+                if (string.IsNullOrWhiteSpace(apiBase))
+                {
+                    throw new ValidationAppException("App:PublicBaseUrl is not configured");
+                }
+
+                webhookUrl = $"{apiBase.TrimEnd('/')}/api/webhooks/{providerSlug}";
+            }
+
+            payload["webhook"] = webhookUrl;
+
+            if (version.WebhookConfig?.Events?.Count > 0)
+            {
+                payload["webhook_events_filter"] = JsonSerializer.Deserialize<JsonElement>(
+                    JsonSerializer.Serialize(version.WebhookConfig.Events));
             }
 
             if (version.Rollout?.CanaryPercent is int canary)

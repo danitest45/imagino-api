@@ -10,6 +10,7 @@ using Imagino.Api.Models;
 using Imagino.Api.Models.Image;
 using Imagino.Api.Repositories.Image;
 using Imagino.Api.Repository;
+using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 
@@ -22,19 +23,22 @@ namespace Imagino.Api.Services.Image
         private readonly IUserRepository _userRepository;
         private readonly IImageModelProviderRepository _providerRepository;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfiguration _configuration;
 
         public ImageJobCreationService(
             IModelResolverService modelResolverService,
             IImageJobRepository jobRepository,
             IUserRepository userRepository,
             IImageModelProviderRepository providerRepository,
-            IHttpClientFactory httpClientFactory)
+            IHttpClientFactory httpClientFactory,
+            IConfiguration configuration)
         {
             _modelResolverService = modelResolverService;
             _jobRepository = jobRepository;
             _userRepository = userRepository;
             _providerRepository = providerRepository;
             _httpClientFactory = httpClientFactory;
+            _configuration = configuration;
         }
 
         public async Task<JobCreatedResponse> CreateJobAsync(CreateImageJobRequest request, string userId)
@@ -228,7 +232,7 @@ namespace Imagino.Api.Services.Image
             return new Uri(new Uri(provider.Auth.BaseUrl!, UriKind.Absolute), endpointUrl).ToString();
         }
 
-        private static void ApplyAuth(ImageModelProvider provider, HttpRequestMessage message)
+        private void ApplyAuth(ImageModelProvider provider, HttpRequestMessage message)
         {
             var auth = provider.Auth;
             var headerName = string.IsNullOrWhiteSpace(auth.Header) ? "Authorization" : auth.Header;
@@ -241,9 +245,24 @@ namespace Imagino.Api.Services.Image
                         throw new ValidationAppException($"Provider '{provider.Name}' is missing SecretRef");
                     }
 
+                    // 1️⃣ Tenta pela variável de ambiente
+                    var secretValue = Environment.GetEnvironmentVariable(auth.SecretRef);
+
+                    // 2️⃣ Se não achar, tenta pelo appsettings (IConfiguration)
+                    if (string.IsNullOrWhiteSpace(secretValue))
+                    {
+                        var configValue = _configuration[auth.SecretRef];
+                        secretValue = configValue;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(secretValue))
+                    {
+                        throw new ValidationAppException($"Configuration or environment variable '{auth.SecretRef}' is not configured");
+                    }
+
                     var tokenValue = string.IsNullOrWhiteSpace(auth.Scheme)
-                        ? auth.SecretRef
-                        : $"{auth.Scheme} {auth.SecretRef}";
+                        ? secretValue
+                        : $"{auth.Scheme} {secretValue}";
 
                     message.Headers.Remove(headerName);
                     message.Headers.TryAddWithoutValidation(headerName, tokenValue);

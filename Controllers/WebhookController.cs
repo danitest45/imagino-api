@@ -40,14 +40,17 @@ public class WebhooksController(ILogger<WebhooksController> logger, IWebhookImag
     /// <returns>A standardized result with job status and image URL if available.</returns>
     /// <response code="200">Webhook processed successfully.</response>
     /// <response code="400">Failed to process the webhook payload.</response>
-    [HttpPost("replicate")]
+    // Rota genérica para webhooks de imagem
+    [HttpPost("image")]
     [ProducesResponseType(typeof(JobStatusResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> ReceiveReplicateWebhook([FromBody] ReplicateWebhookRequest payload)
+    public async Task<IActionResult> ReceiveImageWebhook([FromBody] ReplicateWebhookRequest payload)
     {
-        _logger.LogInformation("🔔 Webhook Replicate recebido: JobId={JobId}, Status={Status}", payload.Id, payload.Status);
-
-        var result = await _webhookService.ProcessarWebhookReplicateAsync(payload);
-
+        _logger.LogInformation("🔔 Webhook de imagem recebido: JobId={JobId}, Status={Status}", payload.Id, payload.Status);
+        var result = await _webhookService.ProcessWebhookAsync(payload);
         return Ok(result);
     }
+
+    [HttpPost("replicate")]
+    public Task<IActionResult> ReceiveReplicateWebhook([FromBody] ReplicateWebhookRequest payload)
+        => ReceiveImageWebhook(payload);
 }

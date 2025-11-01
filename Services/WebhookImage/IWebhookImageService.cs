@@ -6,5 +6,6 @@ namespace Imagino.Api.Services.WebhookImage
     {
         Task<JobStatusResponse> ProcessarWebhookRunPodAsync(RunPodContentResponse payload);
         Task<JobStatusResponse> ProcessarWebhookReplicateAsync(ReplicateWebhookRequest payload);
+        Task<JobStatusResponse> ProcessWebhookAsync(ReplicateWebhookRequest payload);
     }
 }

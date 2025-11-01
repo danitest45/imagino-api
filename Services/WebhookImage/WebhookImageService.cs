@@ -95,6 +95,11 @@ namespace Imagino.Api.Services.WebhookImage
             };
         }
 
+        public async Task<JobStatusResponse> ProcessWebhookAsync(ReplicateWebhookRequest payload)
+        {
+            return await ProcessarWebhookReplicateAsync(payload);
+        }
+
         private async Task<string> SalvarImagemAsync(string base64Data, string jobId)
         {
             try

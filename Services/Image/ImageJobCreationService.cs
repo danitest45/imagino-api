@@ -241,9 +241,16 @@ namespace Imagino.Api.Services.Image
                         throw new ValidationAppException($"Provider '{provider.Name}' is missing SecretRef");
                     }
 
+                    // Obter o valor da chave a partir da variável de ambiente indicada em SecretRef
+                    var secretValue = Environment.GetEnvironmentVariable(auth.SecretRef);
+                    if (string.IsNullOrWhiteSpace(secretValue))
+                    {
+                        throw new ValidationAppException($"Environment variable '{auth.SecretRef}' is not configured");
+                    }
+
                     var tokenValue = string.IsNullOrWhiteSpace(auth.Scheme)
-                        ? auth.SecretRef
-                        : $"{auth.Scheme} {auth.SecretRef}";
+                        ? secretValue
+                        : $"{auth.Scheme} {secretValue}";
 
                     message.Headers.Remove(headerName);
                     message.Headers.TryAddWithoutValidation(headerName, tokenValue);

@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using Imagino.Api.DTOs;
 using Imagino.Api.DTOs.Image;
 using Imagino.Api.Errors;
@@ -187,10 +185,9 @@ namespace Imagino.Api.Services.Image
 
         private string BuildPayload(ImageModelVersion version, BsonDocument resolvedParams)
         {
-            var inputJson = JsonNode.Parse(resolvedParams.ToJson()) ?? new JsonObject();
-            var payload = new JsonObject
+            var payload = new BsonDocument
             {
-                ["input"] = inputJson
+                ["input"] = resolvedParams.DeepClone()
             };
 
             if (!string.IsNullOrWhiteSpace(version.WebhookConfig?.Url))
@@ -201,13 +198,7 @@ namespace Imagino.Api.Services.Image
                 var events = ResolveWebhookEvents(version.WebhookConfig.Events);
                 if (events.Count > 0)
                 {
-                    var eventsArray = new JsonArray();
-                    foreach (var evt in events)
-                    {
-                        eventsArray.Add(evt);
-                    }
-
-                    payload["webhook_events_filter"] = eventsArray;
+                    payload["webhook_events_filter"] = new BsonArray(events);
                 }
             }
 
@@ -216,13 +207,12 @@ namespace Imagino.Api.Services.Image
                 payload["canary_percent"] = canary;
             }
 
-            return JsonSerializer.Serialize(payload, PayloadSerializerOptions);
+            return payload.ToJson(RelaxedJsonWriterSettings);
         }
 
-        private static readonly JsonSerializerOptions PayloadSerializerOptions = new(JsonSerializerDefaults.General)
+        private static readonly JsonWriterSettings RelaxedJsonWriterSettings = new()
         {
-            PropertyNamingPolicy = null,
-            WriteIndented = false
+            OutputMode = JsonOutputMode.RelaxedExtendedJson
         };
 
         private static string BuildEndpointUrl(ImageModelProvider provider, string endpointUrl)

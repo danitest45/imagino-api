@@ -216,7 +216,7 @@ namespace Imagino.Api.Services.Image
                 payload["canary_percent"] = canary;
             }
 
-            return payload.ToJsonString(PayloadSerializerOptions);
+            return JsonSerializer.Serialize(payload, PayloadSerializerOptions);
         }
 
         private static readonly JsonSerializerOptions PayloadSerializerOptions = new(JsonSerializerDefaults.General)

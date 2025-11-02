@@ -1,8 +1,9 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using Imagino.Api.DTOs;
 using Imagino.Api.DTOs.Image;
 using Imagino.Api.Errors;
@@ -182,26 +183,22 @@ namespace Imagino.Api.Services.Image
             return (jobId!, status.ToLowerInvariant());
         }
 
-        private static string BuildPayload(ImageModelVersion version, BsonDocument resolvedParams)
+        private string BuildPayload(ImageModelVersion version, BsonDocument resolvedParams)
         {
-            var inputJson = JsonNode.Parse(resolvedParams.ToJson()) ?? new JsonObject();
-            var payload = new JsonObject
+            var payload = new BsonDocument
             {
-                ["input"] = inputJson
+                ["input"] = resolvedParams.DeepClone()
             };
 
-            if (version.WebhookConfig?.Url != null)
+            if (!string.IsNullOrWhiteSpace(version.WebhookConfig?.Url))
             {
-                payload["webhook"] = version.WebhookConfig.Url;
-                if (version.WebhookConfig.Events is { Count: > 0 })
-                {
-                    var eventsArray = new JsonArray();
-                    foreach (var evt in version.WebhookConfig.Events)
-                    {
-                        eventsArray.Add(evt);
-                    }
+                var resolvedWebhookUrl = ResolveWebhookUrl(version.WebhookConfig.Url);
+                payload["webhook"] = resolvedWebhookUrl;
 
-                    payload["webhook_events_filter"] = eventsArray;
+                var events = ResolveWebhookEvents(version.WebhookConfig.Events);
+                if (events.Count > 0)
+                {
+                    payload["webhook_events_filter"] = new BsonArray(events);
                 }
             }
 
@@ -210,12 +207,13 @@ namespace Imagino.Api.Services.Image
                 payload["canary_percent"] = canary;
             }
 
-            return payload.ToJsonString(new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = null,
-                WriteIndented = false
-            });
+            return payload.ToJson(RelaxedJsonWriterSettings);
         }
+
+        private static readonly JsonWriterSettings RelaxedJsonWriterSettings = new()
+        {
+            OutputMode = JsonOutputMode.RelaxedExtendedJson
+        };
 
         private static string BuildEndpointUrl(ImageModelProvider provider, string endpointUrl)
         {
@@ -271,6 +269,157 @@ namespace Imagino.Api.Services.Image
                     throw new ValidationAppException($"Provider '{provider.Name}' uses unsupported encrypted authentication mode");
                 default:
                     throw new ValidationAppException($"Provider '{provider.Name}' has an unknown authentication mode");
+            }
+        }
+
+        private static readonly IReadOnlyList<string> DefaultWebhookEvents = new[] { "completed" };
+
+        private string ResolveWebhookUrl(string configuredValue)
+        {
+            if (Uri.TryCreate(configuredValue, UriKind.Absolute, out var directUri))
+            {
+                return directUri.ToString();
+            }
+
+            var resolvedValue = TryResolveConfigurationValue(configuredValue);
+
+            if (string.IsNullOrWhiteSpace(resolvedValue))
+            {
+                throw new ValidationAppException($"Webhook URL configuration '{configuredValue}' is not configured");
+            }
+
+            if (!Uri.TryCreate(resolvedValue, UriKind.Absolute, out var resolvedUri))
+            {
+                throw new ValidationAppException($"Resolved webhook URL for '{configuredValue}' is invalid");
+            }
+
+            return resolvedUri.ToString();
+        }
+
+        private static IReadOnlyList<string> ResolveWebhookEvents(List<string>? configuredEvents)
+        {
+            if (configuredEvents is { Count: > 0 })
+            {
+                return configuredEvents;
+            }
+
+            return DefaultWebhookEvents;
+        }
+
+        private string? TryResolveConfigurationValue(string key)
+        {
+            var candidates = BuildEnvironmentKeyCandidates(key).ToArray();
+            foreach (var candidate in candidates)
+            {
+                var envValue = Environment.GetEnvironmentVariable(candidate);
+                if (!string.IsNullOrWhiteSpace(envValue))
+                {
+                    return envValue;
+                }
+            }
+
+            var environmentVariables = Environment.GetEnvironmentVariables();
+            foreach (DictionaryEntry entry in environmentVariables)
+            {
+                if (entry.Key is string envKey && candidates.Any(candidate => string.Equals(envKey, candidate, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var value = entry.Value?.ToString();
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        return value;
+                    }
+                }
+            }
+
+            var configValue = _configuration.GetValue<string>(key);
+            if (!string.IsNullOrWhiteSpace(configValue))
+            {
+                return configValue;
+            }
+
+            configValue = _configuration[key];
+            if (!string.IsNullOrWhiteSpace(configValue))
+            {
+                return configValue;
+            }
+
+            if (key.Contains(':'))
+            {
+                var normalizedKey = key.Replace(":", "__");
+                configValue = _configuration.GetValue<string>(normalizedKey);
+                if (!string.IsNullOrWhiteSpace(configValue))
+                {
+                    return configValue;
+                }
+
+                configValue = _configuration[normalizedKey];
+                if (!string.IsNullOrWhiteSpace(configValue))
+                {
+                    return configValue;
+                }
+            }
+
+            var section = _configuration.GetSection(key);
+            if (section.Exists())
+            {
+                var sectionValue = section.Value;
+                if (!string.IsNullOrWhiteSpace(sectionValue))
+                {
+                    return sectionValue;
+                }
+
+                sectionValue = section.Get<string?>();
+                if (!string.IsNullOrWhiteSpace(sectionValue))
+                {
+                    return sectionValue;
+                }
+            }
+
+            if (key.Contains(':'))
+            {
+                var normalizedKey = key.Replace(":", "__");
+                var normalizedSection = _configuration.GetSection(normalizedKey);
+                if (normalizedSection.Exists())
+                {
+                    var normalizedValue = normalizedSection.Value;
+                    if (!string.IsNullOrWhiteSpace(normalizedValue))
+                    {
+                        return normalizedValue;
+                    }
+
+                    normalizedValue = normalizedSection.Get<string?>();
+                    if (!string.IsNullOrWhiteSpace(normalizedValue))
+                    {
+                        return normalizedValue;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static IEnumerable<string> BuildEnvironmentKeyCandidates(string key)
+        {
+            yield return key;
+
+            if (key.Contains(':'))
+            {
+                yield return key.Replace(":", "__");
+            }
+
+            var upperKey = key.ToUpperInvariant();
+            if (!string.Equals(upperKey, key, StringComparison.Ordinal))
+            {
+                yield return upperKey;
+            }
+
+            if (key.Contains(':'))
+            {
+                var underscoreUpper = key.Replace(":", "__").ToUpperInvariant();
+                if (!string.Equals(underscoreUpper, upperKey, StringComparison.Ordinal))
+                {
+                    yield return underscoreUpper;
+                }
             }
         }
     }

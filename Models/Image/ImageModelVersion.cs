@@ -13,6 +13,7 @@ namespace Imagino.Api.Models.Image
         Archived
     }
 
+    [BsonSerializer(typeof(ImageModelVersionWebhookConfigSerializer))]
     public class ImageModelVersionWebhookConfig
     {
         [BsonElement("url")]

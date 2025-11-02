@@ -1,4 +1,7 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -194,10 +197,12 @@ namespace Imagino.Api.Services.Image
             {
                 var resolvedWebhookUrl = ResolveWebhookUrl(version.WebhookConfig.Url);
                 payload["webhook"] = resolvedWebhookUrl;
-                if (version.WebhookConfig.Events is { Count: > 0 })
+
+                var events = ResolveWebhookEvents(version.WebhookConfig.Events);
+                if (events.Count > 0)
                 {
                     var eventsArray = new JsonArray();
-                    foreach (var evt in version.WebhookConfig.Events)
+                    foreach (var evt in events)
                     {
                         eventsArray.Add(evt);
                     }
@@ -275,6 +280,8 @@ namespace Imagino.Api.Services.Image
             }
         }
 
+        private static readonly IReadOnlyList<string> DefaultWebhookEvents = new[] { "completed" };
+
         private string ResolveWebhookUrl(string configuredValue)
         {
             if (Uri.TryCreate(configuredValue, UriKind.Absolute, out var directUri))
@@ -297,21 +304,38 @@ namespace Imagino.Api.Services.Image
             return resolvedUri.ToString();
         }
 
-        private string? TryResolveConfigurationValue(string key)
+        private static IReadOnlyList<string> ResolveWebhookEvents(List<string>? configuredEvents)
         {
-            var envValue = Environment.GetEnvironmentVariable(key);
-            if (!string.IsNullOrWhiteSpace(envValue))
+            if (configuredEvents is { Count: > 0 })
             {
-                return envValue;
+                return configuredEvents;
             }
 
-            if (key.Contains(':'))
+            return DefaultWebhookEvents;
+        }
+
+        private string? TryResolveConfigurationValue(string key)
+        {
+            var candidates = BuildEnvironmentKeyCandidates(key).ToArray();
+            foreach (var candidate in candidates)
             {
-                var envKey = key.Replace(":", "__");
-                var envValueWithDoubleUnderscore = Environment.GetEnvironmentVariable(envKey);
-                if (!string.IsNullOrWhiteSpace(envValueWithDoubleUnderscore))
+                var envValue = Environment.GetEnvironmentVariable(candidate);
+                if (!string.IsNullOrWhiteSpace(envValue))
                 {
-                    return envValueWithDoubleUnderscore;
+                    return envValue;
+                }
+            }
+
+            var environmentVariables = Environment.GetEnvironmentVariables();
+            foreach (DictionaryEntry entry in environmentVariables)
+            {
+                if (entry.Key is string envKey && candidates.Any(candidate => string.Equals(envKey, candidate, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var value = entry.Value?.ToString();
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        return value;
+                    }
                 }
             }
 
@@ -321,7 +345,52 @@ namespace Imagino.Api.Services.Image
                 return configValue;
             }
 
+            if (key.Contains(':'))
+            {
+                var normalizedKey = key.Replace(":", "__");
+                configValue = _configuration[normalizedKey];
+                if (!string.IsNullOrWhiteSpace(configValue))
+                {
+                    return configValue;
+                }
+            }
+
+            var section = _configuration.GetSection(key);
+            if (section.Exists())
+            {
+                var sectionValue = section.Value;
+                if (!string.IsNullOrWhiteSpace(sectionValue))
+                {
+                    return sectionValue;
+                }
+            }
+
             return null;
+        }
+
+        private static IEnumerable<string> BuildEnvironmentKeyCandidates(string key)
+        {
+            yield return key;
+
+            if (key.Contains(':'))
+            {
+                yield return key.Replace(":", "__");
+            }
+
+            var upperKey = key.ToUpperInvariant();
+            if (!string.Equals(upperKey, key, StringComparison.Ordinal))
+            {
+                yield return upperKey;
+            }
+
+            if (key.Contains(':'))
+            {
+                var underscoreUpper = key.Replace(":", "__").ToUpperInvariant();
+                if (!string.Equals(underscoreUpper, upperKey, StringComparison.Ordinal))
+                {
+                    yield return underscoreUpper;
+                }
+            }
         }
     }
 }

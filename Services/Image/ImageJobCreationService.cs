@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using Imagino.Api.DTOs;
 using Imagino.Api.DTOs.Image;
 using Imagino.Api.Errors;

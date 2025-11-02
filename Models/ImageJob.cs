@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -25,6 +26,7 @@ namespace Imagino.Api.Models
         public string? PresetId { get; set; }
 
         [BsonElement("resolvedParams")]
+        [JsonIgnore]
         public BsonDocument? ResolvedParams { get; set; }
 
         [BsonElement("jobId")]

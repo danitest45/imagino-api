@@ -331,7 +331,13 @@ namespace Imagino.Api.Services.Image
                 }
             }
 
-            var configValue = _configuration[key];
+            var configValue = _configuration.GetValue<string>(key);
+            if (!string.IsNullOrWhiteSpace(configValue))
+            {
+                return configValue;
+            }
+
+            configValue = _configuration[key];
             if (!string.IsNullOrWhiteSpace(configValue))
             {
                 return configValue;
@@ -340,6 +346,12 @@ namespace Imagino.Api.Services.Image
             if (key.Contains(':'))
             {
                 var normalizedKey = key.Replace(":", "__");
+                configValue = _configuration.GetValue<string>(normalizedKey);
+                if (!string.IsNullOrWhiteSpace(configValue))
+                {
+                    return configValue;
+                }
+
                 configValue = _configuration[normalizedKey];
                 if (!string.IsNullOrWhiteSpace(configValue))
                 {
@@ -354,6 +366,32 @@ namespace Imagino.Api.Services.Image
                 if (!string.IsNullOrWhiteSpace(sectionValue))
                 {
                     return sectionValue;
+                }
+
+                sectionValue = section.Get<string?>();
+                if (!string.IsNullOrWhiteSpace(sectionValue))
+                {
+                    return sectionValue;
+                }
+            }
+
+            if (key.Contains(':'))
+            {
+                var normalizedKey = key.Replace(":", "__");
+                var normalizedSection = _configuration.GetSection(normalizedKey);
+                if (normalizedSection.Exists())
+                {
+                    var normalizedValue = normalizedSection.Value;
+                    if (!string.IsNullOrWhiteSpace(normalizedValue))
+                    {
+                        return normalizedValue;
+                    }
+
+                    normalizedValue = normalizedSection.Get<string?>();
+                    if (!string.IsNullOrWhiteSpace(normalizedValue))
+                    {
+                        return normalizedValue;
+                    }
                 }
             }
 

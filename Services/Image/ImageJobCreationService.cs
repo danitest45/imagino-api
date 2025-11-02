@@ -182,7 +182,7 @@ namespace Imagino.Api.Services.Image
             return (jobId!, status.ToLowerInvariant());
         }
 
-        private static string BuildPayload(ImageModelVersion version, BsonDocument resolvedParams)
+        private string BuildPayload(ImageModelVersion version, BsonDocument resolvedParams)
         {
             var inputJson = JsonNode.Parse(resolvedParams.ToJson()) ?? new JsonObject();
             var payload = new JsonObject
@@ -190,9 +190,10 @@ namespace Imagino.Api.Services.Image
                 ["input"] = inputJson
             };
 
-            if (version.WebhookConfig?.Url != null)
+            if (!string.IsNullOrWhiteSpace(version.WebhookConfig?.Url))
             {
-                payload["webhook"] = version.WebhookConfig.Url;
+                var resolvedWebhookUrl = ResolveWebhookUrl(version.WebhookConfig.Url);
+                payload["webhook"] = resolvedWebhookUrl;
                 if (version.WebhookConfig.Events is { Count: > 0 })
                 {
                     var eventsArray = new JsonArray();
@@ -272,6 +273,55 @@ namespace Imagino.Api.Services.Image
                 default:
                     throw new ValidationAppException($"Provider '{provider.Name}' has an unknown authentication mode");
             }
+        }
+
+        private string ResolveWebhookUrl(string configuredValue)
+        {
+            if (Uri.TryCreate(configuredValue, UriKind.Absolute, out var directUri))
+            {
+                return directUri.ToString();
+            }
+
+            var resolvedValue = TryResolveConfigurationValue(configuredValue);
+
+            if (string.IsNullOrWhiteSpace(resolvedValue))
+            {
+                throw new ValidationAppException($"Webhook URL configuration '{configuredValue}' is not configured");
+            }
+
+            if (!Uri.TryCreate(resolvedValue, UriKind.Absolute, out var resolvedUri))
+            {
+                throw new ValidationAppException($"Resolved webhook URL for '{configuredValue}' is invalid");
+            }
+
+            return resolvedUri.ToString();
+        }
+
+        private string? TryResolveConfigurationValue(string key)
+        {
+            var envValue = Environment.GetEnvironmentVariable(key);
+            if (!string.IsNullOrWhiteSpace(envValue))
+            {
+                return envValue;
+            }
+
+            if (key.Contains(':'))
+            {
+                var envKey = key.Replace(":", "__");
+                var envValueWithDoubleUnderscore = Environment.GetEnvironmentVariable(envKey);
+                if (!string.IsNullOrWhiteSpace(envValueWithDoubleUnderscore))
+                {
+                    return envValueWithDoubleUnderscore;
+                }
+            }
+
+            var configValue = _configuration[key];
+            if (!string.IsNullOrWhiteSpace(configValue))
+            {
+                return configValue;
+            }
+
+            return null;
         }
     }
 }

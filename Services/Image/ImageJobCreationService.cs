@@ -216,12 +216,14 @@ namespace Imagino.Api.Services.Image
                 payload["canary_percent"] = canary;
             }
 
-            return payload.ToJsonString(new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = null,
-                WriteIndented = false
-            });
+            return payload.ToJsonString(PayloadSerializerOptions);
         }
+
+        private static readonly JsonSerializerOptions PayloadSerializerOptions = new(JsonSerializerDefaults.General)
+        {
+            PropertyNamingPolicy = null,
+            WriteIndented = false
+        };
 
         private static string BuildEndpointUrl(ImageModelProvider provider, string endpointUrl)
         {

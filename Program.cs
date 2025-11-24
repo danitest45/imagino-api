@@ -3,6 +3,9 @@ using Imagino.Api.Repository;
 using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Errors;
 using Imagino.Api.Settings;
+using Imagino.Api.Filters;
+using Imagino.Api.Middlewares;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -12,8 +15,28 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using AspNetCoreRateLimit;
+using Serilog;
+using Serilog.Formatting.Json;
+using Polly;
+using Polly.Extensions.Http;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, services, configuration) =>
+{
+    configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .WriteTo.Console(new JsonFormatter());
+});
+
+builder.Services.AddHttpClient()
+    .ConfigureHttpClient(client => client.Timeout = TimeSpan.FromSeconds(30))
+    .AddPolicyHandler(HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
 
 // Carregar user-secrets em desenvolvimento
 if (builder.Environment.IsDevelopment())
@@ -122,9 +145,18 @@ builder.Services.AddCors(options =>
 // Adicionar serviços do projeto
 builder.Services.AddAppServices(builder.Configuration);
 builder.Services.AddMemoryCache();
+builder.Services.AddOptions();
+builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+builder.Services.Configure<IpRateLimitPolicies>(builder.Configuration.GetSection("IpRateLimitPolicies"));
+builder.Services.AddInMemoryRateLimiting();
+builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
 // Controllers, Swagger, Endpoints
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ValidateModelAttribute>();
+})
+.AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Program>());
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();
@@ -174,7 +206,7 @@ else
 
 var app = builder.Build();
 
-app.UseExceptionHandler("/error");
+app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
@@ -186,27 +218,12 @@ if (app.Environment.IsDevelopment())
 // Middleware pipeline
 app.UseStaticFiles();
 app.UseRouting();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseIpRateLimiting();
 app.UseCors(corsPolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
-app.Map("/error", (HttpContext httpContext) =>
-{
-    var exception = httpContext.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error
-                    ?? new Exception("Unknown error");
-    var (status, code, title, detail, meta) = ErrorMapper.Map(exception);
-    var problem = new ProblemDetails
-    {
-        Status = status,
-        Title = title,
-        Detail = detail
-    };
-    problem.Extensions["code"] = code;
-    problem.Extensions["traceId"] = httpContext.TraceIdentifier;
-    if (meta != null) problem.Extensions["meta"] = meta;
-    return TypedResults.Problem(problem);
-});
 
 app.Run();
 

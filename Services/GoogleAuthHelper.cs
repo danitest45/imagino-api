@@ -1,19 +1,34 @@
-﻿// Services/GoogleAuthHelper.cs
 using Google.Apis.Auth;
 using Newtonsoft.Json.Linq;
-using System;
+using System.Collections.Generic;
 using System.Net.Http;
-using System.Threading.Tasks;
 
 namespace Imagino.Api.Services
 {
-    public static class GoogleAuthHelper
+    public interface IGoogleAuthHelper
     {
-        public static async Task<GoogleJsonWebSignature.Payload> ExchangeCodeForIdTokenAsync(
-            string code, string clientId, string clientSecret, string redirectUri)
-        {
-            using var http = new HttpClient();
+        Task<GoogleJsonWebSignature.Payload?> ExchangeCodeForIdTokenAsync(
+            string code,
+            string clientId,
+            string clientSecret,
+            string redirectUri);
+    }
 
+    public class GoogleAuthHelper : IGoogleAuthHelper
+    {
+        private readonly HttpClient _httpClient;
+
+        public GoogleAuthHelper(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+        }
+
+        public async Task<GoogleJsonWebSignature.Payload?> ExchangeCodeForIdTokenAsync(
+            string code,
+            string clientId,
+            string clientSecret,
+            string redirectUri)
+        {
             var content = new FormUrlEncodedContent(new[]
             {
                 new KeyValuePair<string,string>("code", code),
@@ -23,7 +38,7 @@ namespace Imagino.Api.Services
                 new KeyValuePair<string,string>("grant_type", "authorization_code")
             });
 
-            var resp = await http.PostAsync("https://oauth2.googleapis.com/token", content);
+            var resp = await _httpClient.PostAsync("https://oauth2.googleapis.com/token", content);
             if (!resp.IsSuccessStatusCode) return null;
 
             var payload = JObject.Parse(await resp.Content.ReadAsStringAsync());

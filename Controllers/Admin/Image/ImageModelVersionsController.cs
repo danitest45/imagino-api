@@ -6,6 +6,7 @@ using Imagino.Api.DTOs.Image;
 using Imagino.Api.Errors;
 using Imagino.Api.Models.Image;
 using Imagino.Api.Repositories.Image;
+using Imagino.Api.Services.Image;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
@@ -14,16 +15,18 @@ namespace Imagino.Api.Controllers.Admin.Image
 {
     [ApiController]
     [Route("api/admin/image/versions")]
-    [Authorize]
-    public class ImageModelVersionsController : ControllerBase
+        [Authorize]
+        public class ImageModelVersionsController : ControllerBase
     {
         private readonly IImageModelVersionRepository _versionRepository;
         private readonly IImageModelRepository _modelRepository;
+        private readonly IPublicImageModelCacheService _publicModelCacheService;
 
-        public ImageModelVersionsController(IImageModelVersionRepository versionRepository, IImageModelRepository modelRepository)
+        public ImageModelVersionsController(IImageModelVersionRepository versionRepository, IImageModelRepository modelRepository, IPublicImageModelCacheService publicImageModelCacheService)
         {
             _versionRepository = versionRepository;
             _modelRepository = modelRepository;
+            _publicModelCacheService = publicImageModelCacheService;
         }
 
         [HttpGet]
@@ -95,6 +98,7 @@ namespace Imagino.Api.Controllers.Admin.Image
             };
 
             await _versionRepository.InsertAsync(version);
+            _publicModelCacheService.BumpVersion();
             return CreatedAtAction(nameof(GetById), new { id = version.Id }, ToDto(version));
         }
 
@@ -139,6 +143,7 @@ namespace Imagino.Api.Controllers.Admin.Image
             version.UpdatedAt = DateTime.UtcNow;
 
             await _versionRepository.UpdateAsync(version);
+            _publicModelCacheService.BumpVersion();
             return Ok(ToDto(version));
         }
 
@@ -146,6 +151,7 @@ namespace Imagino.Api.Controllers.Admin.Image
         public async Task<IActionResult> Delete(string id)
         {
             await _versionRepository.DeleteAsync(id);
+            _publicModelCacheService.BumpVersion();
             return NoContent();
         }
 

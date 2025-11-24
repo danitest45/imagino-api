@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Imagino.Api.DTOs;
 using Imagino.Api.Models.Image;
 using Imagino.Api.Repositories.Image;
 using Imagino.Api.Settings;
@@ -65,6 +66,38 @@ namespace Imagino.Api.Repository.Image
                 : Builders<ImageModel>.Filter.Empty;
 
             return await _collection.Find(filter).ToListAsync();
+        }
+
+        public async Task<PagedResult<ImageModel>> GetPagedAsync(ImageModelStatus? status, ImageModelVisibility? visibility, int page, int pageSize)
+        {
+            var filters = new List<FilterDefinition<ImageModel>>();
+
+            if (status.HasValue)
+            {
+                filters.Add(Builders<ImageModel>.Filter.Eq(m => m.Status, status.Value));
+            }
+
+            if (visibility.HasValue)
+            {
+                filters.Add(Builders<ImageModel>.Filter.Eq(m => m.Visibility, visibility.Value));
+            }
+
+            var filter = filters.Count > 0
+                ? Builders<ImageModel>.Filter.And(filters)
+                : Builders<ImageModel>.Filter.Empty;
+
+            var total = await _collection.CountDocumentsAsync(filter);
+
+            var models = await _collection.Find(filter)
+                .Skip((page - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<ImageModel>
+            {
+                Items = models,
+                Total = total
+            };
         }
 
         public async Task InsertAsync(ImageModel model)

@@ -6,7 +6,9 @@ using Imagino.Api.Services.Image;
 using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Services.Storage;
 using Imagino.Api.Services.Billing;
+using System;
 using Imagino.Api.Settings;
+using Polly.Extensions.Http;
 
 namespace Imagino.Api.DependencyInjection
 {
@@ -35,7 +37,18 @@ namespace Imagino.Api.DependencyInjection
             services.AddTransient<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddTransient<IEmailTokenRepository, EmailTokenRepository>();
             services.AddSingleton<IStorageService, R2StorageService>();
-            services.AddHttpClient<IEmailSender, ResendEmailSender>();
+            services.AddHttpClient<IEmailSender, ResendEmailSender>()
+                .AddPolicyHandler(HttpPolicyExtensions
+                    .HandleTransientHttpError()
+                    .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+            services.AddHttpClient<IGoogleAuthHelper, GoogleAuthHelper>(client =>
+                {
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                })
+                .AddPolicyHandler(HttpPolicyExtensions
+                    .HandleTransientHttpError()
+                    .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+            services.AddSingleton<IPublicImageModelCacheService, PublicImageModelCacheService>();
 
 
             return services;

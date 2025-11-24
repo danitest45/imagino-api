@@ -1,4 +1,5 @@
-﻿using Imagino.Api.Models;
+using Imagino.Api.DTOs;
+using Imagino.Api.Models;
 using Imagino.Api.Settings;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -32,20 +33,41 @@ namespace Imagino.Api.Repository
             var filter = Builders<ImageJob>.Filter.Eq(j => j.JobId, job.JobId);
             await _collection.ReplaceOneAsync(filter, job);
         }
-        public async Task<List<ImageJob>> GetByUserIdAsync(string userId)
+
+        public async Task<PagedResult<ImageJob>> GetByUserIdAsync(string userId, int page, int pageSize)
         {
-            return await _collection.Find(job => job.UserId == userId)
-                                    .SortByDescending(job => job.CreatedAt)
-                                    .ToListAsync();
+            var filter = Builders<ImageJob>.Filter.Eq(job => job.UserId, userId);
+            var total = await _collection.CountDocumentsAsync(filter);
+
+            var items = await _collection.Find(filter)
+                .SortByDescending(job => job.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<ImageJob>
+            {
+                Items = items,
+                Total = total
+            };
         }
 
-        public async Task<List<ImageJob>> GetLatestAsync(int limit)
+        public async Task<PagedResult<ImageJob>> GetLatestAsync(int page, int pageSize)
         {
-            return await _collection.Find(_ => true)
-                                    .SortByDescending(job => job.CreatedAt)
-                                    .Limit(limit)
-                                    .ToListAsync();
-        }
+            var filter = Builders<ImageJob>.Filter.Empty;
+            var total = await _collection.CountDocumentsAsync(filter);
 
+            var items = await _collection.Find(filter)
+                .SortByDescending(job => job.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Limit(pageSize)
+                .ToListAsync();
+
+            return new PagedResult<ImageJob>
+            {
+                Items = items,
+                Total = total
+            };
+        }
     }
 }

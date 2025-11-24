@@ -1,4 +1,4 @@
-﻿using Imagino.Api.Models;
+using Imagino.Api.Models;
 using Imagino.Api.Repository;
 using Imagino.Api.Services;
 using Imagino.Api.DTOs;
@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -28,10 +27,10 @@ namespace Imagino.Api.Controllers
         private readonly IOptions<RefreshTokenCookieSettings> _cookieSettings;
         private readonly IEmailSender _emailSender;
         private readonly IEmailTokenRepository _emailTokens;
-        private readonly IMemoryCache _cache;
         private readonly EmailSettings _emailSettings;
+        private readonly IGoogleAuthHelper _googleAuthHelper;
 
-        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IOptions<FrontendSettings> frontendSettings, IOptions<RefreshTokenCookieSettings> cookieSettings, IEmailSender emailSender, IEmailTokenRepository emailTokens, IMemoryCache cache, IOptions<EmailSettings> emailSettings)
+        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IOptions<FrontendSettings> frontendSettings, IOptions<RefreshTokenCookieSettings> cookieSettings, IEmailSender emailSender, IEmailTokenRepository emailTokens, IOptions<EmailSettings> emailSettings, IGoogleAuthHelper googleAuthHelper)
         {
             _users = users;
             _userService = userService;
@@ -42,19 +41,8 @@ namespace Imagino.Api.Controllers
             _cookieSettings = cookieSettings;
             _emailSender = emailSender;
             _emailTokens = emailTokens;
-            _cache = cache;
             _emailSettings = emailSettings.Value;
-        }
-
-        private bool CheckRate(string key, int limit, TimeSpan window)
-        {
-            var now = DateTime.UtcNow;
-            var list = _cache.GetOrCreate(key, _ => new List<DateTime>());
-            list.RemoveAll(t => t < now - window);
-            if (list.Count >= limit) return false;
-            list.Add(now);
-            _cache.Set(key, list, now + window);
-            return true;
+            _googleAuthHelper = googleAuthHelper;
         }
 
         public record RegisterRequest(string Email, string Password, string? Username, string? PhoneNumber, SubscriptionType Subscription, int Credits);
@@ -105,14 +93,9 @@ namespace Imagino.Api.Controllers
         public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationRequest request)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
-            if (!CheckRate($"rv_ip_{ip}", 10, TimeSpan.FromHours(1)))
-                return Ok();
 
             var user = await _users.GetByEmailAsync(request.Email);
             if (user == null || user.EmailVerified)
-                return Ok();
-
-            if (!CheckRate($"rv_user_{user.Id}", 3, TimeSpan.FromHours(1)))
                 return Ok();
 
             var raw = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
@@ -155,14 +138,9 @@ namespace Imagino.Api.Controllers
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "";
-            if (!CheckRate($"fp_ip_{ip}", 10, TimeSpan.FromHours(1)))
-                return Ok();
 
             var user = await _users.GetByEmailAsync(request.Email);
             if (user == null)
-                return Ok();
-
-            if (!CheckRate($"fp_user_{user.Id}", 3, TimeSpan.FromHours(1)))
                 return Ok();
 
             var raw = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
@@ -298,7 +276,7 @@ namespace Imagino.Api.Controllers
             var clientSecret = _config["Google:ClientSecret"];
             var redirectUri = _config["Google:RedirectUri"];
 
-            var payload = await GoogleAuthHelper.ExchangeCodeForIdTokenAsync(code, clientId, clientSecret, redirectUri);
+            var payload = await _googleAuthHelper.ExchangeCodeForIdTokenAsync(code, clientId, clientSecret, redirectUri);
             if (payload == null) return Unauthorized();
 
             // payload.Subject é o Google User ID (sub)

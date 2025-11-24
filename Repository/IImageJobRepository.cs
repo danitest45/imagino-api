@@ -1,4 +1,5 @@
-﻿using Imagino.Api.Models;
+using Imagino.Api.DTOs;
+using Imagino.Api.Models;
 
 namespace Imagino.Api.Repository
 {
@@ -7,7 +8,7 @@ namespace Imagino.Api.Repository
         Task InsertAsync(ImageJob job);
         Task<ImageJob> GetByJobIdAsync(string jobId);
         Task UpdateAsync(ImageJob job);
-        Task<List<ImageJob>> GetByUserIdAsync(string userId);
-        Task<List<ImageJob>> GetLatestAsync(int limit);
+        Task<PagedResult<ImageJob>> GetByUserIdAsync(string userId, int page, int pageSize);
+        Task<PagedResult<ImageJob>> GetLatestAsync(int page, int pageSize);
     }
 }

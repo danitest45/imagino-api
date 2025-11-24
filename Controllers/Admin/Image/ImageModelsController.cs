@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Imagino.Api.DTOs;
 using Imagino.Api.DTOs.Image;
 using Imagino.Api.Errors;
 using Imagino.Api.Models.Image;
 using Imagino.Api.Repositories.Image;
+using Imagino.Api.Services.Image;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,19 +20,27 @@ namespace Imagino.Api.Controllers.Admin.Image
     {
         private readonly IImageModelRepository _modelRepository;
         private readonly IImageModelProviderRepository _providerRepository;
+        private readonly IPublicImageModelCacheService _publicModelCacheService;
 
-        public ImageModelsController(IImageModelRepository modelRepository, IImageModelProviderRepository providerRepository)
+        public ImageModelsController(IImageModelRepository modelRepository, IImageModelProviderRepository providerRepository, IPublicImageModelCacheService publicImageModelCacheService)
         {
             _modelRepository = modelRepository;
             _providerRepository = providerRepository;
+            _publicModelCacheService = publicImageModelCacheService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> List([FromQuery] ImageModelStatus? status, [FromQuery] ImageModelVisibility? visibility)
+        public async Task<IActionResult> List([FromQuery] ImageModelStatus? status, [FromQuery] ImageModelVisibility? visibility, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
-            var models = await _modelRepository.GetAsync(status, visibility);
-            var result = models.Select(ToDto).ToList();
-            return Ok(result);
+            var safePage = Math.Max(1, page);
+            var safePageSize = Math.Clamp(pageSize, 1, 200);
+            var paged = await _modelRepository.GetPagedAsync(status, visibility, safePage, safePageSize);
+            var result = paged.Items.Select(ToDto).ToList();
+            return Ok(new PagedResult<ImageModelDto>
+            {
+                Items = result,
+                Total = paged.Total
+            });
         }
 
         [HttpGet("{id}")]
@@ -72,6 +82,7 @@ namespace Imagino.Api.Controllers.Admin.Image
             };
 
             await _modelRepository.InsertAsync(model);
+            _publicModelCacheService.BumpVersion();
             return CreatedAtAction(nameof(GetById), new { id = model.Id }, ToDto(model));
         }
 
@@ -98,6 +109,7 @@ namespace Imagino.Api.Controllers.Admin.Image
             model.UpdatedAt = DateTime.UtcNow;
 
             await _modelRepository.UpdateAsync(model);
+            _publicModelCacheService.BumpVersion();
             return Ok(ToDto(model));
         }
 
@@ -105,6 +117,7 @@ namespace Imagino.Api.Controllers.Admin.Image
         public async Task<IActionResult> Delete(string id)
         {
             await _modelRepository.DeleteAsync(id);
+            _publicModelCacheService.BumpVersion();
             return NoContent();
         }
 
@@ -120,6 +133,7 @@ namespace Imagino.Api.Controllers.Admin.Image
             await _modelRepository.SetDefaultVersionAsync(id, versionId);
             model.DefaultVersionId = versionId;
             model.UpdatedAt = DateTime.UtcNow;
+            _publicModelCacheService.BumpVersion();
             return Ok(ToDto(model));
         }
 

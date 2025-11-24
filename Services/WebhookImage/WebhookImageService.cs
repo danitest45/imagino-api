@@ -3,6 +3,7 @@ using Imagino.Api.Errors;
 using System.Linq;
 using Imagino.Api.Repository;
 using System;
+using System.Net.Http;
 using Imagino.Api.Settings;
 using Imagino.Api.Services.Storage;
 using Microsoft.Extensions.Options;
@@ -11,13 +12,30 @@ using System.IO;
 
 namespace Imagino.Api.Services.WebhookImage
 {
-    public class WebhookImageService(IImageJobRepository repository, IUserRepository userRepository, ILogger<WebhookImageService> logger, IOptions<ImageGeneratorSettings> settings, IStorageService storage) : IWebhookImageService
+    public class WebhookImageService : IWebhookImageService
     {
-        private readonly IImageJobRepository _repository = repository;
-        private readonly IUserRepository _userRepository = userRepository;
-        private readonly ILogger<WebhookImageService> _logger = logger;
-        private readonly ImageGeneratorSettings _settings = settings.Value;
-        private readonly IStorageService _storage = storage;
+        private readonly IImageJobRepository _repository;
+        private readonly IUserRepository _userRepository;
+        private readonly ILogger<WebhookImageService> _logger;
+        private readonly ImageGeneratorSettings _settings;
+        private readonly IStorageService _storage;
+        private readonly HttpClient _httpClient;
+
+        public WebhookImageService(
+            IImageJobRepository repository,
+            IUserRepository userRepository,
+            ILogger<WebhookImageService> logger,
+            IOptions<ImageGeneratorSettings> settings,
+            IStorageService storage,
+            HttpClient httpClient)
+        {
+            _repository = repository;
+            _userRepository = userRepository;
+            _logger = logger;
+            _settings = settings.Value;
+            _storage = storage;
+            _httpClient = httpClient;
+        }
 
         public async Task<JobStatusResponse> ProcessarWebhookRunPodAsync(RunPodContentResponse payload)
         {
@@ -121,8 +139,7 @@ namespace Imagino.Api.Services.WebhookImage
         {
             try
             {
-                using var client = new HttpClient();
-                var bytes = await client.GetByteArrayAsync(imageUrl);
+                var bytes = await _httpClient.GetByteArrayAsync(imageUrl);
                 using var ms = new MemoryStream(bytes);
                 var key = $"images/{jobId}.png";
                 return await _storage.UploadAsync(ms, key, "image/png")

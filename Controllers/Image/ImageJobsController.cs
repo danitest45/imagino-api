@@ -23,15 +23,18 @@ namespace Imagino.Api.Controllers.Image
         private readonly IImageJobCreationService _jobCreationService;
         private readonly IImageJobRepository _jobRepository;
         private readonly IUserRepository _userRepository;
+        private readonly HttpClient _httpClient;
 
         public ImageJobsController(
             IImageJobCreationService jobCreationService,
             IImageJobRepository jobRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            HttpClient httpClient)
         {
             _jobCreationService = jobCreationService;
             _jobRepository = jobRepository;
             _userRepository = userRepository;
+            _httpClient = httpClient;
         }
 
         [HttpPost]
@@ -106,8 +109,7 @@ namespace Imagino.Api.Controllers.Image
 
             try
             {
-                using var client = new HttpClient();
-                var bytes = await client.GetByteArrayAsync(imageUrl);
+                var bytes = await _httpClient.GetByteArrayAsync(imageUrl);
 
                 var extension = Path.GetExtension(new Uri(imageUrl).AbsolutePath).ToLowerInvariant();
                 var contentType = extension switch
@@ -135,10 +137,13 @@ namespace Imagino.Api.Controllers.Image
 
         [HttpGet("latest")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetLatestJobs()
+        public async Task<IActionResult> GetLatestJobs([FromQuery] int page = 1, [FromQuery] int pageSize = 12)
         {
-            var jobs = await _jobRepository.GetLatestAsync(12);
-            var responseTasks = jobs.Select(async job =>
+            var safePage = Math.Max(1, page);
+            var safePageSize = Math.Clamp(pageSize, 1, 50);
+
+            var jobs = await _jobRepository.GetLatestAsync(safePage, safePageSize);
+            var responseTasks = jobs.Items.Select(async job =>
             {
                 var user = string.IsNullOrEmpty(job.UserId)
                     ? null
@@ -156,7 +161,11 @@ namespace Imagino.Api.Controllers.Image
             });
 
             var response = await Task.WhenAll(responseTasks);
-            return Ok(response);
+            return Ok(new PagedResult<object>
+            {
+                Items = response,
+                Total = jobs.Total
+            });
         }
     }
 }

@@ -6,6 +6,7 @@ using Imagino.Api.DTOs.Image;
 using Imagino.Api.Errors;
 using Imagino.Api.Models.Image;
 using Imagino.Api.Repositories.Image;
+using Imagino.Api.Services.Image;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
@@ -15,20 +16,23 @@ namespace Imagino.Api.Controllers.Admin.Image
     [ApiController]
     [Route("api/admin/image/presets")]
     [Authorize]
-    public class ImageModelPresetsController : ControllerBase
+        public class ImageModelPresetsController : ControllerBase
     {
         private readonly IImageModelPresetRepository _presetRepository;
         private readonly IImageModelRepository _modelRepository;
         private readonly IImageModelVersionRepository _versionRepository;
+        private readonly IPublicImageModelCacheService _publicModelCacheService;
 
         public ImageModelPresetsController(
             IImageModelPresetRepository presetRepository,
             IImageModelRepository modelRepository,
-            IImageModelVersionRepository versionRepository)
+            IImageModelVersionRepository versionRepository,
+            IPublicImageModelCacheService publicImageModelCacheService)
         {
             _presetRepository = presetRepository;
             _modelRepository = modelRepository;
             _versionRepository = versionRepository;
+            _publicModelCacheService = publicImageModelCacheService;
         }
 
         [HttpGet]
@@ -90,6 +94,7 @@ namespace Imagino.Api.Controllers.Admin.Image
             };
 
             await _presetRepository.InsertAsync(preset);
+            _publicModelCacheService.BumpVersion();
             return CreatedAtAction(nameof(GetById), new { id = preset.Id }, ToDto(preset));
         }
 
@@ -118,6 +123,7 @@ namespace Imagino.Api.Controllers.Admin.Image
             preset.UpdatedAt = DateTime.UtcNow;
 
             await _presetRepository.UpdateAsync(preset);
+            _publicModelCacheService.BumpVersion();
             return Ok(ToDto(preset));
         }
 
@@ -125,6 +131,7 @@ namespace Imagino.Api.Controllers.Admin.Image
         public async Task<IActionResult> Delete(string id)
         {
             await _presetRepository.DeleteAsync(id);
+            _publicModelCacheService.BumpVersion();
             return NoContent();
         }
 

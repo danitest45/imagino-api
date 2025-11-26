@@ -205,10 +205,10 @@ namespace Imagino.Api.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var user = await _users.GetByEmailAsync(request.Email);
-            if (user == null) return Unauthorized();
+            if (user == null) return StatusCode(401, new { title = "Invalid Credentials", code = "INVALID_CREDENTIALS" });
 
             var valid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
-            if (!valid) return Unauthorized();
+            if (!valid) return StatusCode(401, new { title = "Invalid Credentials", code = "INVALID_CREDENTIALS" });
 
             if (!user.EmailVerified)
                 return StatusCode(403, new { title = "Email not verified", code = "EMAIL_NOT_VERIFIED" });

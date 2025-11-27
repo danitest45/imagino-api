@@ -37,9 +37,6 @@ namespace Imagino.Api.Services
             req.Headers.Add("Authorization", $"Bearer {_apiKey}");
             req.Content = new StringContent(json, Encoding.UTF8, "application/json");
             var resp = await _http.SendAsync(req);
-            _logger.LogInformation(resp.Content.ToString());
-            _logger.LogInformation(resp.ToString());
-            _logger.LogInformation(resp.Content.ReadAsStringAsync().Result);
             return resp.IsSuccessStatusCode;
         }
     }

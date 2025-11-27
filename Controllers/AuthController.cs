@@ -3,6 +3,7 @@ using Imagino.Api.Repository;
 using Imagino.Api.Services;
 using Imagino.Api.DTOs;
 using Imagino.Api.Settings;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -30,8 +31,9 @@ namespace Imagino.Api.Controllers
         private readonly IEmailTokenRepository _emailTokens;
         private readonly IMemoryCache _cache;
         private readonly EmailSettings _emailSettings;
+        private readonly IWebHostEnvironment _env;
 
-        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IOptions<FrontendSettings> frontendSettings, IOptions<RefreshTokenCookieSettings> cookieSettings, IEmailSender emailSender, IEmailTokenRepository emailTokens, IMemoryCache cache, IOptions<EmailSettings> emailSettings)
+        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IOptions<FrontendSettings> frontendSettings, IOptions<RefreshTokenCookieSettings> cookieSettings, IEmailSender emailSender, IEmailTokenRepository emailTokens, IMemoryCache cache, IOptions<EmailSettings> emailSettings, IWebHostEnvironment env)
         {
             _users = users;
             _userService = userService;
@@ -44,6 +46,7 @@ namespace Imagino.Api.Controllers
             _emailTokens = emailTokens;
             _cache = cache;
             _emailSettings = emailSettings.Value;
+            _env = env;
         }
 
         private bool CheckRate(string key, int limit, TimeSpan window)
@@ -88,9 +91,10 @@ namespace Imagino.Api.Controllers
                 var raw = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
                 await _emailTokens.CreateAsync(user.Id!, "verify_email", raw, TimeSpan.FromMinutes(60), HttpContext.Connection.RemoteIpAddress?.ToString());
                 var link = $"{_frontendSettings.BaseUrl}/verify?token={raw}";
-                var path = _emailSettings.Template.Verify ?? "EmailTemplates/VerifyEmail.html";
-                var template = System.IO.File.ReadAllText(path);
-                var html = template.Replace("{verifyLink}", link);
+                var verifyTemplateRelative = _emailSettings.Template.Verify ?? "EmailTemplates/VerifyEmail.html";
+                var verifyTemplatePath = Path.Combine(_env.ContentRootPath, verifyTemplateRelative);
+                var verifyTemplate = System.IO.File.ReadAllText(verifyTemplatePath);
+                var html = verifyTemplate.Replace("{verifyLink}", link);
                 await _emailSender.SendAsync(user.Email!, "Confirme seu e-mail", html);
 
                 return StatusCode(201, new { message = "User created. Please verify your email." });
@@ -118,9 +122,10 @@ namespace Imagino.Api.Controllers
             var raw = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
             await _emailTokens.CreateAsync(user.Id!, "verify_email", raw, TimeSpan.FromMinutes(60), ip);
             var link = $"{_frontendSettings.BaseUrl}/verify?token={raw}";
-            var path = _emailSettings.Template.Verify ?? "EmailTemplates/VerifyEmail.html";
-            var template = System.IO.File.ReadAllText(path);
-            var html = template.Replace("{verifyLink}", link);
+            var verifyTemplateRelative = _emailSettings.Template.Verify ?? "EmailTemplates/VerifyEmail.html";
+            var verifyTemplatePath = Path.Combine(_env.ContentRootPath, verifyTemplateRelative);
+            var verifyTemplate = System.IO.File.ReadAllText(verifyTemplatePath);
+            var html = verifyTemplate.Replace("{verifyLink}", link);
             await _emailSender.SendAsync(user.Email!, "Confirme seu e-mail", html);
 
             return Ok();
@@ -168,9 +173,10 @@ namespace Imagino.Api.Controllers
             var raw = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
             await _emailTokens.CreateAsync(user.Id!, "reset_password", raw, TimeSpan.FromMinutes(30), ip);
             var link = $"{_frontendSettings.BaseUrl}/reset-password?token={raw}";
-            var path = _emailSettings.Template.Reset ?? "EmailTemplates/ResetPassword.html";
-            var template = System.IO.File.ReadAllText(path);
-            var html = template.Replace("{resetLink}", link);
+            var resetTemplateRelative = _emailSettings.Template.Reset ?? "EmailTemplates/ResetPassword.html";
+            var resetTemplatePath = Path.Combine(_env.ContentRootPath, resetTemplateRelative);
+            var resetTemplate = System.IO.File.ReadAllText(resetTemplatePath);
+            var html = resetTemplate.Replace("{resetLink}", link);
             await _emailSender.SendAsync(user.Email!, "Redefinir senha", html);
             return Ok();
         }

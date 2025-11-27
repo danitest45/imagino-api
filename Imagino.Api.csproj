@@ -12,6 +12,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="EmailTemplates\**\*.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Remove="Imagino.Api.Tests/**/*" />
     <None Remove="Imagino.Api.Tests/**/*" />
   </ItemGroup>

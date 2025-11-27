@@ -32,6 +32,7 @@ namespace Imagino.Api.Services
                 html = htmlBody,
                 text = textBody
             };
+            _logger.LogInformation("Sending email via Resend to api key: {_apiKey}", _apiKey);
             var json = JsonSerializer.Serialize(payload);
             var req = new HttpRequestMessage(HttpMethod.Post, "https://api.resend.com/emails");
             req.Headers.Add("Authorization", $"Bearer {_apiKey}");

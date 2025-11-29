@@ -4,6 +4,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Imagino.Api.Models.Image
 {
+    [BsonIgnoreExtraElements]
     public class ImageModelProvider
     {
         [BsonId]

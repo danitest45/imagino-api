@@ -27,6 +27,7 @@ namespace Imagino.Api.DependencyInjection
             services.AddTransient<IModelResolverService, ModelResolverService>();
             services.AddTransient<IImageJobCreationService, ImageJobCreationService>();
             services.AddHttpClient("ImageModelProvider");
+            services.AddSingleton<IImageProviderClient, GoogleGeminiImageProviderClient>();
             services.AddSingleton<IImageProviderClient, ReplicateImageProviderClient>();
             services.AddTransient<IWebhookImageService, WebhookImageService>();
             services.AddTransient<IUserRepository, UserRepository>();

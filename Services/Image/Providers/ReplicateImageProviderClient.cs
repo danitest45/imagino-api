@@ -77,7 +77,7 @@ namespace Imagino.Api.Services.Image.Providers
                 ? statusProp.GetString() ?? "queued"
                 : "queued";
 
-            return new ProviderJobResult(jobId!, status.ToLowerInvariant());
+            return new ProviderJobResult(jobId!, status.ToLowerInvariant(), null);
         }
 
         private void ApplyAuth(HttpRequestMessage message)

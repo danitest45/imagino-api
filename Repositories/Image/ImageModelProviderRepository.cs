@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Imagino.Api.Models.Image;
 using Imagino.Api.Repositories.Image;
 using Imagino.Api.Settings;
@@ -23,11 +24,11 @@ namespace Imagino.Api.Repository.Image
         public async Task<ImageModelProvider?> GetByNameAsync(string name) =>
             await _collection.Find(p => p.Name.ToLower() == name.ToLower()).FirstOrDefaultAsync();
 
-        public async Task<List<ImageModelProvider>> GetAsync(ImageModelProviderStatus? status = null)
+        public async Task<List<ImageModelProvider>> GetAsync(string? status = null)
         {
-            var filter = status.HasValue
-                ? Builders<ImageModelProvider>.Filter.Eq(p => p.Status, status.Value)
-                : Builders<ImageModelProvider>.Filter.Empty;
+            var filter = string.IsNullOrWhiteSpace(status)
+                ? Builders<ImageModelProvider>.Filter.Empty
+                : Builders<ImageModelProvider>.Filter.Eq(p => p.Status, status);
 
             return await _collection.Find(filter).ToListAsync();
         }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Imagino.Api.Models.Image;
 
 namespace Imagino.Api.Repositories.Image
@@ -7,7 +8,7 @@ namespace Imagino.Api.Repositories.Image
     {
         Task<ImageModelProvider?> GetByIdAsync(string id);
         Task<ImageModelProvider?> GetByNameAsync(string name);
-        Task<List<ImageModelProvider>> GetAsync(ImageModelProviderStatus? status = null);
+        Task<List<ImageModelProvider>> GetAsync(string? status = null);
         Task InsertAsync(ImageModelProvider provider);
         Task UpdateAsync(ImageModelProvider provider);
         Task DeleteAsync(string id);

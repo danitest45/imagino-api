@@ -23,7 +23,7 @@ namespace Imagino.Api.Controllers.Admin.Image
         }
 
         [HttpGet]
-        public async Task<IActionResult> List([FromQuery] ImageModelProviderStatus? status)
+        public async Task<IActionResult> List([FromQuery] string? status)
         {
             var providers = await _providerRepository.GetAsync(status);
             var result = providers.Select(ToDto).ToList();
@@ -55,7 +55,8 @@ namespace Imagino.Api.Controllers.Admin.Image
             {
                 Name = dto.Name,
                 Status = dto.Status,
-                Auth = MapAuth(dto.Auth),
+                ProviderType = dto.ProviderType,
+                Notes = dto.Notes,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -73,9 +74,26 @@ namespace Imagino.Api.Controllers.Admin.Image
                 return NotFound();
             }
 
-            provider.Name = dto.Name;
-            provider.Status = dto.Status;
-            provider.Auth = MapAuth(dto.Auth);
+            if (dto.Name is not null)
+            {
+                provider.Name = dto.Name;
+            }
+
+            if (dto.Status is not null)
+            {
+                provider.Status = dto.Status;
+            }
+
+            if (dto.ProviderType.HasValue)
+            {
+                provider.ProviderType = dto.ProviderType.Value;
+            }
+
+            if (dto.Notes is not null)
+            {
+                provider.Notes = dto.Notes;
+            }
+
             provider.UpdatedAt = DateTime.UtcNow;
 
             await _providerRepository.UpdateAsync(provider);
@@ -89,34 +107,13 @@ namespace Imagino.Api.Controllers.Admin.Image
             return NoContent();
         }
 
-        private static ImageModelProviderAuth MapAuth(ImageModelProviderAuthDto dto) => new()
-        {
-            Mode = dto.Mode,
-            SecretRef = dto.SecretRef,
-            EncBlob = dto.EncBlob,
-            EncKeyId = dto.EncKeyId,
-            Header = dto.Header ?? "Authorization",
-            Scheme = dto.Scheme,
-            BaseUrl = dto.BaseUrl,
-            Notes = dto.Notes
-        };
-
         private static ImageModelProviderDto ToDto(ImageModelProvider provider) => new()
         {
             Id = provider.Id,
             Name = provider.Name,
             Status = provider.Status,
-            Auth = new ImageModelProviderAuthDto
-            {
-                Mode = provider.Auth.Mode,
-                SecretRef = provider.Auth.SecretRef,
-                EncBlob = provider.Auth.EncBlob,
-                EncKeyId = provider.Auth.EncKeyId,
-                Header = provider.Auth.Header,
-                Scheme = provider.Auth.Scheme,
-                BaseUrl = provider.Auth.BaseUrl,
-                Notes = provider.Auth.Notes
-            },
+            ProviderType = provider.ProviderType,
+            Notes = provider.Notes,
             CreatedAt = provider.CreatedAt,
             UpdatedAt = provider.UpdatedAt
         };

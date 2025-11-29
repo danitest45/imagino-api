@@ -3,6 +3,7 @@ using Imagino.Api.Repositories.Image;
 using Imagino.Api.Repository.Image;
 using Imagino.Api.Services;
 using Imagino.Api.Services.Image;
+using Imagino.Api.Services.Image.Providers;
 using Imagino.Api.Services.WebhookImage;
 using Imagino.Api.Services.Storage;
 using Imagino.Api.Services.Billing;
@@ -26,6 +27,7 @@ namespace Imagino.Api.DependencyInjection
             services.AddTransient<IModelResolverService, ModelResolverService>();
             services.AddTransient<IImageJobCreationService, ImageJobCreationService>();
             services.AddHttpClient("ImageModelProvider");
+            services.AddSingleton<IImageProviderClient, ReplicateImageProviderClient>();
             services.AddTransient<IWebhookImageService, WebhookImageService>();
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IUserService, UserService>();

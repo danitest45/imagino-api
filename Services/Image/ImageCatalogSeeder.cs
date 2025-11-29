@@ -38,14 +38,8 @@ namespace Imagino.Api.Services.Image
             var provider = new ImageModelProvider
             {
                 Name = "replicate",
-                Status = ImageModelProviderStatus.Active,
-                Auth = new ImageModelProviderAuth
-                {
-                    Mode = ImageModelProviderAuthMode.SecretRef,
-                    SecretRef = "replicate:apiKey",
-                    Header = "Authorization",
-                    Scheme = "Token"
-                },
+                Status = "Active",
+                ProviderType = ImageProviderType.Replicate,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };

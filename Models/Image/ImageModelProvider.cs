@@ -4,66 +4,29 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Imagino.Api.Models.Image
 {
-    public enum ImageModelProviderStatus
-    {
-        Active,
-        Disabled
-    }
-
-    public enum ImageModelProviderAuthMode
-    {
-        SecretRef,
-        Encrypted
-    }
-
-    public class ImageModelProviderAuth
-    {
-        [BsonElement("mode")]
-        [BsonRepresentation(BsonType.String)]
-        public ImageModelProviderAuthMode Mode { get; set; }
-
-        [BsonElement("secretRef")]
-        public string? SecretRef { get; set; }
-
-        [BsonElement("encBlob")]
-        public string? EncBlob { get; set; }
-
-        [BsonElement("encKeyId")]
-        public string? EncKeyId { get; set; }
-
-        [BsonElement("header")]
-        public string Header { get; set; } = "Authorization";
-
-        [BsonElement("scheme")]
-        public string? Scheme { get; set; }
-
-        [BsonElement("baseUrl")]
-        public string? BaseUrl { get; set; }
-
-        [BsonElement("notes")]
-        public string? Notes { get; set; }
-    }
-
     public class ImageModelProvider
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string? Id { get; set; }
+        public string Id { get; set; } = default!;
 
         [BsonElement("name")]
-        public string Name { get; set; } = string.Empty;
+        public string Name { get; set; } = default!;
 
         [BsonElement("status")]
-        [BsonRepresentation(BsonType.String)]
-        public ImageModelProviderStatus Status { get; set; } = ImageModelProviderStatus.Active;
+        public string Status { get; set; } = "Active";
 
-        [BsonElement("auth")]
-        public ImageModelProviderAuth Auth { get; set; } = new();
+        [BsonElement("providerType")]
+        [BsonRepresentation(BsonType.String)]
+        public ImageProviderType ProviderType { get; set; } = ImageProviderType.Replicate;
+
+        [BsonElement("notes")]
+        public string? Notes { get; set; }
 
         [BsonElement("createdAt")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; }
 
         [BsonElement("updatedAt")]
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; }
     }
 }

@@ -94,7 +94,7 @@ namespace Imagino.Api.Services.Image
 
             try
             {
-                var (jobId, status) = await DispatchToProviderAsync(provider, version, resolvedParams);
+                var (jobId, status, imageUrl) = await DispatchToProviderAsync(provider, version, resolvedParams);
 
                 var prompt = resolvedParams.TryGetValue("prompt", out var promptValue) && promptValue.IsString
                     ? promptValue.AsString
@@ -120,6 +120,11 @@ namespace Imagino.Api.Services.Image
                     TokenConsumed = true
                 };
 
+                if (!string.IsNullOrEmpty(imageUrl))
+                {
+                    job.ImageUrls.Add(imageUrl);
+                }
+
                 await _jobRepository.InsertAsync(job);
 
                 return new JobCreatedResponse
@@ -139,7 +144,7 @@ namespace Imagino.Api.Services.Image
             }
         }
 
-        private async Task<(string JobId, string Status)> DispatchToProviderAsync(ImageModelProvider provider, ImageModelVersion version, BsonDocument resolvedParams)
+        private async Task<ProviderJobResult> DispatchToProviderAsync(ImageModelProvider provider, ImageModelVersion version, BsonDocument resolvedParams)
         {
             if (!_providerClients.TryGetValue(provider.ProviderType, out var client))
             {
@@ -148,7 +153,7 @@ namespace Imagino.Api.Services.Image
             }
 
             var result = await client.CreateJobAsync(provider, version, resolvedParams);
-            return (result.JobId, result.Status);
+            return result;
         }
     }
 }

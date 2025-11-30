@@ -6,6 +6,10 @@ namespace Imagino.Api.Models
         Queued,
         Running,
         Completed,
-        Failed
+        Failed,
+
+        //legacy
+        Starting,
+        Processing
     }
 }

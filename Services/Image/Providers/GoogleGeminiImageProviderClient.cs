@@ -5,6 +5,8 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Imagino.Api.Errors;
+using Imagino.Api.Models;
 using Imagino.Api.Models.Image;
 using Imagino.Api.Services.Storage;
 using Microsoft.Extensions.Configuration;
@@ -118,6 +120,7 @@ namespace Imagino.Api.Services.Image.Providers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to parse Gemini image response");
+                throw new UpstreamServiceException("Google Gemini", message: "Failed to parse image response");
             }
 
             var jobId = ObjectId.GenerateNewId().ToString();
@@ -142,10 +145,16 @@ namespace Imagino.Api.Services.Image.Providers
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to upload image for job {JobId}", jobId);
+                    throw new UpstreamServiceException("Google Gemini", message: "Failed to upload generated image");
                 }
             }
 
-            var status = "completed";
+            if (string.IsNullOrEmpty(imageUrl))
+            {
+                throw new UpstreamServiceException("Google Gemini", message: "Image generation failed");
+            }
+
+            var status = ImageJobStatus.Completed;
             return new ProviderJobResult(jobId, status, imageUrl);
         }
     }

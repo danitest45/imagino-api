@@ -23,7 +23,7 @@ namespace Imagino.Api.Tests
         [Fact]
         public async Task CreateJobAsync_GoogleProvider_CompletesAndUpdatesJob()
         {
-            var (service, dependencies) = BuildService(ImageProviderType.Google, new ProviderJobResult("provider-job", "completed", "http://image"));
+            var (service, dependencies) = BuildService(ImageProviderType.Google, new ProviderJobResult("provider-job", ImageJobStatus.Completed, "http://image"));
 
             var request = new CreateImageJobRequest
             {
@@ -35,12 +35,12 @@ namespace Imagino.Api.Tests
 
             Assert.NotNull(dependencies.InsertedJob);
             Assert.Equal(dependencies.InsertedJob!.Id, response.JobId);
-            Assert.Equal("in_progress", dependencies.InsertedJob.Status);
-            Assert.Equal("completed", response.Status);
+            Assert.Equal(ImageJobStatus.Created, dependencies.InsertedJob.Status);
+            Assert.Equal(ImageJobStatus.Completed.ToString(), response.Status);
 
             Assert.NotNull(dependencies.UpdatedJob);
             Assert.Equal("provider-job", dependencies.UpdatedJob!.ProviderJobId);
-            Assert.Equal("completed", dependencies.UpdatedJob.Status);
+            Assert.Equal(ImageJobStatus.Completed, dependencies.UpdatedJob.Status);
             Assert.Contains("http://image", dependencies.UpdatedJob.ImageUrls);
             Assert.Equal(dependencies.InsertedJob.Id, dependencies.UpdatedJob.JobId);
         }
@@ -48,7 +48,7 @@ namespace Imagino.Api.Tests
         [Fact]
         public async Task CreateJobAsync_ReplicateProvider_RemainsInProgressWithProviderJobId()
         {
-            var (service, dependencies) = BuildService(ImageProviderType.Replicate, new ProviderJobResult("provider-job", "queued", null));
+            var (service, dependencies) = BuildService(ImageProviderType.Replicate, new ProviderJobResult("provider-job", ImageJobStatus.Queued, null));
 
             var request = new CreateImageJobRequest
             {
@@ -58,7 +58,7 @@ namespace Imagino.Api.Tests
 
             var response = await service.CreateJobAsync(request, "user-1");
 
-            Assert.Equal("queued", response.Status);
+            Assert.Equal(ImageJobStatus.Queued.ToString(), response.Status);
             Assert.NotNull(dependencies.UpdatedJob);
             Assert.Equal("provider-job", dependencies.UpdatedJob!.ProviderJobId);
             Assert.Empty(dependencies.UpdatedJob.ImageUrls);
@@ -83,7 +83,7 @@ namespace Imagino.Api.Tests
 
             dependencies.UserRepository.Verify(r => r.IncrementCreditsAsync("user-1", 1), Times.Once);
             Assert.NotNull(dependencies.UpdatedJob);
-            Assert.Equal("failed", dependencies.UpdatedJob!.Status);
+            Assert.Equal(ImageJobStatus.Failed, dependencies.UpdatedJob!.Status);
             Assert.Equal(providerException.Message, dependencies.UpdatedJob.ErrorMessage);
         }
 

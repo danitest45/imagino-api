@@ -8,6 +8,7 @@ using Imagino.Api.Services.Storage;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 using System.IO;
+using Imagino.Api.Models;
 
 namespace Imagino.Api.Services.WebhookImage
 {
@@ -32,7 +33,7 @@ namespace Imagino.Api.Services.WebhookImage
 
             var imageUrl = await SalvarImagemAsync(payload.output.images[0], payload.id);
 
-            job.Status = "COMPLETED";
+            job.Status = ImageJobStatus.Completed;
             job.ImageUrls.Add(imageUrl);
             job.UpdatedAt = DateTime.UtcNow;
 
@@ -51,7 +52,7 @@ namespace Imagino.Api.Services.WebhookImage
             return new JobStatusResponse
             {
                 JobId = job.JobId,
-                Status = job.Status,
+                Status = job.Status.ToString(),
                 ImageUrls = job.ImageUrls,
                 UpdatedAt = job.UpdatedAt
             };
@@ -70,7 +71,7 @@ namespace Imagino.Api.Services.WebhookImage
 
             var imageUrl = await BaixarImagemReplicateAsync(payload.Output, payload.Id);
 
-            job.Status = "COMPLETED";
+            job.Status = ImageJobStatus.Completed;
             job.ImageUrls.Add(imageUrl);
             job.UpdatedAt = DateTime.UtcNow;
 
@@ -89,7 +90,7 @@ namespace Imagino.Api.Services.WebhookImage
             return new JobStatusResponse
             {
                 JobId = job.JobId,
-                Status = job.Status,
+                Status = job.Status.ToString(),
                 ImageUrls = job.ImageUrls,
                 UpdatedAt = job.UpdatedAt
             };

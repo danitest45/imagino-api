@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Linq;
 using Imagino.Api.Errors;
+using Imagino.Api.Models;
 using Imagino.Api.Models.Image;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Bson;
@@ -57,7 +58,14 @@ namespace Imagino.Api.Services.Image.Providers
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new UpstreamServiceException(provider.Name, response.StatusCode.ToString(), (int)response.StatusCode);
+                var errorBody = await response.Content.ReadAsStringAsync();
+                var upstreamMessage = TryExtractErrorMessage(errorBody) ?? response.ReasonPhrase ?? "Upstream service error";
+
+                throw new UpstreamServiceException(
+                    provider.Name,
+                    response.StatusCode.ToString(),
+                    (int)response.StatusCode,
+                    upstreamMessage);
             }
 
             var responseBody = await response.Content.ReadAsStringAsync();
@@ -73,11 +81,13 @@ namespace Imagino.Api.Services.Image.Providers
                 jobId = ObjectId.GenerateNewId().ToString();
             }
 
-            var status = root.TryGetProperty("status", out var statusProp) && statusProp.ValueKind == JsonValueKind.String
+            var statusText = root.TryGetProperty("status", out var statusProp) && statusProp.ValueKind == JsonValueKind.String
                 ? statusProp.GetString() ?? "queued"
                 : "queued";
 
-            return new ProviderJobResult(jobId!, status.ToLowerInvariant(), null);
+            var status = MapStatus(statusText);
+
+            return new ProviderJobResult(jobId!, status, null);
         }
 
         private void ApplyAuth(HttpRequestMessage message)
@@ -101,6 +111,55 @@ namespace Imagino.Api.Services.Image.Providers
             }
 
             return new Uri(new Uri(baseUrl, UriKind.Absolute), endpointUrl).ToString();
+        }
+
+        private static ImageJobStatus MapStatus(string? status)
+        {
+            return status?.ToLowerInvariant() switch
+            {
+                "succeeded" => ImageJobStatus.Completed,
+                "completed" => ImageJobStatus.Completed,
+                "starting" => ImageJobStatus.Running,
+                "processing" => ImageJobStatus.Running,
+                "running" => ImageJobStatus.Running,
+                "queued" => ImageJobStatus.Queued,
+                _ => ImageJobStatus.Queued
+            };
+        }
+
+        private static string? TryExtractErrorMessage(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return null;
+            }
+
+            try
+            {
+                using var document = JsonDocument.Parse(content);
+                var root = document.RootElement;
+
+                if (root.TryGetProperty("error", out var errorElement))
+                {
+                    if (errorElement.ValueKind == JsonValueKind.String)
+                    {
+                        return errorElement.GetString();
+                    }
+
+                    if (errorElement.ValueKind == JsonValueKind.Object
+                        && errorElement.TryGetProperty("message", out var messageProp)
+                        && messageProp.ValueKind == JsonValueKind.String)
+                    {
+                        return messageProp.GetString();
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore parse errors and fall back to default messages.
+            }
+
+            return null;
         }
 
         private string BuildPayload(ImageModelVersion version, BsonDocument resolvedParams)

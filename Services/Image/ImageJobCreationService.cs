@@ -9,6 +9,7 @@ using Imagino.Api.Models.Image;
 using Imagino.Api.Repositories.Image;
 using Imagino.Api.Repository;
 using Imagino.Api.Services.Image.Providers;
+using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 
 namespace Imagino.Api.Services.Image
@@ -20,19 +21,22 @@ namespace Imagino.Api.Services.Image
         private readonly IUserRepository _userRepository;
         private readonly IImageModelProviderRepository _providerRepository;
         private readonly IReadOnlyDictionary<ImageProviderType, IImageProviderClient> _providerClients;
+        private readonly ILogger<ImageJobCreationService> _logger;
 
         public ImageJobCreationService(
             IModelResolverService modelResolverService,
             IImageJobRepository jobRepository,
             IUserRepository userRepository,
             IImageModelProviderRepository providerRepository,
-            IEnumerable<IImageProviderClient> providerClients)
+            IEnumerable<IImageProviderClient> providerClients,
+            ILogger<ImageJobCreationService> logger)
         {
             _modelResolverService = modelResolverService;
             _jobRepository = jobRepository;
             _userRepository = userRepository;
             _providerRepository = providerRepository;
             _providerClients = providerClients.ToDictionary(c => c.ProviderType);
+            _logger = logger;
         }
 
         public async Task<JobCreatedResponse> CreateJobAsync(CreateImageJobRequest request, string userId)
@@ -94,8 +98,6 @@ namespace Imagino.Api.Services.Image
 
             try
             {
-                var (jobId, status, imageUrl) = await DispatchToProviderAsync(provider, version, resolvedParams);
-
                 var prompt = resolvedParams.TryGetValue("prompt", out var promptValue) && promptValue.IsString
                     ? promptValue.AsString
                     : null;
@@ -104,32 +106,59 @@ namespace Imagino.Api.Services.Image
                     ? aspectRatioValue.AsString
                     : string.Empty;
 
+                var now = DateTime.UtcNow;
                 var job = new ImageJob
                 {
+                    Id = ObjectId.GenerateNewId().ToString(),
                     Prompt = prompt,
-                    JobId = jobId,
-                    Status = status,
+                    JobId = null,
+                    Status = "in_progress",
                     UserId = userId,
                     ModelSlug = model.Slug,
                     VersionTag = version.VersionTag,
                     PresetId = resolvedPreset?.Preset.Id ?? request.PresetId,
                     ResolvedParams = resolvedParams,
                     AspectRatio = aspectRatio,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
+                    CreatedAt = now,
+                    UpdatedAt = now,
                     TokenConsumed = true
                 };
 
-                if (!string.IsNullOrEmpty(imageUrl))
-                {
-                    job.ImageUrls.Add(imageUrl);
-                }
+                job.JobId = job.Id;
 
                 await _jobRepository.InsertAsync(job);
 
+                try
+                {
+                    var result = await DispatchToProviderAsync(provider, version, resolvedParams);
+
+                    job.ProviderJobId = result.JobId;
+                    job.Status = result.Status;
+
+                    if (!string.IsNullOrEmpty(result.ImageUrl))
+                    {
+                        job.ImageUrls.Add(result.ImageUrl);
+                    }
+
+                    job.UpdatedAt = DateTime.UtcNow;
+
+                    await _jobRepository.UpdateAsync(job);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to create image job for provider {Provider}", provider.Name);
+
+                    job.Status = "failed";
+                    job.ErrorMessage = ex.Message;
+                    job.UpdatedAt = DateTime.UtcNow;
+
+                    await _jobRepository.UpdateAsync(job);
+                    throw;
+                }
+
                 return new JobCreatedResponse
                 {
-                    JobId = job.JobId,
+                    JobId = job.Id,
                     Status = job.Status,
                     CreatedAt = job.CreatedAt,
                     Model = model.Slug,

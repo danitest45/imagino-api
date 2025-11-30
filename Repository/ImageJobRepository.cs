@@ -22,14 +22,24 @@ namespace Imagino.Api.Repository
 
         public async Task<ImageJob> GetByJobIdAsync(string jobId)
         {
+            var filter = Builders<ImageJob>.Filter.Or(
+                Builders<ImageJob>.Filter.Eq(job => job.JobId, jobId),
+                Builders<ImageJob>.Filter.Eq(job => job.ProviderJobId, jobId),
+                Builders<ImageJob>.Filter.Eq(job => job.Id, jobId)
+            );
+
             return await _collection
-                .Find(job => job.JobId == jobId)
+                .Find(filter)
                 .FirstOrDefaultAsync();
         }
 
         public async Task UpdateAsync(ImageJob job)
         {
-            var filter = Builders<ImageJob>.Filter.Eq(j => j.JobId, job.JobId);
+            var filter = Builders<ImageJob>.Filter.Or(
+                Builders<ImageJob>.Filter.Eq(j => j.Id, job.Id),
+                Builders<ImageJob>.Filter.Eq(j => j.JobId, job.JobId),
+                Builders<ImageJob>.Filter.Eq(j => j.ProviderJobId, job.ProviderJobId)
+            );
             await _collection.ReplaceOneAsync(filter, job);
         }
         public async Task<List<ImageJob>> GetByUserIdAsync(string userId)

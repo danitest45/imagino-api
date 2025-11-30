@@ -32,6 +32,9 @@ namespace Imagino.Api.Models
         [BsonElement("jobId")]
         public string? JobId { get; set; }
 
+        [BsonElement("providerJobId")]
+        public string? ProviderJobId { get; set; }
+
         [BsonElement("userId")]
         public string? UserId { get; set; }
 
@@ -52,5 +55,8 @@ namespace Imagino.Api.Models
 
         [BsonElement("updatedAt")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        [BsonElement("errorMessage")]
+        public string? ErrorMessage { get; set; }
     }
 }

@@ -39,7 +39,9 @@ namespace Imagino.Api.Models
         public string? UserId { get; set; }
 
         [BsonElement("status")]
-        public string? Status { get; set; }
+        [BsonRepresentation(BsonType.String)]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public ImageJobStatus Status { get; set; }
 
         [BsonElement("imageUrls")]
         public List<string> ImageUrls { get; set; } = new();

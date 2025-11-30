@@ -112,7 +112,7 @@ namespace Imagino.Api.Services.Image
                     Id = ObjectId.GenerateNewId().ToString(),
                     Prompt = prompt,
                     JobId = null,
-                    Status = "in_progress",
+                    Status = ImageJobStatus.Created,
                     UserId = userId,
                     ModelSlug = model.Slug,
                     VersionTag = version.VersionTag,
@@ -128,38 +128,12 @@ namespace Imagino.Api.Services.Image
 
                 await _jobRepository.InsertAsync(job);
 
-                try
-                {
-                    var result = await DispatchToProviderAsync(provider, version, resolvedParams);
-
-                    job.ProviderJobId = result.JobId;
-                    job.Status = result.Status;
-
-                    if (!string.IsNullOrEmpty(result.ImageUrl))
-                    {
-                        job.ImageUrls.Add(result.ImageUrl);
-                    }
-
-                    job.UpdatedAt = DateTime.UtcNow;
-
-                    await _jobRepository.UpdateAsync(job);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to create image job for provider {Provider}", provider.Name);
-
-                    job.Status = "failed";
-                    job.ErrorMessage = ex.Message;
-                    job.UpdatedAt = DateTime.UtcNow;
-
-                    await _jobRepository.UpdateAsync(job);
-                    throw;
-                }
+                await DispatchAsync(job, provider, version, resolvedParams);
 
                 return new JobCreatedResponse
                 {
                     JobId = job.Id,
-                    Status = job.Status,
+                    Status = job.Status.ToString(),
                     CreatedAt = job.CreatedAt,
                     Model = model.Slug,
                     Version = version.VersionTag,
@@ -173,6 +147,37 @@ namespace Imagino.Api.Services.Image
             }
         }
 
+        private async Task DispatchAsync(ImageJob job, ImageModelProvider provider, ImageModelVersion version, BsonDocument resolvedParams)
+        {
+            try
+            {
+                var result = await DispatchToProviderAsync(provider, version, resolvedParams);
+
+                job.ProviderJobId = result.JobId;
+                job.Status = result.Status;
+
+                if (!string.IsNullOrEmpty(result.ImageUrl))
+                {
+                    job.ImageUrls.Add(result.ImageUrl);
+                }
+
+                job.UpdatedAt = DateTime.UtcNow;
+
+                await _jobRepository.UpdateAsync(job);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create image job for provider {Provider}", provider.Name);
+
+                job.Status = ImageJobStatus.Failed;
+                job.ErrorMessage = ex.Message;
+                job.UpdatedAt = DateTime.UtcNow;
+
+                await _jobRepository.UpdateAsync(job);
+                throw;
+            }
+        }
+
         private async Task<ProviderJobResult> DispatchToProviderAsync(ImageModelProvider provider, ImageModelVersion version, BsonDocument resolvedParams)
         {
             if (!_providerClients.TryGetValue(provider.ProviderType, out var client))
@@ -181,8 +186,7 @@ namespace Imagino.Api.Services.Image
                     $"No image provider client registered for provider type '{provider.ProviderType}'");
             }
 
-            var result = await client.CreateJobAsync(provider, version, resolvedParams);
-            return result;
+            return await client.CreateJobAsync(provider, version, resolvedParams);
         }
     }
 }

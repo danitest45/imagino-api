@@ -59,7 +59,7 @@ namespace Imagino.Api.Controllers.Image
             var response = new JobStatusResponse
             {
                 JobId = job.JobId,
-                Status = job.Status,
+                Status = job.Status.ToString(),
                 ImageUrls = job.ImageUrls,
                 UpdatedAt = job.UpdatedAt
             };

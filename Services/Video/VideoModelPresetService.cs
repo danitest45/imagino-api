@@ -79,6 +79,15 @@ namespace Imagino.Api.Services.Video
             await _presetRepository.DeleteAsync(id);
         }
 
+        private async Task EnsureModelExists(string modelId)
+        {
+            var model = await _modelRepository.GetByIdAsync(modelId);
+            if (model == null)
+            {
+                throw new ValidationAppException($"Model '{modelId}' not found");
+            }
+        }
+
         private async Task EnsureModelAndVersion(string modelId, string versionId)
         {
             var model = await _modelRepository.GetByIdAsync(modelId);

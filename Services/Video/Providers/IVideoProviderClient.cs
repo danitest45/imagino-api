@@ -13,6 +13,6 @@ namespace Imagino.Api.Services.Video.Providers
 
         Task<VideoProviderJobResult> CreateJobAsync(VideoModelProvider provider, VideoModelVersion version, BsonDocument resolvedParams);
 
-        Task<VideoProviderJobResult> PollResultAsync(VideoModelProvider provider, VideoModelVersion version, string providerJobId, BsonDocument resolvedParams);
+        Task<VideoProviderJobResult> PollResultAsync(VideoModelProvider provider, VideoModelVersion version, string providerJobId, BsonDocument resolvedParams, string? outputFileName = null);
     }
 }

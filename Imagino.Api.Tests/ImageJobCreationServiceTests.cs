@@ -23,7 +23,7 @@ namespace Imagino.Api.Tests
         [Fact]
         public async Task CreateJobAsync_GoogleProvider_CompletesAndUpdatesJob()
         {
-            var (service, dependencies) = BuildService(ImageProviderType.Google, new ProviderJobResult("provider-job", ImageJobStatus.Completed, "http://image"));
+            var (service, dependencies) = BuildService(ImageProviderType.GoogleGemini, new ProviderJobResult("provider-job", ImageJobStatus.Completed, "http://image"));
 
             var request = new CreateImageJobRequest
             {
@@ -69,7 +69,7 @@ namespace Imagino.Api.Tests
         {
             var providerException = new Exception("provider failed");
             var (service, dependencies) = BuildService(
-                ImageProviderType.Google,
+                ImageProviderType.GoogleGemini,
                 providerResult: null,
                 providerException: providerException);
 

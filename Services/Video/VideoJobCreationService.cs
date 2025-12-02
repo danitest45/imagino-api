@@ -250,7 +250,7 @@ namespace Imagino.Api.Services.Video
             }
 
             var seconds = durationSeconds > 0 ? durationSeconds : 1;
-            var computed = (int)Math.Ceiling(seconds * pricing.CreditsPerSecond);
+            var computed = (int)Math.Ceiling((double)(seconds * pricing.CreditsPerSecond));
 
             if (pricing.MinCredits > 0)
             {

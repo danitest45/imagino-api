@@ -1,15 +1,13 @@
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Imagino.Api.Errors;
 using Imagino.Api.Models;
 using Imagino.Api.Models.Video;
-using Imagino.Api.Services.Storage;
 using Imagino.Api.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -23,18 +21,15 @@ namespace Imagino.Api.Services.Video.Providers
 
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly VeoSettings _settings;
-        private readonly IStorageService _storageService;
         private readonly ILogger<GoogleVeoVideoProviderClient> _logger;
 
         public GoogleVeoVideoProviderClient(
             IHttpClientFactory httpClientFactory,
             IOptions<VeoSettings> settings,
-            IStorageService storageService,
             ILogger<GoogleVeoVideoProviderClient> logger)
         {
             _httpClientFactory = httpClientFactory;
             _settings = settings.Value;
-            _storageService = storageService;
             _logger = logger;
         }
 
@@ -44,51 +39,26 @@ namespace Imagino.Api.Services.Video.Providers
                 ? promptVal.AsString
                 : string.Empty;
 
-            var durationSeconds = resolvedParams.TryGetValue("max_output_length_seconds", out var durationVal) && durationVal.IsNumeric
-                ? Convert.ToInt32(durationVal.ToDouble())
-                : 0;
-
-            if (durationSeconds <= 0 && resolvedParams.TryGetValue("duration", out var altDuration) && altDuration.IsNumeric)
-            {
-                durationSeconds = Convert.ToInt32(altDuration.ToDouble());
-            }
-
-            if (durationSeconds <= 0)
-            {
-                durationSeconds = 10;
-            }
-
-            var resolution = resolvedParams.TryGetValue("resolution", out var resolutionVal) && resolutionVal.IsString
-                ? resolutionVal.AsString
-                : "720p";
-
             if (string.IsNullOrWhiteSpace(_settings.ApiKey))
             {
                 throw new InvalidOperationException("Veo API key not configured");
             }
 
+            var parameters = BuildParameters(resolvedParams);
+
             var payload = new
             {
-                contents = new[]
+                instances = new[]
                 {
                     new
                     {
-                        role = "user",
-                        parts = new[] { new { text = prompt } }
+                        prompt
                     }
                 },
-                generationConfig = new
-                {
-                    responseModalities = new[] { "VIDEO" },
-                    videoConfig = new
-                    {
-                        max_output_length_seconds = durationSeconds,
-                        resolution
-                    }
-                }
+                parameters = parameters
             };
 
-            var endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-001:generateContent?key={_settings.ApiKey}";
+            var endpoint = "https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:predictLongRunning";
 
             var client = _httpClientFactory.CreateClient();
             using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
@@ -99,122 +69,133 @@ namespace Imagino.Api.Services.Video.Providers
                 })
             };
 
+            request.Headers.Add("x-goog-api-key", _settings.ApiKey);
+
             var response = await client.SendAsync(request);
-            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync();
 
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-
-            var jobId = ObjectId.GenerateNewId().ToString();
-            var videoUrl = ExtractVideoUrl(doc.RootElement);
-
-            if (string.IsNullOrEmpty(videoUrl))
+            if (!response.IsSuccessStatusCode)
             {
-                var base64Video = ExtractBase64Video(doc.RootElement);
-                if (!string.IsNullOrEmpty(base64Video))
-                {
-                    try
-                    {
-                        var data = base64Video;
-                        var commaIndex = data.IndexOf(',');
-                        if (commaIndex >= 0)
-                        {
-                            data = data[(commaIndex + 1)..];
-                        }
-
-                        var bytes = Convert.FromBase64String(data);
-                        await using var ms = new MemoryStream(bytes);
-                        var key = $"videos/{jobId}.mp4";
-                        videoUrl = await _storageService.UploadAsync(ms, key, "video/mp4");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to upload video for job {JobId}", jobId);
-                        throw new UpstreamServiceException("Google Veo", message: "Failed to upload generated video");
-                    }
-                }
+                throw new Exception($"Google Veo API error: {response.StatusCode} - {content}");
             }
 
-            if (string.IsNullOrEmpty(videoUrl))
+            using var doc = JsonDocument.Parse(content);
+            var operationName = doc.RootElement.TryGetProperty("name", out var nameElement) && nameElement.ValueKind == JsonValueKind.String
+                ? nameElement.GetString()
+                : null;
+
+            if (string.IsNullOrWhiteSpace(operationName))
             {
-                throw new UpstreamServiceException("Google Veo", message: "Video generation failed");
+                throw new Exception($"Google Veo API error: missing operation name - {content}");
             }
 
-            return new VideoProviderJobResult(jobId, VideoJobStatus.Completed, videoUrl);
+            return new VideoProviderJobResult(operationName!, VideoJobStatus.Running, null);
         }
 
-        private static string? ExtractVideoUrl(JsonElement root)
+        public async Task<VideoProviderJobResult> PollResultAsync(VideoModelProvider provider, VideoModelVersion version, string providerJobId, BsonDocument resolvedParams)
         {
-            if (root.TryGetProperty("videoUri", out var directUri) && directUri.ValueKind == JsonValueKind.String)
+            if (string.IsNullOrWhiteSpace(_settings.ApiKey))
             {
-                return directUri.GetString();
+                throw new InvalidOperationException("Veo API key not configured");
             }
 
-            if (root.TryGetProperty("videoUrl", out var urlElement) && urlElement.ValueKind == JsonValueKind.String)
+            var endpoint = $"https://generativelanguage.googleapis.com/v1beta/{providerJobId}";
+            var client = _httpClientFactory.CreateClient();
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+            request.Headers.Add("x-goog-api-key", _settings.ApiKey);
+
+            var response = await client.SendAsync(request);
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
             {
-                return urlElement.GetString();
+                throw new Exception($"Google Veo API error: {response.StatusCode} - {content}");
             }
 
-            if (root.TryGetProperty("videos", out var videos) && videos.ValueKind == JsonValueKind.Array)
+            using var doc = JsonDocument.Parse(content);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("error", out _))
             {
-                var first = videos.EnumerateArray().FirstOrDefault();
-                if (first.ValueKind == JsonValueKind.Object)
+                throw new Exception($"Google Veo API error: {content}");
+            }
+
+            if (root.TryGetProperty("done", out var doneElement) && doneElement.ValueKind == JsonValueKind.True)
+            {
+                var videoUrl = ExtractVideoUri(root);
+                if (string.IsNullOrWhiteSpace(videoUrl))
                 {
-                    if (first.TryGetProperty("videoUri", out var videoUri) && videoUri.ValueKind == JsonValueKind.String)
-                    {
-                        return videoUri.GetString();
-                    }
-
-                    if (first.TryGetProperty("videoUrl", out var nestedUrl) && nestedUrl.ValueKind == JsonValueKind.String)
-                    {
-                        return nestedUrl.GetString();
-                    }
+                    throw new Exception($"Google Veo API error: missing video uri - {content}");
                 }
+
+                return new VideoProviderJobResult(providerJobId, VideoJobStatus.Completed, videoUrl);
             }
 
-            if (root.TryGetProperty("candidates", out var candidates) && candidates.ValueKind == JsonValueKind.Array)
+            return new VideoProviderJobResult(providerJobId, VideoJobStatus.Running, null);
+        }
+
+        private static string? ExtractVideoUri(JsonElement root)
+        {
+            if (root.TryGetProperty("response", out var responseElement)
+                && responseElement.TryGetProperty("generateVideoResponse", out var videoResponse)
+                && videoResponse.TryGetProperty("generatedSamples", out var samples)
+                && samples.ValueKind == JsonValueKind.Array)
             {
-                foreach (var candidate in candidates.EnumerateArray())
+                var first = samples.EnumerateArray().FirstOrDefault();
+                if (first.ValueKind == JsonValueKind.Object
+                    && first.TryGetProperty("video", out var video)
+                    && video.TryGetProperty("uri", out var uriElement)
+                    && uriElement.ValueKind == JsonValueKind.String)
                 {
-                    if (candidate.TryGetProperty("content", out var content) && content.TryGetProperty("parts", out var parts))
-                    {
-                        foreach (var part in parts.EnumerateArray())
-                        {
-                            if (part.TryGetProperty("fileData", out var fileData) && fileData.TryGetProperty("fileUri", out var fileUri) && fileUri.ValueKind == JsonValueKind.String)
-                            {
-                                return fileUri.GetString();
-                            }
-                        }
-                    }
+                    return uriElement.GetString();
                 }
             }
 
             return null;
         }
 
-        private static string? ExtractBase64Video(JsonElement root)
+        private static object? BuildParameters(BsonDocument resolvedParams)
         {
-            if (root.TryGetProperty("candidates", out var candidates) && candidates.ValueKind == JsonValueKind.Array)
+            var parameters = new Dictionary<string, object>();
+
+            if (resolvedParams.TryGetValue("aspect_ratio", out var aspectRatioVal) && aspectRatioVal.IsString)
             {
-                foreach (var candidate in candidates.EnumerateArray())
-                {
-                    if (candidate.TryGetProperty("content", out var content) && content.TryGetProperty("parts", out var parts))
-                    {
-                        foreach (var part in parts.EnumerateArray())
-                        {
-                            if (part.TryGetProperty("inlineData", out var inlineData))
-                            {
-                                if (inlineData.TryGetProperty("data", out var dataElement) && dataElement.ValueKind == JsonValueKind.String)
-                                {
-                                    return dataElement.GetString();
-                                }
-                            }
-                        }
-                    }
-                }
+                parameters["aspectRatio"] = aspectRatioVal.AsString;
             }
 
-            return null;
+            if (resolvedParams.TryGetValue("negative_prompt", out var negativePromptVal) && negativePromptVal.IsString)
+            {
+                parameters["negativePrompt"] = negativePromptVal.AsString;
+            }
+
+            var durationSeconds = ResolveDurationSeconds(resolvedParams);
+            if (durationSeconds > 0)
+            {
+                parameters["durationSeconds"] = durationSeconds;
+            }
+
+            if (resolvedParams.TryGetValue("resolution", out var resolutionVal) && resolutionVal.IsString)
+            {
+                parameters["resolution"] = resolutionVal.AsString;
+            }
+
+            return parameters.Count > 0 ? parameters : null;
+        }
+
+        private static int ResolveDurationSeconds(BsonDocument resolvedParams)
+        {
+            if (resolvedParams.TryGetValue("max_output_length_seconds", out var durationVal) && durationVal.IsNumeric)
+            {
+                return Convert.ToInt32(Math.Ceiling(durationVal.ToDouble()));
+            }
+
+            if (resolvedParams.TryGetValue("duration", out var altDuration) && altDuration.IsNumeric)
+            {
+                return Convert.ToInt32(Math.Ceiling(altDuration.ToDouble()));
+            }
+
+            return 0;
         }
     }
 }

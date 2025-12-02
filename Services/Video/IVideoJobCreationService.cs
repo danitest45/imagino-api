@@ -1,3 +1,4 @@
+using Imagino.Api.DTOs;
 using Imagino.Api.DTOs.Video;
 
 namespace Imagino.Api.Services.Video

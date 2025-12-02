@@ -37,6 +37,10 @@ namespace Imagino.Api.DependencyInjection
             services.AddTransient<IVideoModelPresetRepository, VideoModelPresetRepository>();
             services.AddTransient<IVideoModelResolverService, VideoModelResolverService>();
             services.AddTransient<IVideoJobCreationService, VideoJobCreationService>();
+            services.AddTransient<IVideoModelService, VideoModelService>();
+            services.AddTransient<IVideoModelVersionService, VideoModelVersionService>();
+            services.AddTransient<IVideoModelPresetService, VideoModelPresetService>();
+            services.AddTransient<IVideoModelProviderService, VideoModelProviderService>();
             services.AddHttpClient("ImageModelProvider");
             services.AddSingleton<IImageProviderClient, GoogleGeminiImageProviderClient>();
             services.AddSingleton<IImageProviderClient, ReplicateImageProviderClient>();

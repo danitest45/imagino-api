@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Imagino.Api.DTOs;
 using Imagino.Api.DTOs.Video;
 using Imagino.Api.Errors;
@@ -146,6 +147,11 @@ namespace Imagino.Api.Services.Video
                 job.UpdatedAt = DateTime.UtcNow;
 
                 await _jobRepository.UpdateAsync(job);
+
+                if (result.Status == VideoJobStatus.Running && !string.IsNullOrWhiteSpace(result.JobId))
+                {
+                    _ = Task.Run(() => PollProviderJobAsync(job, provider, version, resolvedParams.DeepClone().AsBsonDocument));
+                }
             }
             catch (Exception ex)
             {
@@ -169,6 +175,51 @@ namespace Imagino.Api.Services.Video
             }
 
             return await client.CreateJobAsync(provider, version, resolvedParams);
+        }
+
+        private async Task PollProviderJobAsync(VideoJob job, VideoModelProvider provider, VideoModelVersion version, BsonDocument resolvedParams)
+        {
+            try
+            {
+                while (true)
+                {
+                    var pollResult = await DispatchPollAsync(provider, version, job.ProviderJobId!, resolvedParams);
+
+                    job.Status = pollResult.Status;
+                    job.VideoUrl = pollResult.VideoUrl ?? job.VideoUrl;
+                    job.UpdatedAt = DateTime.UtcNow;
+
+                    await _jobRepository.UpdateAsync(job);
+
+                    if (pollResult.Status == VideoJobStatus.Completed || pollResult.Status == VideoJobStatus.Failed)
+                    {
+                        break;
+                    }
+
+                    await Task.Delay(TimeSpan.FromSeconds(5));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to poll video job {JobId}", job.JobId);
+
+                job.Status = VideoJobStatus.Failed;
+                job.ErrorMessage = ex.Message;
+                job.UpdatedAt = DateTime.UtcNow;
+
+                await _jobRepository.UpdateAsync(job);
+            }
+        }
+
+        private async Task<VideoProviderJobResult> DispatchPollAsync(VideoModelProvider provider, VideoModelVersion version, string providerJobId, BsonDocument resolvedParams)
+        {
+            if (!_providerClients.TryGetValue(provider.ProviderType, out var client))
+            {
+                throw new ValidationAppException(
+                    $"No video provider client registered for provider type '{provider.ProviderType}'");
+            }
+
+            return await client.PollResultAsync(provider, version, providerJobId, resolvedParams);
         }
 
         private static int ResolveDurationSeconds(BsonDocument resolvedParams)

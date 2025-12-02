@@ -183,7 +183,7 @@ namespace Imagino.Api.Services.Video
             {
                 while (true)
                 {
-                    var pollResult = await DispatchPollAsync(provider, version, job.ProviderJobId!, resolvedParams);
+                    var pollResult = await DispatchPollAsync(provider, version, job.ProviderJobId!, resolvedParams, job.JobId);
 
                     job.Status = pollResult.Status;
                     job.VideoUrl = pollResult.VideoUrl ?? job.VideoUrl;
@@ -211,7 +211,7 @@ namespace Imagino.Api.Services.Video
             }
         }
 
-        private async Task<VideoProviderJobResult> DispatchPollAsync(VideoModelProvider provider, VideoModelVersion version, string providerJobId, BsonDocument resolvedParams)
+        private async Task<VideoProviderJobResult> DispatchPollAsync(VideoModelProvider provider, VideoModelVersion version, string providerJobId, BsonDocument resolvedParams, string? outputFileName)
         {
             if (!_providerClients.TryGetValue(provider.ProviderType, out var client))
             {
@@ -219,7 +219,7 @@ namespace Imagino.Api.Services.Video
                     $"No video provider client registered for provider type '{provider.ProviderType}'");
             }
 
-            return await client.PollResultAsync(provider, version, providerJobId, resolvedParams);
+            return await client.PollResultAsync(provider, version, providerJobId, resolvedParams, outputFileName);
         }
 
         private static int ResolveDurationSeconds(BsonDocument resolvedParams)

@@ -5,9 +5,11 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using Imagino.Api.Models;
 using Imagino.Api.Models.Video;
+using Imagino.Api.Services.Storage;
 using Imagino.Api.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -21,15 +23,18 @@ namespace Imagino.Api.Services.Video.Providers
 
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly VeoSettings _settings;
+        private readonly IStorageService _storage;
         private readonly ILogger<GoogleVeoVideoProviderClient> _logger;
 
         public GoogleVeoVideoProviderClient(
             IHttpClientFactory httpClientFactory,
             IOptions<VeoSettings> settings,
+            IStorageService storage,
             ILogger<GoogleVeoVideoProviderClient> logger)
         {
             _httpClientFactory = httpClientFactory;
             _settings = settings.Value;
+            _storage = storage;
             _logger = logger;
         }
 
@@ -92,7 +97,7 @@ namespace Imagino.Api.Services.Video.Providers
             return new VideoProviderJobResult(operationName!, VideoJobStatus.Running, null);
         }
 
-        public async Task<VideoProviderJobResult> PollResultAsync(VideoModelProvider provider, VideoModelVersion version, string providerJobId, BsonDocument resolvedParams)
+        public async Task<VideoProviderJobResult> PollResultAsync(VideoModelProvider provider, VideoModelVersion version, string providerJobId, BsonDocument resolvedParams, string? outputFileName = null)
         {
             if (string.IsNullOrWhiteSpace(_settings.ApiKey))
             {
@@ -129,10 +134,44 @@ namespace Imagino.Api.Services.Video.Providers
                     throw new Exception($"Google Veo API error: missing video uri - {content}");
                 }
 
-                return new VideoProviderJobResult(providerJobId, VideoJobStatus.Completed, videoUrl);
+                var fileName = string.IsNullOrWhiteSpace(outputFileName) ? providerJobId : outputFileName;
+                var storedUrl = await DownloadAndStoreVideoAsync(videoUrl, fileName!, CancellationToken.None);
+
+                return new VideoProviderJobResult(providerJobId, VideoJobStatus.Completed, storedUrl);
             }
 
             return new VideoProviderJobResult(providerJobId, VideoJobStatus.Running, null);
+        }
+
+        private async Task<string> DownloadAndStoreVideoAsync(string videoUri, string fileName, CancellationToken cancellationToken)
+        {
+            var client = _httpClientFactory.CreateClient();
+            using var request = new HttpRequestMessage(HttpMethod.Get, videoUri);
+            request.Headers.Add("x-goog-api-key", _settings.ApiKey);
+
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogError("Failed to download video from Veo. Status: {Status}. Body: {Body}", response.StatusCode, errorBody);
+                throw new Exception($"Failed to download video from Veo: {response.StatusCode} - {errorBody}");
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var normalizedFileName = fileName.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase)
+                ? fileName
+                : $"{fileName}.mp4";
+
+            try
+            {
+                return await _storage.UploadVideoAsync(stream, normalizedFileName, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to upload video {FileName} to R2", normalizedFileName);
+                throw new Exception("Failed to store generated video");
+            }
         }
 
         private static string? ExtractVideoUri(JsonElement root)

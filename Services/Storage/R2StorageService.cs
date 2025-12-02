@@ -2,6 +2,8 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Options;
 using Imagino.Api.Settings;
+using System.IO;
+using System.Threading;
 
 namespace Imagino.Api.Services.Storage
 {
@@ -21,11 +23,23 @@ namespace Imagino.Api.Services.Storage
             _client = new AmazonS3Client(_settings.AccessKeyId, _settings.SecretAccessKey, config);
         }
 
-        public async Task<string> UploadAsync(Stream stream, string key, string contentType)
+        public async Task<string> UploadAsync(Stream stream, string key, string contentType, CancellationToken cancellationToken = default)
+        {
+            var bucketName = _settings.BucketName;
+            return await UploadInternalAsync(stream, bucketName, key, contentType, cancellationToken);
+        }
+
+        public async Task<string> UploadVideoAsync(Stream stream, string fileName, CancellationToken cancellationToken = default)
+        {
+            var key = $"videos/{fileName}";
+            return await UploadInternalAsync(stream, _settings.BucketNameVideos, key, "video/mp4", cancellationToken);
+        }
+
+        private async Task<string> UploadInternalAsync(Stream stream, string bucketName, string key, string contentType, CancellationToken cancellationToken)
         {
             var request = new PutObjectRequest
             {
-                BucketName = _settings.BucketName,
+                BucketName = bucketName,
                 Key = key,
                 InputStream = stream,
                 ContentType = contentType,
@@ -40,8 +54,14 @@ namespace Imagino.Api.Services.Storage
             }
 
 
-            await _client.PutObjectAsync(request);
-            return $"{_settings.PublicUrl}/{key}";
+            await _client.PutObjectAsync(request, cancellationToken);
+            return BuildPublicUrl(bucketName, key);
+        }
+
+        private string BuildPublicUrl(string bucketName, string key)
+        {
+            var baseUrl = _settings.PublicUrl.TrimEnd('/');
+            return $"{baseUrl}/{bucketName}/{key}";
         }
     }
 }

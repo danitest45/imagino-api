@@ -61,7 +61,7 @@ namespace Imagino.Api.Services.Storage
         private string BuildPublicUrl(string bucketName, string key)
         {
             var baseUrl = _settings.PublicUrl.TrimEnd('/');
-            return $"{baseUrl}/{bucketName}/{key}";
+            return $"{baseUrl}/images/{key}";
         }
     }
 }

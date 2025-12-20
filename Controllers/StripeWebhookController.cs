@@ -161,7 +161,7 @@ namespace Imagino.Api.Controllers
         {
             if (stripeEvent.Data.Object is Invoice invoice)
             {
-                if (!invoice.Paid)
+                if (!string.Equals(invoice.Status, "paid", StringComparison.OrdinalIgnoreCase))
                 {
                     return;
                 }
@@ -173,12 +173,13 @@ namespace Imagino.Api.Controllers
                 }
 
                 var customerId = invoice.CustomerId;
-                var subscriptionId = invoice.SubscriptionId;
 
                 if (string.IsNullOrEmpty(customerId)) return;
 
                 var user = await _users.GetByStripeCustomerIdAsync(customerId);
                 if (user == null) return;
+
+                var subscriptionId = invoice.RawJObject?["subscription"]?.Value<string>() ?? user.StripeSubscriptionId;
 
                 Stripe.Subscription? subscription = null;
                 if (!string.IsNullOrEmpty(subscriptionId))

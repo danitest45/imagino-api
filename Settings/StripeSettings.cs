@@ -9,5 +9,7 @@ namespace Imagino.Api.Settings
         public string SuccessUrl { get; set; } = default!;
         public string CancelUrl { get; set; } = default!;
         public string PortalReturnUrl { get; set; } = default!;
+        public int CreditsPro { get; set; } = 100;
+        public int CreditsUltra { get; set; } = 300;
     }
 }

@@ -60,6 +60,10 @@ namespace Imagino.Api.Controllers
                     case "checkout.session.completed":
                         await HandleCheckoutSessionCompleted(stripeEvent);
                         break;
+                    case "invoice.paid":
+                    case "invoice.payment_succeeded":
+                        await HandleInvoicePaid(stripeEvent);
+                        break;
                     case "customer.subscription.updated":
                     case "customer.subscription.deleted":
                         await HandleSubscriptionUpdated(stripeEvent);
@@ -107,9 +111,25 @@ namespace Imagino.Api.Controllers
                     var periodEndUnix = sub.RawJObject?["current_period_end"]?.Value<long?>();
                     if (periodEndUnix.HasValue)
                         user.CurrentPeriodEnd = DateTimeOffset.FromUnixTimeSeconds(periodEndUnix.Value);
+
+                    var priceId = sub.Items.Data.Count > 0 ? sub.Items.Data[0].Price.Id : null;
+                    if (!string.IsNullOrEmpty(priceId))
+                    {
+                        user.Plan = MapPlanFromPrice(priceId, user.Plan);
+                    }
                 }
 
                 await _users.UpdateAsync(user);
+
+                var creditsToAdd = GetCreditsForPlan(user.Plan);
+                if (creditsToAdd > 0 && string.Equals(session.PaymentStatus, "paid", StringComparison.OrdinalIgnoreCase))
+                {
+                    var incremented = await _users.IncrementCreditsAsync(user.Id!, creditsToAdd);
+                    if (incremented)
+                    {
+                        _logger.LogInformation("Credits added on checkout session completed. UserId={UserId}, Plan={Plan}, Credits={Credits}, EventId={EventId}", user.Id, user.Plan, creditsToAdd, stripeEvent.Id);
+                    }
+                }
             }
         }
 
@@ -135,6 +155,87 @@ namespace Imagino.Api.Controllers
 
                 await _users.UpdateAsync(user);
             }
+        }
+
+        private async Task HandleInvoicePaid(Event stripeEvent)
+        {
+            if (stripeEvent.Data.Object is Invoice invoice)
+            {
+                if (!string.Equals(invoice.Status, "paid", StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+
+                if (string.Equals(invoice.BillingReason, "subscription_create", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Crédito inicial já tratado no checkout
+                    return;
+                }
+
+                var customerId = invoice.CustomerId;
+
+                if (string.IsNullOrEmpty(customerId)) return;
+
+                var user = await _users.GetByStripeCustomerIdAsync(customerId);
+                if (user == null) return;
+
+                var subscriptionId = invoice.RawJObject?["subscription"]?.Value<string>() ?? user.StripeSubscriptionId;
+
+                Stripe.Subscription? subscription = null;
+                if (!string.IsNullOrEmpty(subscriptionId))
+                {
+                    var subscriptionService = new SubscriptionService();
+                    subscription = await subscriptionService.GetAsync(subscriptionId);
+
+                    user.StripeSubscriptionId = subscription.Id;
+                    user.SubscriptionStatus = subscription.Status;
+
+                    var periodEnd = subscription.RawJObject?["current_period_end"]?.Value<long?>();
+                    if (periodEnd.HasValue)
+                        user.CurrentPeriodEnd = DateTimeOffset.FromUnixTimeSeconds(periodEnd.Value);
+
+                    var priceId = subscription.Items.Data.Count > 0 ? subscription.Items.Data[0].Price.Id : null;
+                    if (!string.IsNullOrEmpty(priceId))
+                    {
+                        user.Plan = MapPlanFromPrice(priceId, user.Plan);
+                    }
+
+                    await _users.UpdateAsync(user);
+                }
+
+                var creditsToAdd = GetCreditsForPlan(user.Plan);
+                if (creditsToAdd > 0)
+                {
+                    var creditEventId = $"invoice-credit-{invoice.Id}";
+                    if (await _events.ExistsAsync(creditEventId)) return;
+
+                    var incremented = await _users.IncrementCreditsAsync(user.Id!, creditsToAdd);
+                    if (incremented)
+                    {
+                        await _events.CreateAsync(new Models.StripeEventRecord { EventId = creditEventId, Created = DateTime.UtcNow });
+                        _logger.LogInformation("Credits added on invoice paid. UserId={UserId}, Plan={Plan}, Credits={Credits}, EventId={EventId}, InvoiceId={InvoiceId}", user.Id, user.Plan, creditsToAdd, stripeEvent.Id, invoice.Id);
+                    }
+                }
+            }
+        }
+
+        private int GetCreditsForPlan(string? plan)
+        {
+            if (string.IsNullOrEmpty(plan)) return 0;
+
+            return plan.ToUpperInvariant() switch
+            {
+                "PRO" => _settings.CreditsPro,
+                "ULTRA" => _settings.CreditsUltra,
+                _ => 0
+            };
+        }
+
+        private string MapPlanFromPrice(string priceId, string? currentPlan)
+        {
+            if (priceId == _settings.PricePro) return "PRO";
+            if (priceId == _settings.PriceUltra) return "ULTRA";
+            return currentPlan ?? string.Empty;
         }
     }
 }

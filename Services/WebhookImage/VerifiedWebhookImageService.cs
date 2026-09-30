@@ -48,6 +48,11 @@ public class WebhookImageService(IImageJobRepository jobs, IUserRepository users
             job.UpdatedAt = DateTime.UtcNow;
             return Response(job);
         }
+        catch (ArgumentException)
+        {
+            await jobs.ReleaseWebhookAsync(job.Id!, lease);
+            throw new ValidationAppException("Provider image does not satisfy the permitted URL, format or size policy.");
+        }
         catch
         {
             await jobs.ReleaseWebhookAsync(job.Id!, lease);

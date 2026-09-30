@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Imagino.Api.DTOs;
+using Imagino.Api.Errors;
 using Imagino.Api.Models;
 using Imagino.Api.Repository;
 using Imagino.Api.Security;
@@ -83,7 +84,8 @@ public class GeneratedImageSecurityTests
         var bytes = oversized ? new byte[GeneratedImageValidator.MaxBytes + 1] : Encoding.UTF8.GetBytes("<svg></svg>");
         if (oversized) new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }.CopyTo(bytes, 0);
         var (service, jobs, storage) = CreateService(provider, bytes);
-        await Assert.ThrowsAnyAsync<ArgumentException>(() => Process(service, provider, bytes));
+        var error = await Assert.ThrowsAsync<ValidationAppException>(() => Process(service, provider, bytes));
+        Assert.Equal(400, ErrorMapper.Map(error).status);
         storage.Verify(s => s.UploadAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         jobs.Verify(r => r.CompleteWebhookAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         jobs.Verify(r => r.ReleaseWebhookAsync("local-job", It.IsAny<string>()), Times.Once);

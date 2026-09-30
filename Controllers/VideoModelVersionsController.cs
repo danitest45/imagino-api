@@ -7,6 +7,7 @@ using Imagino.Api.DTOs.Video;
 using Imagino.Api.Models.Video;
 using Imagino.Api.Services.Video;
 using Microsoft.AspNetCore.Authorization;
+using Imagino.Api.Security;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 
@@ -46,7 +47,7 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<ActionResult<VideoModelVersionDto>> Create(string modelId, [FromBody] CreateVideoModelVersionDto dto)
         {
             var version = new VideoModelVersion
@@ -80,7 +81,7 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpPut("{versionId}")]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<ActionResult<VideoModelVersionDto>> Update(string modelId, string versionId, [FromBody] UpdateVideoModelVersionDto dto)
         {
             var version = new VideoModelVersion
@@ -119,7 +120,7 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpDelete("{versionId}")]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<IActionResult> Delete(string modelId, string versionId)
         {
             await _versionService.DeleteAsync(versionId);
@@ -127,7 +128,7 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpPost("{versionId}/set-default")]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<IActionResult> SetDefault(string modelId, string versionId)
         {
             var model = await _modelService.GetByIdAsync(modelId);

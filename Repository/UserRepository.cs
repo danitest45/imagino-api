@@ -3,6 +3,7 @@ using Imagino.Api.Repository;
 using Imagino.Api.Settings;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -39,6 +40,23 @@ namespace Imagino.Api.Repository
 
         public async Task UpdateAsync(User user) =>
             await _collection.ReplaceOneAsync(u => u.Id == user.Id, user);
+
+        public async Task UpdateProfileAsync(string id, string username, string? phoneNumber, DateTime updatedAt)
+        {
+            var update = Builders<User>.Update
+                .Set(u => u.Username, username)
+                .Set(u => u.PhoneNumber, phoneNumber)
+                .Set(u => u.UpdatedAt, updatedAt);
+            await _collection.UpdateOneAsync(u => u.Id == id, update);
+        }
+
+        public async Task UpdateProfileImageAsync(string id, string imageUrl, DateTime updatedAt)
+        {
+            var update = Builders<User>.Update
+                .Set(u => u.ProfileImageUrl, imageUrl)
+                .Set(u => u.UpdatedAt, updatedAt);
+            await _collection.UpdateOneAsync(u => u.Id == id, update);
+        }
 
         public async Task DeleteAsync(string id) =>
             await _collection.DeleteOneAsync(u => u.Id == id);

@@ -11,7 +11,7 @@ namespace Imagino.Api.Services
         Task<IEnumerable<User>> GetAllAsync();
         Task<User?> GetByIdAsync(string id);
         Task<User> CreateAsync(CreateUserDto dto);
-        Task<User?> UpdateAsync(string id, UpdateUserDto dto);
+        Task<User?> UpdateAsync(string id, UserProfileUpdateDto dto);
         Task DeleteAsync(string id);
         Task<string?> UpdateProfileImageAsync(string id, IFormFile file);
         Task<string> GenerateUsernameFromEmailAsync(string email);

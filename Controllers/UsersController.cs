@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Imagino.Api.Security;
 
 namespace Imagino.Api.Controllers
 {
@@ -41,12 +42,23 @@ namespace Imagino.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<UserDto>> GetById(string id)
         {
+            if (!IsSelf(id)) return NotFound();
             var user = await _service.GetByIdAsync(id);
             if (user == null) return NotFound();
             return Ok(ToDto(user));
         }
 
+        [HttpGet("me")]
+        public async Task<ActionResult<UserDto>> GetMe()
+        {
+            var userId = CurrentUserId();
+            if (userId == null) return Unauthorized();
+            var user = await _service.GetByIdAsync(userId);
+            return user == null ? NotFound() : Ok(ToDto(user));
+        }
+
         [HttpPost]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<ActionResult<UserDto>> Create([FromBody] CreateUserDto dto)
         {
             try
@@ -61,16 +73,25 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<UserDto>> Update(string id, [FromBody] UpdateUserDto dto)
+        public async Task<ActionResult<UserDto>> Update(string id, [FromBody] UserProfileUpdateDto dto)
         {
+            if (!IsSelf(id)) return NotFound();
             var user = await _service.UpdateAsync(id, dto);
             if (user == null) return NotFound();
             return Ok(ToDto(user));
         }
 
+        [HttpPut("me")]
+        public async Task<ActionResult<UserDto>> UpdateMe([FromBody] UserProfileUpdateDto dto)
+        {
+            var userId = CurrentUserId();
+            return userId == null ? Unauthorized() : await Update(userId, dto);
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
+            if (!IsSelf(id)) return NotFound();
             await _service.DeleteAsync(id);
             return NoContent();
         }
@@ -79,6 +100,7 @@ namespace Imagino.Api.Controllers
         [Consumes("multipart/form-data")]
         public async Task<ActionResult> UploadProfileImage(string id, [FromForm] UploadProfileImageDto form)
         {
+            if (!IsSelf(id)) return NotFound();
             var file = form.File;
             if (file == null || file.Length == 0)
                 return BadRequest(new { message = "File not provided" });
@@ -89,9 +111,19 @@ namespace Imagino.Api.Controllers
             return Ok(new { imageUrl });
         }
 
+        [HttpPost("me/profile-image")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> UploadMyProfileImage([FromForm] UploadProfileImageDto form)
+        {
+            var userId = CurrentUserId();
+            return userId == null ? Unauthorized() : await UploadProfileImage(userId, form);
+        }
+
         [HttpPost("{id}/credits")]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<IActionResult> AddCredits(string id, [FromBody] UpdateCreditsDto dto)
         {
+            if (dto.Amount <= 0) return BadRequest(new { message = "Amount must be positive" });
             var success = await _service.IncrementCreditsAsync(id, dto.Amount);
             if (!success) return NotFound();
             var credits = await _service.GetCreditsAsync(id);
@@ -115,6 +147,13 @@ namespace Imagino.Api.Controllers
 
         private static UserDto ToDto(User user) =>
             new(user.Id!, user.Email, user.GoogleId, user.ProfileImageUrl, user.Username, user.PhoneNumber, user.Subscription, user.Credits, user.CreatedAt, user.UpdatedAt);
+
+        private string? CurrentUserId() =>
+            User.FindFirstValue(JwtRegisteredClaimNames.Sub) ??
+            User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        private bool IsSelf(string id) =>
+            string.Equals(CurrentUserId(), id, StringComparison.Ordinal);
     }
 }
 

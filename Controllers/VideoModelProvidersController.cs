@@ -5,6 +5,7 @@ using Imagino.Api.DTOs.Video;
 using Imagino.Api.Models.Video;
 using Imagino.Api.Services.Video;
 using Microsoft.AspNetCore.Authorization;
+using Imagino.Api.Security;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Imagino.Api.Controllers
@@ -21,15 +22,15 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<VideoModelProviderDto>>> List()
+        public async Task<ActionResult<List<PublicVideoModelProviderDto>>> List()
         {
             var providers = await _providerService.ListAsync();
-            var dtos = providers.Select(ToDto).ToList();
+            var dtos = providers.Select(ToPublicDto).ToList();
             return Ok(dtos);
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<ActionResult<VideoModelProviderDto>> Create([FromBody] CreateVideoModelProviderDto dto)
         {
             var provider = new VideoModelProvider
@@ -44,7 +45,7 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpPut("{providerId}")]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<ActionResult<VideoModelProviderDto>> Update(string providerId, [FromBody] UpdateVideoModelProviderDto dto)
         {
             var provider = new VideoModelProvider
@@ -69,6 +70,15 @@ namespace Imagino.Api.Controllers
             Name = provider.Name,
             ProviderType = provider.ProviderType,
             Config = provider.Config,
+            CreatedAt = provider.CreatedAt,
+            UpdatedAt = provider.UpdatedAt
+        };
+
+        private static PublicVideoModelProviderDto ToPublicDto(VideoModelProvider provider) => new()
+        {
+            Id = provider.Id,
+            Name = provider.Name,
+            ProviderType = provider.ProviderType,
             CreatedAt = provider.CreatedAt,
             UpdatedAt = provider.UpdatedAt
         };

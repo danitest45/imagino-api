@@ -51,7 +51,7 @@ namespace Imagino.Api.Repository
 
         public async Task<List<ImageJob>> GetLatestAsync(int limit)
         {
-            return await _collection.Find(_ => true)
+            return await _collection.Find(job => job.IsPublic)
                                     .SortByDescending(job => job.CreatedAt)
                                     .Limit(limit)
                                     .ToListAsync();

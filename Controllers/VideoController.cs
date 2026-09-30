@@ -43,7 +43,10 @@ namespace Imagino.Api.Controllers
         public async Task<ActionResult<VideoJobStatusResponse>> GetJobById(string id)
         {
             var job = await _jobRepository.GetByJobIdAsync(id);
-            if (job == null)
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (job == null || string.IsNullOrWhiteSpace(userId)
+                || !string.Equals(job.UserId, userId, StringComparison.Ordinal))
             {
                 return NotFound();
             }

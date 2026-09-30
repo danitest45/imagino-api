@@ -38,6 +38,9 @@ namespace Imagino.Api.Models
         [BsonElement("userId")]
         public string? UserId { get; set; }
 
+        [BsonElement("isPublic")]
+        public bool IsPublic { get; set; }
+
         [BsonElement("status")]
         [BsonRepresentation(BsonType.String)]
         [JsonConverter(typeof(JsonStringEnumConverter))]

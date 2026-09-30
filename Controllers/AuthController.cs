@@ -60,7 +60,8 @@ namespace Imagino.Api.Controllers
             return true;
         }
 
-        public record RegisterRequest(string Email, string Password, string? Username, string? PhoneNumber, SubscriptionType Subscription, int Credits);
+        [System.Text.Json.Serialization.JsonUnmappedMemberHandling(System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow)]
+        public record RegisterRequest(string Email, string Password, string? Username, string? PhoneNumber);
         public record LoginRequest(string Email, string Password);
         public record ResendVerificationRequest(string Email);
         public record VerifyEmailRequest(string Token);
@@ -81,9 +82,7 @@ namespace Imagino.Api.Controllers
                     Email = request.Email,
                     Password = request.Password,
                     Username = request.Username,
-                    PhoneNumber = request.PhoneNumber,
-                    Subscription = request.Subscription,
-                    Credits = request.Credits
+                    PhoneNumber = request.PhoneNumber
                 };
 
                 var user = await _userService.CreateAsync(dto);

@@ -51,7 +51,7 @@ namespace Imagino.Api.Controllers.Image
         public async Task<ActionResult<JobStatusResponse>> GetJobById(string jobId)
         {
             var job = await _jobRepository.GetByJobIdAsync(jobId);
-            if (job == null)
+            if (job == null || !IsOwnedByCurrentUser(job.UserId))
             {
                 return NotFound();
             }
@@ -71,7 +71,7 @@ namespace Imagino.Api.Controllers.Image
         public async Task<IActionResult> GetJobDetails(string jobId)
         {
             var job = await _jobRepository.GetByJobIdAsync(jobId);
-            if (job == null)
+            if (job == null || !IsOwnedByCurrentUser(job.UserId))
             {
                 return NotFound();
             }
@@ -93,11 +93,10 @@ namespace Imagino.Api.Controllers.Image
         }
 
         [HttpGet("{jobId}/download")]
-        [AllowAnonymous]
         public async Task<IActionResult> DownloadImage(string jobId)
         {
             var job = await _jobRepository.GetByJobIdAsync(jobId);
-            if (job == null || job.ImageUrls.Count == 0)
+            if (job == null || !IsOwnedByCurrentUser(job.UserId) || job.ImageUrls.Count == 0)
             {
                 return NotFound();
             }
@@ -138,7 +137,7 @@ namespace Imagino.Api.Controllers.Image
         public async Task<IActionResult> GetLatestJobs()
         {
             var jobs = await _jobRepository.GetLatestAsync(12);
-            var responseTasks = jobs.Select(async job =>
+            var responseTasks = jobs.Where(job => job.IsPublic).Select(async job =>
             {
                 var user = string.IsNullOrEmpty(job.UserId)
                     ? null
@@ -157,6 +156,14 @@ namespace Imagino.Api.Controllers.Image
 
             var response = await Task.WhenAll(responseTasks);
             return Ok(response);
+        }
+
+        private bool IsOwnedByCurrentUser(string? ownerId)
+        {
+            var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return !string.IsNullOrWhiteSpace(userId)
+                && string.Equals(ownerId, userId, StringComparison.Ordinal);
         }
     }
 }

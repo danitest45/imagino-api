@@ -2,6 +2,7 @@ using Imagino.Api.Models;
 using Imagino.Api.Settings;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using MongoDB.Bson;
 
 namespace Imagino.Api.Repository
 {
@@ -23,16 +24,21 @@ namespace Imagino.Api.Repository
             await _collection.InsertOneAsync(job);
         }
 
-        public async Task<VideoJob?> GetByJobIdAsync(string jobId)
+        public static FilterDefinition<VideoJob> JobLookupFilter(string jobId)
         {
             var filter = Builders<VideoJob>.Filter.Or(
                 Builders<VideoJob>.Filter.Eq(job => job.JobId, jobId),
-                Builders<VideoJob>.Filter.Eq(job => job.ProviderJobId, jobId),
-                Builders<VideoJob>.Filter.Eq(job => job.Id, jobId)
+                Builders<VideoJob>.Filter.Eq(job => job.ProviderJobId, jobId)
             );
+            return ObjectId.TryParse(jobId, out _)
+                ? filter | Builders<VideoJob>.Filter.Eq(job => job.Id, jobId)
+                : filter;
+        }
 
+        public async Task<VideoJob?> GetByJobIdAsync(string jobId)
+        {
             return await _collection
-                .Find(filter)
+                .Find(JobLookupFilter(jobId))
                 .FirstOrDefaultAsync();
         }
 

@@ -7,6 +7,7 @@ using Imagino.Api.Errors;
 using Imagino.Api.Models.Image;
 using Imagino.Api.Repositories.Image;
 using Microsoft.AspNetCore.Authorization;
+using Imagino.Api.Security;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 
@@ -14,7 +15,7 @@ namespace Imagino.Api.Controllers.Admin.Image
 {
     [ApiController]
     [Route("api/admin/image/presets")]
-    [Authorize]
+    [Authorize(Policy = AdminAuthorization.Policy)]
     public class ImageModelPresetsController : ControllerBase
     {
         private readonly IImageModelPresetRepository _presetRepository;

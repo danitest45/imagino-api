@@ -6,13 +6,14 @@ using Imagino.Api.Errors;
 using Imagino.Api.Models.Image;
 using Imagino.Api.Repositories.Image;
 using Microsoft.AspNetCore.Authorization;
+using Imagino.Api.Security;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Imagino.Api.Controllers.Admin.Image
 {
     [ApiController]
     [Route("api/admin/image/providers")]
-    [Authorize]
+    [Authorize(Policy = AdminAuthorization.Policy)]
     public class ImageModelProvidersController : ControllerBase
     {
         private readonly IImageModelProviderRepository _providerRepository;

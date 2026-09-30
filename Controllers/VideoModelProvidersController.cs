@@ -5,6 +5,7 @@ using Imagino.Api.DTOs.Video;
 using Imagino.Api.Models.Video;
 using Imagino.Api.Services.Video;
 using Microsoft.AspNetCore.Authorization;
+using Imagino.Api.Security;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Imagino.Api.Controllers
@@ -29,7 +30,7 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<ActionResult<VideoModelProviderDto>> Create([FromBody] CreateVideoModelProviderDto dto)
         {
             var provider = new VideoModelProvider
@@ -44,7 +45,7 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpPut("{providerId}")]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<ActionResult<VideoModelProviderDto>> Update(string providerId, [FromBody] UpdateVideoModelProviderDto dto)
         {
             var provider = new VideoModelProvider

@@ -35,7 +35,7 @@ namespace Imagino.Api.Tests
 
             Assert.NotNull(dependencies.InsertedJob);
             Assert.Equal(dependencies.InsertedJob!.Id, response.JobId);
-            Assert.Equal(ImageJobStatus.Created, dependencies.InsertedJob.Status);
+            Assert.Equal(ImageJobStatus.Created, dependencies.InsertedStatus);
             Assert.Equal(ImageJobStatus.Completed.ToString(), response.Status);
 
             Assert.NotNull(dependencies.UpdatedJob);
@@ -126,17 +126,24 @@ namespace Imagino.Api.Tests
 
             var jobRepository = new Mock<IImageJobRepository>();
             var sequence = new MockSequence();
-            ImageJob? insertedJob = null;
-            ImageJob? updatedJob = null;
+            var dependencies = new DependencySnapshot
+            {
+                JobRepository = jobRepository,
+                UserRepository = userRepository
+            };
 
             jobRepository.InSequence(sequence)
                 .Setup(r => r.InsertAsync(It.IsAny<ImageJob>()))
-                .Callback<ImageJob>(j => insertedJob = j)
+                .Callback<ImageJob>(j =>
+                {
+                    dependencies.InsertedJob = j;
+                    dependencies.InsertedStatus = j.Status;
+                })
                 .Returns(Task.CompletedTask);
 
             jobRepository.InSequence(sequence)
                 .Setup(r => r.UpdateAsync(It.IsAny<ImageJob>()))
-                .Callback<ImageJob>(j => updatedJob = j)
+                .Callback<ImageJob>(j => dependencies.UpdatedJob = j)
                 .Returns(Task.CompletedTask);
 
             var providerClient = new Mock<IImageProviderClient>();
@@ -165,20 +172,13 @@ namespace Imagino.Api.Tests
                 new[] { providerClient.Object },
                 logger.Object);
 
-            var dependencies = new DependencySnapshot
-            {
-                InsertedJob = insertedJob,
-                UpdatedJob = updatedJob,
-                JobRepository = jobRepository,
-                UserRepository = userRepository
-            };
-
             return (service, dependencies);
         }
 
         private class DependencySnapshot
         {
             public ImageJob? InsertedJob { get; set; }
+            public ImageJobStatus? InsertedStatus { get; set; }
             public ImageJob? UpdatedJob { get; set; }
             public Mock<IImageJobRepository> JobRepository { get; set; } = default!;
             public Mock<IUserRepository> UserRepository { get; set; } = default!;

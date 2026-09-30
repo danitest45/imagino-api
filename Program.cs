@@ -12,6 +12,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Imagino.Api.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -155,7 +156,13 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AdminAuthorization.Policy, policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireAssertion(context =>
+                  AdminAuthorization.IsConfiguredAdmin(context.User, builder.Configuration)));
+});
 
 if (builder.Environment.IsDevelopment())
 {

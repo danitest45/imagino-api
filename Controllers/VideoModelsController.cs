@@ -6,6 +6,7 @@ using Imagino.Api.DTOs.Video;
 using Imagino.Api.Models.Video;
 using Imagino.Api.Services.Video;
 using Microsoft.AspNetCore.Authorization;
+using Imagino.Api.Security;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Imagino.Api.Controllers
@@ -42,7 +43,7 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<ActionResult<VideoModelDto>> Create([FromBody] CreateVideoModelDto dto)
         {
             var model = new VideoModel
@@ -71,7 +72,7 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<ActionResult<VideoModelDto>> Update(string id, [FromBody] UpdateVideoModelDto dto)
         {
             var updatedModel = new VideoModel
@@ -105,7 +106,7 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<IActionResult> Delete(string id)
         {
             await _modelService.DeleteAsync(id);

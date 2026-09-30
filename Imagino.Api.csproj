@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <Compile Remove="Imagino.Api.Tests/**/*" />
+    <Content Remove="Imagino.Api.Tests/**/*" />
     <None Remove="Imagino.Api.Tests/**/*" />
   </ItemGroup>
 

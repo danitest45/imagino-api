@@ -7,6 +7,7 @@ using Imagino.Api.DTOs.Video;
 using Imagino.Api.Models.Video;
 using Imagino.Api.Services.Video;
 using Microsoft.AspNetCore.Authorization;
+using Imagino.Api.Security;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 
@@ -44,7 +45,7 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<ActionResult<VideoModelPresetDto>> Create(string modelId, [FromBody] VideoModelPresetDto dto)
         {
             var preset = new VideoModelPreset
@@ -64,7 +65,7 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpPut("{presetId}")]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<ActionResult<VideoModelPresetDto>> Update(string modelId, string presetId, [FromBody] VideoModelPresetDto dto)
         {
             var preset = new VideoModelPreset
@@ -89,7 +90,7 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpDelete("{presetId}")]
-        [Authorize]
+        [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<IActionResult> Delete(string modelId, string presetId)
         {
             await _presetService.DeleteAsync(presetId);

@@ -48,8 +48,12 @@ namespace Imagino.Api.Services
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Username = username!,
                 PhoneNumber = dto.PhoneNumber,
-                Subscription = dto.Subscription,
-                Credits = dto.Credits
+                Subscription = SubscriptionType.Free,
+                Credits = 0,
+                Plan = null,
+                SubscriptionStatus = null,
+                StripeCustomerId = null,
+                StripeSubscriptionId = null
             };
 
             await _repository.CreateAsync(user);
@@ -76,7 +80,7 @@ namespace Imagino.Api.Services
             return username;
         }
 
-        public async Task<User?> UpdateAsync(string id, UpdateUserDto dto)
+        public async Task<User?> UpdateAsync(string id, UserProfileUpdateDto dto)
         {
             var user = await _repository.GetByIdAsync(id);
             if (user == null) return null;
@@ -100,12 +104,6 @@ namespace Imagino.Api.Services
 
             if (!string.IsNullOrEmpty(dto.PhoneNumber))
                 user.PhoneNumber = dto.PhoneNumber;
-
-            if (dto.Subscription.HasValue)
-                user.Subscription = dto.Subscription.Value;
-
-            if (dto.Credits.HasValue)
-                user.Credits = dto.Credits.Value;
 
             user.UpdatedAt = DateTime.UtcNow;
 

@@ -32,6 +32,12 @@ namespace Imagino.Api.Tests
             Assert.NotNull(created);
             Assert.StartsWith("john", created!.Username);
             Assert.NotEqual("john", created.Username);
+            Assert.Equal(SubscriptionType.Free, created.Subscription);
+            Assert.Equal(0, created.Credits);
+            Assert.Null(created.Plan);
+            Assert.Null(created.SubscriptionStatus);
+            Assert.Null(created.StripeCustomerId);
+            Assert.Null(created.StripeSubscriptionId);
         }
 
         [Fact]
@@ -47,6 +53,33 @@ namespace Imagino.Api.Tests
 
             Assert.StartsWith("jane", username);
             Assert.NotEqual("jane", username);
+        }
+
+        [Fact]
+        public async Task ProfileUpdate_PreservesEconomicFields()
+        {
+            var user = new User
+            {
+                Id = "user-a", Email = "a@example.test", Username = "old",
+                Credits = 17, Subscription = SubscriptionType.Free,
+                Plan = "PRO", SubscriptionStatus = "active",
+                StripeCustomerId = "customer", StripeSubscriptionId = "subscription"
+            };
+            var repo = new Mock<IUserRepository>();
+            repo.Setup(r => r.GetByIdAsync("user-a")).ReturnsAsync(user);
+            repo.Setup(r => r.GetByUsernameAsync("new")).ReturnsAsync((User?)null);
+            var service = new UserService(repo.Object, new Mock<IStorageService>().Object);
+
+            await service.UpdateAsync("user-a", new UserProfileUpdateDto { Username = "new" });
+
+            Assert.Equal("new", user.Username);
+            Assert.Equal(17, user.Credits);
+            Assert.Equal(SubscriptionType.Free, user.Subscription);
+            Assert.Equal("PRO", user.Plan);
+            Assert.Equal("active", user.SubscriptionStatus);
+            Assert.Equal("customer", user.StripeCustomerId);
+            Assert.Equal("subscription", user.StripeSubscriptionId);
+            repo.Verify(r => r.UpdateAsync(user), Times.Once);
         }
 
         [Fact]

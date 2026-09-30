@@ -37,7 +37,7 @@ namespace Imagino.Api.Services.Billing
                 });
                 customerId = customer.Id;
                 user.StripeCustomerId = customerId;
-                await _users.UpdateAsync(user);
+                await _users.SetStripeCustomerIdAsync(user.Id!, customerId);
             }
 
             var price = plan.ToUpper() switch

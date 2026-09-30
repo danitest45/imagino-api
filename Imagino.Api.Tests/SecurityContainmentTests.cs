@@ -310,6 +310,9 @@ internal sealed class SecurityApiFactory : WebApplicationFactory<Program>
     public Mock<IImageJobRepository> ImageJobs { get; } = new();
     public Mock<IVideoJobRepository> VideoJobs { get; } = new();
     public Mock<IVideoModelProviderService> VideoProviders { get; } = new();
+    public Mock<IGoogleOAuthClient> Google { get; } = new();
+    public Dictionary<string, string> ExtraSettings { get; } = new();
+    public Mock<Imagino.Api.Services.WebhookImage.IWebhookImageService> Webhooks { get; } = new();
 
     public SecurityApiFactory()
     {
@@ -329,6 +332,11 @@ internal sealed class SecurityApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:Audience", Audience);
         builder.UseSetting("ImageGeneratorSettings:MongoConnection", "mongodb://127.0.0.1:27017");
         builder.UseSetting("Admin:UserIds:0", "admin-user");
+        builder.UseSetting("Google:ClientId", "test-client");
+        builder.UseSetting("Google:ClientSecret", "test-secret");
+        builder.UseSetting("Google:RedirectUri", "https://api.example.test/api/auth/google/callback");
+        builder.UseSetting("Webhooks:ReplicateSigningSecret", "whsec_dGVzdC1zaWduaW5nLXNlY3JldA==");
+        foreach (var setting in ExtraSettings) builder.UseSetting(setting.Key, setting.Value);
         builder.ConfigureLogging(logging => logging.ClearProviders());
         builder.ConfigureTestServices(services =>
         {
@@ -348,6 +356,10 @@ internal sealed class SecurityApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(ImageJobs.Object);
             services.AddSingleton(VideoJobs.Object);
             services.AddSingleton(VideoProviders.Object);
+            services.RemoveAll<IGoogleOAuthClient>();
+            services.RemoveAll<Imagino.Api.Services.WebhookImage.IWebhookImageService>();
+            services.AddSingleton(Google.Object);
+            services.AddSingleton(Webhooks.Object);
         });
     }
 

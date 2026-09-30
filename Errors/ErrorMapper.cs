@@ -23,7 +23,7 @@ public static class ErrorMapper
             WebhookSignatureException wse => (400, ErrorCodes.WEBHOOK_SIGNATURE_INVALID, "Invalid webhook signature", wse.Message, null),
             WebhookProcessingException wpe => (500, ErrorCodes.WEBHOOK_PROCESSING_FAILED, "Webhook processing failed", wpe.Message, null),
             ConflictAppException cae => (409, ErrorCodes.CONFLICT, "Conflict", cae.Message, null),
-            _ => (500, ErrorCodes.INTERNAL, "Internal Server Error", ex.Message, null)
+            _ => (500, ErrorCodes.INTERNAL, "Internal Server Error", "An unexpected error occurred.", null)
         };
     }
 }

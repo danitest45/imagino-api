@@ -83,3 +83,15 @@ Também para a Phase 0B: testar produção equivalente em staging, revisar índi
 - Testes: `Imagino.Api.Tests/Imagino.Api.Tests.csproj`, `Imagino.Api.Tests/ImageJobCreationServiceTests.cs`, `Imagino.Api.Tests/SecurityContainmentTests.cs`, `Imagino.Api.Tests/UserServiceTests.cs`.
 - Este relatório: `SECURITY_CONTAINMENT_REPORT.md`.
 - Frontend, em PR separada: `imagino-front/src/lib/download.ts`, `src/lib/api.ts`, `src/types/user.ts`, `src/components/Navbar.tsx`, `src/components/profile/UserInfo.tsx`.
+## Continuação Phase 0B.1 — 2026-09-30
+
+A preparação operacional está em `SECURITY_OPERATIONAL_PLAN.md`, em uma nova
+branch dependente desta Phase 0A. Acrescenta OAuth state/nonce/PKCE sem JWT na URL,
+assinatura/vínculo/idempotência de callbacks, SSRF também no proxy frontend,
+avatar com limites/magic bytes, hash/rotação atômica de refresh, updates parciais
+de usuário e ledger de crédito Stripe, configuração sanitizada e remoção da
+referência ASP.NET 2.3.0. Nenhum merge/deploy/rotação ocorreu.
+
+Gates operacionais incluem credencial Atlas administrativa, um grupo de e-mails
+duplicados, jobs legados, signing secret Replicate ausente e isolamento dos envs
+Preview. Tests desta fase: API 65/65; frontend 7/7; build/typecheck aprovados.

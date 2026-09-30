@@ -119,12 +119,12 @@ namespace Imagino.Api.Controllers
                     }
                 }
 
-                await _users.UpdateAsync(user);
+                await _users.UpdateBillingAsync(user);
 
                 var creditsToAdd = GetCreditsForPlan(user.Plan);
                 if (creditsToAdd > 0 && string.Equals(session.PaymentStatus, "paid", StringComparison.OrdinalIgnoreCase))
                 {
-                    var incremented = await _users.IncrementCreditsAsync(user.Id!, creditsToAdd);
+                    var incremented = await _users.IncrementBillingCreditsOnceAsync(user.Id!, creditsToAdd, $"checkout-credit-{session.Id}");
                     if (incremented)
                     {
                         _logger.LogInformation("Credits added on checkout session completed. UserId={UserId}, Plan={Plan}, Credits={Credits}, EventId={EventId}", user.Id, user.Plan, creditsToAdd, stripeEvent.Id);
@@ -153,7 +153,7 @@ namespace Imagino.Api.Controllers
                                 priceId == _settings.PriceUltra ? "ULTRA" : user.Plan;
                 }
 
-                await _users.UpdateAsync(user);
+                await _users.UpdateBillingAsync(user);
             }
         }
 
@@ -200,7 +200,7 @@ namespace Imagino.Api.Controllers
                         user.Plan = MapPlanFromPrice(priceId, user.Plan);
                     }
 
-                    await _users.UpdateAsync(user);
+                    await _users.UpdateBillingAsync(user);
                 }
 
                 var creditsToAdd = GetCreditsForPlan(user.Plan);
@@ -209,7 +209,7 @@ namespace Imagino.Api.Controllers
                     var creditEventId = $"invoice-credit-{invoice.Id}";
                     if (await _events.ExistsAsync(creditEventId)) return;
 
-                    var incremented = await _users.IncrementCreditsAsync(user.Id!, creditsToAdd);
+                    var incremented = await _users.IncrementBillingCreditsOnceAsync(user.Id!, creditsToAdd, creditEventId);
                     if (incremented)
                     {
                         await _events.CreateAsync(new Models.StripeEventRecord { EventId = creditEventId, Created = DateTime.UtcNow });

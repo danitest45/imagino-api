@@ -17,7 +17,8 @@ namespace Imagino.Api.Services
         public ResendEmailSender(HttpClient http, IConfiguration config, IOptions<EmailSettings> options, ILogger<BillingController> logger)
         {
             _http = http;
-            _apiKey = config["RESEND__API_KEY"] ?? config["RESEND:ApiKey"] ?? config["RESEND_API_KEY"] ?? string.Empty;
+            _apiKey = new[] { config["Resend:ApiKey"], config["RESEND:API_KEY"], config["RESEND__API_KEY"], config["RESEND_API_KEY"] }
+                .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
             _settings = options.Value;
             _logger = logger;
         }

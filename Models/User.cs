@@ -5,6 +5,7 @@ using System;
 
 namespace Imagino.Api.Models
 {
+    [BsonIgnoreExtraElements]
     public class User
     {
         [BsonId]
@@ -30,6 +31,8 @@ namespace Imagino.Api.Models
         [BsonRepresentation(BsonType.String)]
         public SubscriptionType Subscription { get; set; } = SubscriptionType.Free;
         public int Credits { get; set; } = 0;
+        [BsonIgnoreIfNull]
+        public List<string>? BillingCreditEvents { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }

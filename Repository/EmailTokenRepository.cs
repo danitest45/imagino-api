@@ -16,11 +16,7 @@ namespace Imagino.Api.Repository
             var client = new MongoClient(settings.Value.MongoConnection);
             var db = client.GetDatabase(settings.Value.MongoDatabase);
             _collection = db.GetCollection<EmailToken>("email_tokens");
-            var index = Builders<EmailToken>.IndexKeys
-                .Ascending(x => x.UserId)
-                .Ascending(x => x.Purpose)
-                .Ascending(x => x.ExpiresAt);
-            _collection.Indexes.CreateOne(new CreateIndexModel<EmailToken>(index));
+            // Indexes are provisioned only by an explicitly approved migration.
         }
 
         private static string Hash(string raw)

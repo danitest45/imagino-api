@@ -84,11 +84,11 @@ namespace Imagino.Api.Services.Image.Providers
                 }
             };
 
-            var endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent" +
-                           $"?key={apiKey}";
+            var endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent";
 
-            var client = _httpClientFactory.CreateClient();
+            var client = _httpClientFactory.CreateClient("ProviderSecure");
             using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+            request.Headers.Add("x-goog-api-key", apiKey);
             request.Content = JsonContent.Create(payload, options: new JsonSerializerOptions
             {
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull

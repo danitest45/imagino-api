@@ -17,14 +17,31 @@ namespace Imagino.Api.Repository
             _collection = database.GetCollection<RefreshToken>("RefreshTokens");
         }
 
-        public async Task CreateAsync(RefreshToken token) =>
-            await _collection.InsertOneAsync(token);
+        public async Task CreateAsync(RefreshToken token)
+        {
+            await _collection.InsertOneAsync(ForStorage(token));
+        }
+
+        public static RefreshToken ForStorage(RefreshToken token)
+        {
+            if (string.IsNullOrEmpty(token.Token)) throw new ArgumentException("Refresh token is required.");
+            return new RefreshToken { Id = token.Id, UserId = token.UserId, ExpiresAt = token.ExpiresAt, CreatedAt = DateTime.UtcNow,
+                TokenHash = Imagino.Api.Security.TokenSecurity.Hash(token.Token) };
+        }
+
+        public static FilterDefinition<RefreshToken> TokenFilter(string token) =>
+            Builders<RefreshToken>.Filter.Eq(t => t.TokenHash, Imagino.Api.Security.TokenSecurity.Hash(token)) |
+            (Builders<RefreshToken>.Filter.Eq(t => t.TokenHash, null) & Builders<RefreshToken>.Filter.Eq(t => t.Token, token));
+
+        public async Task<RefreshToken?> ConsumeAsync(string token) =>
+            await _collection.FindOneAndDeleteAsync(TokenFilter(token) &
+                Builders<RefreshToken>.Filter.Gt(t => t.ExpiresAt, DateTime.UtcNow));
 
         public async Task<RefreshToken?> GetByTokenAsync(string token) =>
-            await _collection.Find(t => t.Token == token).FirstOrDefaultAsync();
+            await _collection.Find(TokenFilter(token)).FirstOrDefaultAsync();
 
         public async Task DeleteAsync(string token) =>
-            await _collection.DeleteOneAsync(t => t.Token == token);
+            await _collection.DeleteOneAsync(TokenFilter(token));
 
         public async Task DeleteByUserIdAsync(string userId) =>
             await _collection.DeleteManyAsync(t => t.UserId == userId);

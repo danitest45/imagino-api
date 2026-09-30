@@ -87,7 +87,7 @@ namespace Imagino.Api.Tests
             Assert.Equal("customer", user.StripeCustomerId);
             Assert.Equal("subscription", user.StripeSubscriptionId);
             repo.Verify(r => r.UpdateProfileAsync("user-a", "new", user.PhoneNumber, It.IsAny<System.DateTime>()), Times.Once);
-            repo.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
+            repo.Verify(r => r.UpdateBillingAsync(It.IsAny<User>()), Times.Never);
         }
 
         [Fact]
@@ -100,7 +100,7 @@ namespace Imagino.Api.Tests
             storage.Setup(s => s.UploadAsync(It.IsAny<Stream>(), It.IsAny<string>(), "image/png", It.IsAny<CancellationToken>()))
                 .ReturnsAsync("https://example.test/avatar.png");
             var service = new UserService(repo.Object, storage.Object);
-            using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+            using var stream = new MemoryStream(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 });
             var file = new FormFile(stream, 0, stream.Length, "File", "avatar.png")
             {
                 Headers = new HeaderDictionary(), ContentType = "image/png"
@@ -111,7 +111,7 @@ namespace Imagino.Api.Tests
             Assert.Equal("https://example.test/avatar.png", url);
             Assert.Equal(17, user.Credits);
             repo.Verify(r => r.UpdateProfileImageAsync("user-a", url, It.IsAny<System.DateTime>()), Times.Once);
-            repo.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
+            repo.Verify(r => r.UpdateBillingAsync(It.IsAny<User>()), Times.Never);
         }
 
         [Fact]

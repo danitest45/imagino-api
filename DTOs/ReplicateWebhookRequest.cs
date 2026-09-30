@@ -4,6 +4,7 @@
     {
         public string Id { get; set; }
         public string Status { get; set; }
+        [System.Text.Json.Serialization.JsonConverter(typeof(WebhookOutputConverter))]
         public string? Output { get; set; }
         public Dictionary<string, object>? Input { get; set; }
         public string? Logs { get; set; }

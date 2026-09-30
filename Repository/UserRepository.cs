@@ -38,8 +38,14 @@ namespace Imagino.Api.Repository
         public async Task CreateAsync(User user) =>
             await _collection.InsertOneAsync(user);
 
-        public async Task UpdateAsync(User user) =>
-            await _collection.ReplaceOneAsync(u => u.Id == user.Id, user);
+        public async Task MarkEmailVerifiedAsync(string id, DateTime now) =>
+            await _collection.UpdateOneAsync(u => u.Id == id, Imagino.Api.Security.UserUpdates.VerifyEmail(now));
+        public async Task SetPasswordHashAsync(string id, string hash) =>
+            await _collection.UpdateOneAsync(u => u.Id == id, Imagino.Api.Security.UserUpdates.Password(hash));
+        public async Task SetStripeCustomerIdAsync(string id, string customerId) =>
+            await _collection.UpdateOneAsync(u => u.Id == id, Imagino.Api.Security.UserUpdates.Customer(customerId));
+        public async Task UpdateBillingAsync(User user) =>
+            await _collection.UpdateOneAsync(u => u.Id == user.Id, Imagino.Api.Security.UserUpdates.Billing(user));
 
         public async Task UpdateProfileAsync(string id, string username, string? phoneNumber, DateTime updatedAt)
         {
@@ -76,6 +82,17 @@ namespace Imagino.Api.Repository
         {
             var update = Builders<User>.Update.Inc(u => u.Credits, amount);
             var result = await _collection.UpdateOneAsync(u => u.Id == userId, update);
+            return result.ModifiedCount == 1;
+        }
+
+        public static FilterDefinition<User> BillingCreditFilter(string userId, string eventId) =>
+            Builders<User>.Filter.Eq(u => u.Id, userId) & Builders<User>.Filter.Ne("BillingCreditEvents", eventId);
+
+        public async Task<bool> IncrementBillingCreditsOnceAsync(string userId, int amount, string eventId)
+        {
+            if (amount <= 0 || string.IsNullOrWhiteSpace(eventId)) throw new ArgumentException("Invalid billing credit event.");
+            var result = await _collection.UpdateOneAsync(BillingCreditFilter(userId, eventId),
+                Builders<User>.Update.Inc(u => u.Credits, amount).AddToSet(u => u.BillingCreditEvents, eventId));
             return result.ModifiedCount == 1;
         }
 

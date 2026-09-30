@@ -95,3 +95,26 @@ referência ASP.NET 2.3.0. Nenhum merge/deploy/rotação ocorreu.
 Gates operacionais incluem credencial Atlas administrativa, um grupo de e-mails
 duplicados, jobs legados, signing secret Replicate ausente e isolamento dos envs
 Preview. Tests desta fase: API 65/65; frontend 7/7; build/typecheck aprovados.
+
+## Ajustes finais antes da Phase 0B.2 — 2026-09-30
+
+- `GeneratedImageValidator` separado do validator de avatar: limite de 20 MiB,
+  PNG/JPEG/WebP por magic bytes. O avatar permanece em 5 MiB. AVIF não foi
+  habilitado por ausência de necessidade/suporte confirmado.
+- `VerifiedWebhookImageService` usa o validator de geração para Replicate e
+  RunPod. Replicate limita o download a 20 MiB; RunPod limita base64, bytes
+  decodificados e envelope JSON assinado, sem habilitar o provider por padrão.
+- Startup rejeita Replicate com API key ou webhook configurado e signing secret
+  ausente. A mensagem identifica apenas o nome da configuração.
+- Os redirects após login normal e OAuth no frontend agora levam a `/images`,
+  cujo catálogo existente resolve o modelo disponível. As duas referências
+  restantes a `/images/replicate` são links de galeria: `src/app/page.tsx`
+  (Explore gallery) e `src/app/_components/ClientGallery.tsx` (Browse entire
+  library). Permanecem para revisão posterior, conforme o escopo solicitado.
+- Verificações locais: `dotnet build` sem erros (30 warnings de nulabilidade
+  existentes); `dotnet test` 82/82; `npm test` 7/7; `npx tsc --noEmit` sem erros.
+  Testes incluem PNG completo acima de 5 MiB, rejeição acima de 20 MiB/formato
+  inválido, ambos os callbacks, envelope RunPod assinado e config Replicate.
+
+PRs atuais #55/#86 atualizados por commits adicionais. Nenhum merge/deploy ou
+alteração de configuração em produção; staging ainda não criado nesta etapa.

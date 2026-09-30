@@ -11,7 +11,7 @@ namespace Imagino.Api.Controllers;
 public class WebhooksController(IWebhookImageService service, IConfiguration config) : ControllerBase
 {
     [HttpPost("runpod")]
-    [RequestSizeLimit(16 * 1024 * 1024)]
+    [RequestSizeLimit(GeneratedImageValidator.MaxWebhookBodyBytes)]
     public async Task<IActionResult> RunPod()
     {
         // Native RunPod callbacks do not have a verified signing contract. A trusted
@@ -28,7 +28,7 @@ public class WebhooksController(IWebhookImageService service, IConfiguration con
     private async Task<IActionResult> ReceiveAsync<T>(string key, Func<T, Task<JobStatusResponse>> process)
     {
         if (string.IsNullOrWhiteSpace(config[key])) return StatusCode(503);
-        var max = typeof(T) == typeof(RunPodContentResponse) ? 16 * 1024 * 1024 : 1024 * 1024;
+        var max = typeof(T) == typeof(RunPodContentResponse) ? GeneratedImageValidator.MaxWebhookBodyBytes : 1024 * 1024;
         using var body = new MemoryStream();
         var buffer = new byte[8192];
         int read;
@@ -39,7 +39,7 @@ public class WebhooksController(IWebhookImageService service, IConfiguration con
         }
         var bytes = body.ToArray();
         if (!WebhookVerifier.Verify(bytes, Request.Headers["webhook-id"], Request.Headers["webhook-timestamp"],
-            Request.Headers["webhook-signature"], config[key], DateTimeOffset.UtcNow)) return Unauthorized();
+            Request.Headers["webhook-signature"], config[key], DateTimeOffset.UtcNow, max)) return Unauthorized();
         try
         {
             var payload = JsonSerializer.Deserialize<T>(bytes, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });

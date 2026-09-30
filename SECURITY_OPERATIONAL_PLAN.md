@@ -56,7 +56,7 @@ até comprovar revogação fora desta fase. Valores não constam deste documento
 | `Cors__AllowedOrigins__0..4` | Presente | Sim, cinco nomes | Browser com cookies | Não | Restringir a origens exatas | Revisar lista antes do rollout; nenhuma permissão global `*.vercel.app` |
 | `RefreshTokenCookie__Secure/HttpOnly/SameSite/Domain/ExpiresDays` | Presente | Não observado | Sessões; defaults do JSON | Não | Revisar host/domain/SameSite e expiração | HTTPS e domínio compatível → browser staging → manter no rollout |
 | `Admin__UserIds__0..N` | Ausente; PR adiciona lista vazia | Não observado | Rotas admin negadas por padrão | Não; identificadores internos | Definir só IDs autorizados, sem conceder a todos | Confirmar operador/admin em staging e depois produção autorizada |
-| `Webhooks__ReplicateSigningSecret` | Novo vazio | Não observado | Callback Replicate falha fechado sem ele | Sim | Obter da conta correta, sem publicar | Antes de ativar o novo receiver |
+| `Webhooks__ReplicateSigningSecret` | Novo vazio | Não observado | Startup rejeita Replicate com API key/webhook configurado sem ele; callback falha fechado | Sim | Obter da conta correta, sem publicar | Antes de ativar o novo receiver |
 | `Webhooks__RunPodEnabled/RunPodSigningSecret` | Novo desligado/vazio | Não observado | Gateway customizado; não é assinatura nativa confirmada | Flag não; chave sim | Não habilitar automaticamente | Confirmar necessidade → gateway confiável → teste de assinatura/job |
 | `Auth__RefreshTokensValidAfter` | Novo opcional, ausente | Não observado | Corte global de sessões na rotação | Não | Não ativado nesta fase | Ativar com a nova chave JWT apenas na rotação aprovada |
 | `NEXT_PUBLIC_API_URL` (Vercel) | Nome público/exemplo | Sim, All Environments | Destino da API do frontend | Não | Separar Preview/Production | Preview → API staging; nunca credencial aqui |
@@ -111,7 +111,7 @@ Produção: Phase 0A #54/#85 → revisão Phase 0B.1 → staging validado
   existe, mas exige gateway/worker confiável. Nenhuma afirmação de suporte nativo.
 - SSRF: API valida HTTPS/443, host do provider/R2, sem userinfo/IP literal;
   socket usa DNS público verificado e endereço fixado, sem proxy/auto redirect.
-  Download autenticado da imagem até 20 MiB; callbacks até 5 MiB; Veo até 100 MiB
+  Download autenticado da imagem e outputs de callbacks até 20 MiB; Veo até 100 MiB
   e deadline de dois minutos. Chave Google só no host Google, nunca em storage.
   Endpoint Replicate limitado à API oficial; chave Gemini saiu da query string.
 - Frontend: proxy arbitrário corrigido, allowlist por ambiente, DNS público fixado,
@@ -398,7 +398,7 @@ download/redirect, updates Mongo renderizados, plaintext/hash/cutoff e concorrê
 do frontend. Não comprovam TLS/DNS real, Mongo concorrente real, console Google,
 provider, storage ou billing externos. Esses gates ficam em staging.
 
-Resultado final: **65/65 testes API**, zero falhas/ignorados; build com zero erros
+Resultado após ajustes finais: **82/82 testes API**, zero falhas/ignorados; build com zero erros
 e 30 warnings de nulabilidade no código legado/testes. Restore concluído com
 acesso ao cache/configuração NuGet local. A referência removida não aparece no
 grafo restaurado.

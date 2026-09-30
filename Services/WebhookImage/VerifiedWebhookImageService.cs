@@ -14,14 +14,15 @@ public class WebhookImageService(IImageJobRepository jobs, IUserRepository users
         ProcessAsync(payload.id, "RunPod", payload.status == "COMPLETED", async () =>
         {
             var encoded = payload.output?.images?.FirstOrDefault() ?? throw new ValidationAppException("Missing provider output.");
-            if (encoded.Length > 8 * 1024 * 1024) throw new ValidationAppException("Provider output too large.");
             var comma = encoded.StartsWith("data:image/", StringComparison.Ordinal) ? encoded.IndexOf(',') : -1;
-            return Convert.FromBase64String(comma >= 0 ? encoded[(comma + 1)..] : encoded);
+            var base64 = comma >= 0 ? encoded[(comma + 1)..] : encoded;
+            if (base64.Length > GeneratedImageValidator.MaxBase64Chars) throw new ValidationAppException("Provider output too large.");
+            return Convert.FromBase64String(base64);
         });
 
     public Task<JobStatusResponse> ProcessarWebhookReplicateAsync(ReplicateWebhookRequest payload) =>
         ProcessAsync(payload.Id, "Replicate", payload.Status == "succeeded", () =>
-            downloader.DownloadAsync(payload.Output ?? "", new[] { "replicate.delivery", "*.replicate.delivery" }, AvatarValidator.MaxBytes));
+            downloader.DownloadAsync(payload.Output ?? "", new[] { "replicate.delivery", "*.replicate.delivery" }, GeneratedImageValidator.MaxBytes));
 
     private async Task<JobStatusResponse> ProcessAsync(string providerId, string provider, bool succeeded, Func<Task<byte[]>> download)
     {
@@ -37,7 +38,7 @@ public class WebhookImageService(IImageJobRepository jobs, IUserRepository users
         try
         {
             var bytes = await download();
-            var format = AvatarValidator.Identify(bytes);
+            var format = GeneratedImageValidator.Identify(bytes);
             using var stream = new MemoryStream(bytes, writable: false);
             // Persisted local job id determines the key, never a provider-supplied path.
             var url = await storage.UploadAsync(stream, $"images/{job.Id}{format.Extension}", format.ContentType);

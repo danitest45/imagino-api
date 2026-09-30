@@ -22,6 +22,9 @@ public static class StartupConfiguration
             var enabled = group.Take(2).Any(k => !string.IsNullOrWhiteSpace(config[k]));
             if (enabled) foreach (var key in group) if (string.IsNullOrWhiteSpace(config[key])) errors.Add(key + " is required for its integration");
         }
+        if (new[] { "ReplicateSettings:ApiKey", "ReplicateSettings:WebhookUrl" }.Any(k => !string.IsNullOrWhiteSpace(config[k])) &&
+            string.IsNullOrWhiteSpace(config["Webhooks:ReplicateSigningSecret"]))
+            errors.Add("Webhooks:ReplicateSigningSecret is required for Replicate");
         if (errors.Count != 0) throw new InvalidOperationException("Invalid configuration: " + string.Join("; ", errors));
     }
 }

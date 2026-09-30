@@ -32,11 +32,20 @@ wildcards não são aceitos com cookies. Remova entradas herdadas com curingas.
 | Admin | `Admin__UserIds__0`, `__1`, etc.; vazio nega acesso |
 | RunPod legado | `ImageGeneratorSettings__RunPodApiKey`, `ImageGeneratorSettings__RunPodApiUrl`, `ImageGeneratorSettings__WebhookUrl`; `Webhooks__RunPodEnabled` desligado por padrão, `Webhooks__RunPodSigningSecret` somente para gateway confiável |
 
-Google, Stripe e R2 parcialmente configurados são rejeitados no startup. Antes de
+Google, Stripe e R2 parcialmente configurados são rejeitados no startup. Replicate
+exige `Webhooks__ReplicateSigningSecret` no startup quando `ApiKey` ou `WebhookUrl`
+estiver preenchido; deixe ambos vazios para desabilitar essa integração. Antes de
 testar geração/storage/e-mail, forneça as credenciais da integração correspondente.
 O callback Replicate retorna 503 sem signing secret e 401 para assinatura inválida.
 O RunPod exige gateway/worker com o mesmo protocolo de assinatura; não é uma
 assinatura nativa confirmada do provider. Não habilite por receber callbacks antigos.
+
+Avatares permanecem limitados a 5 MiB. Outputs gerados usam validação própria:
+20 MiB, magic bytes PNG/JPEG/WebP e extensão/MIME derivados no servidor. AVIF
+não foi habilitado: não há necessidade/suporte confirmado nesta fase. O download
+Replicate tem o mesmo limite real de 20 MiB. RunPod admite base64 de até 20 MiB
+decodificados, com envelope JSON limitado ao tamanho base64 máximo + 64 KiB;
+continua desabilitado por padrão e exige gateway/worker com assinatura validada.
 
 O OAuth começa em `GET /api/auth/google/login`. Configure o callback da API no
 cliente Google dedicado ao ambiente; o frontend não precisa de ClientId/RedirectUri.

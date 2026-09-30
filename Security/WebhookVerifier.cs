@@ -6,9 +6,9 @@ namespace Imagino.Api.Security;
 public static class WebhookVerifier
 {
     public static bool Verify(ReadOnlySpan<byte> body, string? id, string? timestamp, string? signatures,
-        string? secret, DateTimeOffset now)
+        string? secret, DateTimeOffset now, int maxBodyBytes = 1024 * 1024)
     {
-        if (body.Length > 16 * 1024 * 1024 || string.IsNullOrEmpty(id) || id.Length > 200 ||
+        if (body.Length > maxBodyBytes || string.IsNullOrEmpty(id) || id.Length > 200 ||
             string.IsNullOrEmpty(signatures) || signatures.Length > 2048 ||
             string.IsNullOrEmpty(secret) || !long.TryParse(timestamp, out var seconds) ||
             seconds < now.ToUnixTimeSeconds() - 300 || seconds > now.ToUnixTimeSeconds() + 300) return false;

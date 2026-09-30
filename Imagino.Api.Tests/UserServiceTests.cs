@@ -1,10 +1,13 @@
 using System.Threading.Tasks;
+using System.IO;
+using System.Threading;
 using Imagino.Api.DTOs;
 using Imagino.Api.Models;
 using Imagino.Api.Repository;
 using Imagino.Api.Services;
 using Imagino.Api.Services.Storage;
 using Moq;
+using Microsoft.AspNetCore.Http;
 using Xunit;
 
 #nullable enable
@@ -60,7 +63,8 @@ namespace Imagino.Api.Tests
         {
             var user = new User
             {
-                Id = "user-a", Email = "a@example.test", Username = "old",
+                Id = "user-a", Email = "a@example.test", PasswordHash = "original-hash",
+                ProfileImageUrl = "https://example.test/original.png", Username = "old",
                 Credits = 17, Subscription = SubscriptionType.Free,
                 Plan = "PRO", SubscriptionStatus = "active",
                 StripeCustomerId = "customer", StripeSubscriptionId = "subscription"
@@ -73,13 +77,41 @@ namespace Imagino.Api.Tests
             await service.UpdateAsync("user-a", new UserProfileUpdateDto { Username = "new" });
 
             Assert.Equal("new", user.Username);
+            Assert.Equal("a@example.test", user.Email);
+            Assert.Equal("original-hash", user.PasswordHash);
+            Assert.Equal("https://example.test/original.png", user.ProfileImageUrl);
             Assert.Equal(17, user.Credits);
             Assert.Equal(SubscriptionType.Free, user.Subscription);
             Assert.Equal("PRO", user.Plan);
             Assert.Equal("active", user.SubscriptionStatus);
             Assert.Equal("customer", user.StripeCustomerId);
             Assert.Equal("subscription", user.StripeSubscriptionId);
-            repo.Verify(r => r.UpdateAsync(user), Times.Once);
+            repo.Verify(r => r.UpdateProfileAsync("user-a", "new", user.PhoneNumber, It.IsAny<System.DateTime>()), Times.Once);
+            repo.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task AvatarUpload_UpdatesOnlyProfileImageField()
+        {
+            var user = new User { Id = "user-a", Username = "a", Credits = 17 };
+            var repo = new Mock<IUserRepository>();
+            repo.Setup(r => r.GetByIdAsync("user-a")).ReturnsAsync(user);
+            var storage = new Mock<IStorageService>();
+            storage.Setup(s => s.UploadAsync(It.IsAny<Stream>(), It.IsAny<string>(), "image/png", It.IsAny<CancellationToken>()))
+                .ReturnsAsync("https://example.test/avatar.png");
+            var service = new UserService(repo.Object, storage.Object);
+            using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+            var file = new FormFile(stream, 0, stream.Length, "File", "avatar.png")
+            {
+                Headers = new HeaderDictionary(), ContentType = "image/png"
+            };
+
+            var url = await service.UpdateProfileImageAsync("user-a", file);
+
+            Assert.Equal("https://example.test/avatar.png", url);
+            Assert.Equal(17, user.Credits);
+            repo.Verify(r => r.UpdateProfileImageAsync("user-a", url, It.IsAny<System.DateTime>()), Times.Once);
+            repo.Verify(r => r.UpdateAsync(It.IsAny<User>()), Times.Never);
         }
 
         [Fact]

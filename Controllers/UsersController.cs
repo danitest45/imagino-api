@@ -111,6 +111,14 @@ namespace Imagino.Api.Controllers
             return Ok(new { imageUrl });
         }
 
+        [HttpPost("me/profile-image")]
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult> UploadMyProfileImage([FromForm] UploadProfileImageDto form)
+        {
+            var userId = CurrentUserId();
+            return userId == null ? Unauthorized() : await UploadProfileImage(userId, form);
+        }
+
         [HttpPost("{id}/credits")]
         [Authorize(Policy = AdminAuthorization.Policy)]
         public async Task<IActionResult> AddCredits(string id, [FromBody] UpdateCreditsDto dto)

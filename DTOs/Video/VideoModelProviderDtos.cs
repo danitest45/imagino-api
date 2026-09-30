@@ -30,4 +30,16 @@ namespace Imagino.Api.DTOs.Video
 
         public DateTime UpdatedAt { get; set; }
     }
+
+    public class PublicVideoModelProviderDto
+    {
+        public string? Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public VideoProviderType ProviderType { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
 }

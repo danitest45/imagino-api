@@ -85,15 +85,6 @@ namespace Imagino.Api.Services
             var user = await _repository.GetByIdAsync(id);
             if (user == null) return null;
 
-            if (!string.IsNullOrEmpty(dto.Email))
-                user.Email = dto.Email;
-
-            if (!string.IsNullOrEmpty(dto.Password))
-                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
-
-            if (!string.IsNullOrEmpty(dto.ProfileImageUrl))
-                user.ProfileImageUrl = dto.ProfileImageUrl;
-
             if (!string.IsNullOrEmpty(dto.Username))
             {
                 var existing = await _repository.GetByUsernameAsync(dto.Username);
@@ -107,7 +98,7 @@ namespace Imagino.Api.Services
 
             user.UpdatedAt = DateTime.UtcNow;
 
-            await _repository.UpdateAsync(user);
+            await _repository.UpdateProfileAsync(id, user.Username, user.PhoneNumber, user.UpdatedAt);
             return user;
         }
 
@@ -125,7 +116,7 @@ namespace Imagino.Api.Services
 
             user.ProfileImageUrl = url;
             user.UpdatedAt = DateTime.UtcNow;
-            await _repository.UpdateAsync(user);
+            await _repository.UpdateProfileImageAsync(id, url, user.UpdatedAt);
 
             return user.ProfileImageUrl;
         }

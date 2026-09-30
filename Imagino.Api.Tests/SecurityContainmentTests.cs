@@ -6,11 +6,13 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Imagino.Api.Controllers;
 using Imagino.Api.Controllers.Admin.Image;
 using Imagino.Api.DTOs;
 using Imagino.Api.Models;
+using Imagino.Api.Models.Video;
 using Imagino.Api.Repository;
 using Imagino.Api.Security;
 using Imagino.Api.Services;
@@ -170,21 +172,86 @@ public class SecurityContainmentTests
     {
         using var factory = new SecurityApiFactory();
         factory.Users.Setup(s => s.UpdateAsync("user-a", It.IsAny<UserProfileUpdateDto>()))
-            .ReturnsAsync(new User { Id = "user-a", Username = "new-name", Credits = 7 });
+            .ReturnsAsync(new User
+            {
+                Id = "user-a", Username = "new-name", Credits = 7,
+                Email = "a@example.test", ProfileImageUrl = "https://example.test/original.png"
+            });
         using var client = factory.ClientFor("user-a");
 
-        Assert.Equal(HttpStatusCode.OK,
-            (await client.PutAsJsonAsync("/api/users/me", new { username = "new-name", credits = 1000000, subscription = "Ultra" })).StatusCode);
+        var response = await client.PutAsJsonAsync("/api/users/me", new
+        {
+            username = "new-name", phoneNumber = "123", credits = 1000000,
+            subscription = "Ultra", email = "attacker@example.test",
+            password = "new-password", profileImageUrl = "https://example.test/attacker.png"
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("a@example.test", json.RootElement.GetProperty("email").GetString());
+        Assert.Equal("https://example.test/original.png", json.RootElement.GetProperty("profileImageUrl").GetString());
+        Assert.Equal(7, json.RootElement.GetProperty("credits").GetInt32());
         factory.Users.Verify(s => s.UpdateAsync("user-a", It.Is<UserProfileUpdateDto>(
-            dto => dto.Username == "new-name")), Times.Once);
+            dto => dto.Username == "new-name" && dto.PhoneNumber == "123")), Times.Once);
     }
 
     [Fact]
     public void PublicProfileUpdateDtoHasNoEconomicProperties()
     {
         var properties = typeof(UserProfileUpdateDto).GetProperties().Select(p => p.Name).ToArray();
-        foreach (var forbidden in new[] { "Credits", "Subscription", "Plan", "SubscriptionStatus", "StripeCustomerId", "StripeSubscriptionId" })
+        foreach (var forbidden in new[] { "Credits", "Subscription", "Plan", "SubscriptionStatus", "StripeCustomerId", "StripeSubscriptionId", "Email", "Password", "ProfileImageUrl" })
             Assert.DoesNotContain(forbidden, properties);
+        Assert.Equal(new[] { "PhoneNumber", "Username" }, properties.OrderBy(p => p));
+    }
+
+    [Fact]
+    public async Task AvatarUploadRequiresAuthenticationAndOwnership()
+    {
+        using var factory = new SecurityApiFactory();
+        factory.Users.Setup(s => s.UpdateProfileImageAsync("user-a", It.IsAny<Microsoft.AspNetCore.Http.IFormFile>()))
+            .ReturnsAsync("https://example.test/avatar.png");
+        using var anonymous = factory.CreateClient();
+        using var owner = factory.ClientFor("user-a");
+
+        Assert.Equal(HttpStatusCode.Unauthorized,
+            (await anonymous.PostAsync("/api/users/me/profile-image", AvatarForm())).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await owner.PostAsync("/api/users/user-b/profile-image", AvatarForm())).StatusCode);
+        Assert.Equal(HttpStatusCode.OK,
+            (await owner.PostAsync("/api/users/me/profile-image", AvatarForm())).StatusCode);
+        factory.Users.Verify(s => s.UpdateProfileImageAsync("user-a", It.IsAny<Microsoft.AspNetCore.Http.IFormFile>()), Times.Once);
+        factory.Users.Verify(s => s.UpdateProfileImageAsync("user-b", It.IsAny<Microsoft.AspNetCore.Http.IFormFile>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PublicVideoProvidersNeverExposeConfig(bool authenticated)
+    {
+        using var factory = new SecurityApiFactory();
+        factory.VideoProviders.Setup(s => s.ListAsync()).ReturnsAsync(new List<VideoModelProvider>
+        {
+            new() { Name = "Video provider", Config = new Dictionary<string, string> { ["secret"] = "must-not-leak" } }
+        });
+        using var client = authenticated ? factory.ClientFor("user-a") : factory.CreateClient();
+
+        var response = await client.GetAsync("/api/video/providers");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var provider = json.RootElement[0];
+        Assert.Equal("Video provider", provider.GetProperty("name").GetString());
+        Assert.False(provider.TryGetProperty("config", out _));
+        Assert.DoesNotContain("must-not-leak", provider.ToString());
+    }
+
+    private static MultipartFormDataContent AvatarForm()
+    {
+        var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(new byte[] { 1, 2, 3 });
+        file.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+        form.Add(file, "File", "avatar.png");
+        return form;
     }
 
     [Fact]
@@ -242,6 +309,7 @@ internal sealed class SecurityApiFactory : WebApplicationFactory<Program>
     public Mock<IEmailSender> EmailSender { get; } = new();
     public Mock<IImageJobRepository> ImageJobs { get; } = new();
     public Mock<IVideoJobRepository> VideoJobs { get; } = new();
+    public Mock<IVideoModelProviderService> VideoProviders { get; } = new();
 
     public SecurityApiFactory()
     {
@@ -271,6 +339,7 @@ internal sealed class SecurityApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<IEmailSender>();
             services.RemoveAll<IImageJobRepository>();
             services.RemoveAll<IVideoJobRepository>();
+            services.RemoveAll<IVideoModelProviderService>();
             services.AddSingleton(Users.Object);
             services.AddSingleton(UserRepository.Object);
             services.AddSingleton(RefreshTokens.Object);
@@ -278,6 +347,7 @@ internal sealed class SecurityApiFactory : WebApplicationFactory<Program>
             services.AddSingleton(EmailSender.Object);
             services.AddSingleton(ImageJobs.Object);
             services.AddSingleton(VideoJobs.Object);
+            services.AddSingleton(VideoProviders.Object);
         });
     }
 

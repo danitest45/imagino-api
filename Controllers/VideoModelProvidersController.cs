@@ -22,10 +22,10 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<VideoModelProviderDto>>> List()
+        public async Task<ActionResult<List<PublicVideoModelProviderDto>>> List()
         {
             var providers = await _providerService.ListAsync();
-            var dtos = providers.Select(ToDto).ToList();
+            var dtos = providers.Select(ToPublicDto).ToList();
             return Ok(dtos);
         }
 
@@ -70,6 +70,15 @@ namespace Imagino.Api.Controllers
             Name = provider.Name,
             ProviderType = provider.ProviderType,
             Config = provider.Config,
+            CreatedAt = provider.CreatedAt,
+            UpdatedAt = provider.UpdatedAt
+        };
+
+        private static PublicVideoModelProviderDto ToPublicDto(VideoModelProvider provider) => new()
+        {
+            Id = provider.Id,
+            Name = provider.Name,
+            ProviderType = provider.ProviderType,
             CreatedAt = provider.CreatedAt,
             UpdatedAt = provider.UpdatedAt
         };

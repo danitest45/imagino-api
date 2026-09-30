@@ -11,6 +11,8 @@ namespace Imagino.Api.Repository
         Task<IEnumerable<User>> GetAllAsync();
         Task CreateAsync(User user);
         Task UpdateAsync(User user);
+        Task UpdateProfileAsync(string id, string username, string? phoneNumber, DateTime updatedAt);
+        Task UpdateProfileImageAsync(string id, string imageUrl, DateTime updatedAt);
         Task DeleteAsync(string id);
         Task<bool> DecrementCreditsAsync(string userId, int amount);
         Task<bool> IncrementCreditsAsync(string userId, int amount);

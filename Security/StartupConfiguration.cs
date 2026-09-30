@@ -25,6 +25,8 @@ public static class StartupConfiguration
         if (new[] { "ReplicateSettings:ApiKey", "ReplicateSettings:WebhookUrl" }.Any(k => !string.IsNullOrWhiteSpace(config[k])) &&
             string.IsNullOrWhiteSpace(config["Webhooks:ReplicateSigningSecret"]))
             errors.Add("Webhooks:ReplicateSigningSecret is required for Replicate");
+        // Fail startup if the optional synthetic-fixture configuration escapes staging.
+        StagingWebhookFixtures.ReplicateHosts(config);
         if (errors.Count != 0) throw new InvalidOperationException("Invalid configuration: " + string.Join("; ", errors));
     }
 }

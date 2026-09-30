@@ -1,5 +1,12 @@
 # Imagino Revival — Phase 0A: Security Containment
 
+## Staging de mídia — blocker pré-produção (30/09/2026)
+
+- r2.dev público está autorizado somente para objetos sintéticos de `imagino-images-staging`. Não é solução de mídia privada para produção.
+- **Blocker de promoção:** decidir e implementar signed URLs/presigned R2 com expiração curta e autorização antes da emissão, ou entrega autenticada. Manter objetos privados sem URL pública permanente, para que acesso direto ao objeto não contorne ownership da API. Rever também cache, revogação, URLs de vídeo e proxy público antes de promoção.
+- Fixtures Replicate podem usar apenas o host r2.dev exato configurado em staging mediante `Webhooks:StagingFixturesEnabled=true`. Configuração exige banco `imagino_staging`, os dois buckets staging, PublicUrl correspondente e nenhuma API key Replicate. Desativada por padrão; configuração fora desse isolamento falha no startup. Download continua com HTTPS, DNS público fixado, sem redirects e limite de 20 MiB; GeneratedImageValidator continua PNG/JPEG/WebP com magic bytes.
+- Nenhuma prediction real, segredo de produção, bucket de produção ou recurso Little Haven faz parte desse teste.
+
 Data: 29 de setembro de 2026. Repositório: `danitest45/imagino-api`. Branch: `fix/revival-security-containment`. Base da PR: `master`.
 
 ## Escopo e decisões

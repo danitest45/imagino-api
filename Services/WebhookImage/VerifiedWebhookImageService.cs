@@ -8,7 +8,7 @@ using Imagino.Api.Services.Storage;
 namespace Imagino.Api.Services.WebhookImage;
 
 public class WebhookImageService(IImageJobRepository jobs, IUserRepository users, IStorageService storage,
-    SafeMediaDownloader downloader) : IWebhookImageService
+    SafeMediaDownloader downloader, IConfiguration? config = null) : IWebhookImageService
 {
     public Task<JobStatusResponse> ProcessarWebhookRunPodAsync(RunPodContentResponse payload) =>
         ProcessAsync(payload.id, "RunPod", payload.status == "COMPLETED", async () =>
@@ -22,7 +22,7 @@ public class WebhookImageService(IImageJobRepository jobs, IUserRepository users
 
     public Task<JobStatusResponse> ProcessarWebhookReplicateAsync(ReplicateWebhookRequest payload) =>
         ProcessAsync(payload.Id, "Replicate", payload.Status == "succeeded", () =>
-            downloader.DownloadAsync(payload.Output ?? "", new[] { "replicate.delivery", "*.replicate.delivery" }, GeneratedImageValidator.MaxBytes));
+            downloader.DownloadAsync(payload.Output ?? "", StagingWebhookFixtures.ReplicateHosts(config), GeneratedImageValidator.MaxBytes));
 
     private async Task<JobStatusResponse> ProcessAsync(string providerId, string provider, bool succeeded, Func<Task<byte[]>> download)
     {

@@ -126,3 +126,22 @@ Preview. Tests desta fase: API 65/65; frontend 7/7; build/typecheck aprovados.
 
 PRs atuais #55/#86 atualizados por commits adicionais. Nenhum merge/deploy ou
 alteração de configuração em produção; staging ainda não criado nesta etapa.
+
+## Phase 0B.2C — hardening local Google OAuth — 2026-09-30
+
+- Corrigida ativação do grupo Google: qualquer uma das três configurações,
+  inclusive RedirectUri isolada, exige ClientId/ClientSecret/RedirectUri completos.
+  Erros de startup incluem somente nomes das configurações.
+- Fixtures RSA locais exercitam o GoogleOAuthClient e a validação oficial do
+  Google.Apis.Auth 1.70.0: assinatura, issuer, audience, expiry, nonce e e-mail
+  verificado. O cache de certificados é preparado/restaurado apenas no projeto
+  de testes, em collection sem paralelismo; nenhuma requisição real ao Google.
+- Testes adicionais: ausência do cookie de browser, código inválido, identidade
+  não verificada, consumo único após falha e ACCOUNT_LINK_REQUIRED com 409,
+  sem criação de usuário duplicado nem sessão. Account linking segue como
+  feature futura, sem vinculação automática por coincidência de e-mail.
+- dotnet build: 0 erros, 30 warnings existentes; dotnet test: 126/126.
+  Frontend: npm ci --no-audit --no-fund, npm test 10/10 e tsc --noEmit passaram.
+  O E2E Google real é um gate separado, ainda pendente nesta evidência local.
+
+Nenhum merge, alteração em produção, Stripe ou provider de IA pago nesta etapa.

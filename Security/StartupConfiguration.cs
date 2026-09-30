@@ -19,7 +19,9 @@ public static class StartupConfiguration
         foreach (var group in new[] { new[] { "Google:ClientId", "Google:ClientSecret", "Google:RedirectUri" }, new[] { "Stripe:ApiKey", "Stripe:WebhookSecret", "Stripe:PricePro", "Stripe:PriceUltra" }, new[] { "R2Settings:AccessKeyId", "R2Settings:SecretAccessKey", "R2Settings:ServiceUrl", "R2Settings:BucketName" } })
         {
             // An optional integration may be disabled, but never partially configured.
-            var enabled = group.Take(2).Any(k => !string.IsNullOrWhiteSpace(config[k]));
+            // Google has no harmless default metadata: any configured key requires the complete group.
+            var activationKeys = group[0] == "Google:ClientId" ? group : group.Take(2);
+            var enabled = activationKeys.Any(k => !string.IsNullOrWhiteSpace(config[k]));
             if (enabled) foreach (var key in group) if (string.IsNullOrWhiteSpace(config[key])) errors.Add(key + " is required for its integration");
         }
         if (new[] { "ReplicateSettings:ApiKey", "ReplicateSettings:WebhookUrl" }.Any(k => !string.IsNullOrWhiteSpace(config[k])) &&

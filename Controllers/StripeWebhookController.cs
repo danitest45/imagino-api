@@ -1,241 +1,119 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Stripe;
-using Stripe.Checkout;
 using Imagino.Api.Repository;
-using Imagino.Api.Errors;
 using Imagino.Api.Settings;
-using Newtonsoft.Json.Linq;
-
-namespace Imagino.Api.Controllers
+using Imagino.Api.Models;
+using Imagino.Api.Services.Billing;
+namespace Imagino.Api.Controllers;
+[ApiController, Route("api/stripe/webhook")]
+public class StripeWebhookController(IUserRepository users, IStripeEventRepository events,
+    IOptions<StripeSettings> options, IOptions<ImageGeneratorSettings> database,
+    IStripeBillingGateway stripe, ILogger<StripeWebhookController> logger) : ControllerBase
 {
-    [ApiController]
-    [Route("api/stripe/webhook")]
-    public class StripeWebhookController : ControllerBase
+    private StripeSettings Settings => options.Value;
+    private bool TestOnly => database.Value.MongoDatabase == "imagino_staging";
+    [HttpPost, Microsoft.AspNetCore.Authorization.AllowAnonymous, RequestSizeLimit(1024 * 1024)]
+    public async Task<IActionResult> Handle()
     {
-        private readonly IUserRepository _users;
-        private readonly IStripeEventRepository _events;
-        private readonly StripeSettings _settings;
-        private readonly ILogger<StripeWebhookController> _logger;
-
-        public StripeWebhookController(IUserRepository users, IStripeEventRepository events, IOptions<StripeSettings> settings, ILogger<StripeWebhookController> logger)
-        {
-            _users = users;
-            _events = events;
-            _settings = settings.Value;
-            _logger = logger;
-        }
-
-        [HttpPost]
-        [AllowAnonymous]
-        public async Task<IActionResult> Handle()
-        {
+        if (string.IsNullOrWhiteSpace(Settings.WebhookSecret)) return StatusCode(503);
+        if (!Request.Headers.TryGetValue("Stripe-Signature", out var signature) || string.IsNullOrWhiteSpace(signature))
+            return BadRequest(new { message = "Invalid webhook signature" });
+        Event ev;
+        try {
             var json = await new StreamReader(Request.Body).ReadToEndAsync();
-
-            if (!Request.Headers.TryGetValue("Stripe-Signature", out var signature) || string.IsNullOrEmpty(signature))
-                throw new WebhookSignatureException();
-
-            Event stripeEvent;
-            try
-            {
-                stripeEvent = EventUtility.ConstructEvent(json, signature, _settings.WebhookSecret);
+            ev = EventUtility.ConstructEvent(json, signature, Settings.WebhookSecret);
+        } catch (Exception ex) when (ex is StripeException or Newtonsoft.Json.JsonException or ArgumentException) {
+            return BadRequest(new { message = "Invalid webhook signature or event" });
+        }
+        if (string.IsNullOrWhiteSpace(ev.Id) || (TestOnly && ev.Livemode)) return BadRequest();
+        var claimId = Guid.NewGuid().ToString("N");
+        var acquired = false;
+        try {
+            var claim = await events.TryClaimAsync(new StripeEventRecord {
+                EventId = ev.Id, Created = ev.Created, Type = ev.Type, ClaimId = claimId
+            });
+            if (claim == StripeClaim.Completed) return Ok();
+            if (claim == StripeClaim.Busy) return StatusCode(503);
+            acquired = true;
+            switch (ev.Type) {
+                case "checkout.session.completed":
+                    if (ev.Data.Object is Stripe.Checkout.Session session && session.Mode == "subscription" &&
+                        session.PaymentStatus == "paid" && !string.IsNullOrEmpty(session.SubscriptionId) &&
+                        !string.IsNullOrEmpty(session.ClientReferenceId)) {
+                        var user = await users.GetByIdAsync(session.ClientReferenceId);
+                        if (user != null && !string.IsNullOrEmpty(user.StripeCustomerId) && user.StripeCustomerId == session.CustomerId) {
+                            var sub = await Reconcile(user, session.SubscriptionId, ev.Created);
+                            var invoiceId = session.InvoiceId ?? sub?.LatestInvoiceId;
+                            if (!string.IsNullOrEmpty(invoiceId)) await CreditInvoice(await stripe.GetInvoiceAsync(invoiceId));
+                        }
+                    }
+                    break;
+                case "invoice.paid":
+                case "invoice.payment_succeeded":
+                    if (ev.Data.Object is Invoice invoice) {
+                        await CreditInvoice(invoice);
+                        var user = await users.GetByStripeCustomerIdAsync(invoice.CustomerId);
+                        var id = invoice.Parent?.SubscriptionDetails?.SubscriptionId;
+                        if (user != null && !string.IsNullOrEmpty(id)) await Reconcile(user, id, ev.Created);
+                    }
+                    break;
+                case "customer.subscription.updated":
+                case "customer.subscription.deleted":
+                    if (ev.Data.Object is Stripe.Subscription subscription) {
+                        var user = await users.GetByStripeCustomerIdAsync(subscription.CustomerId);
+                        if (user != null) await Reconcile(user, subscription.Id, ev.Created);
+                    }
+                    break;
             }
-            catch (StripeException e)
-            {
-                throw new WebhookSignatureException(e.Message);
-            }
-
-            if (await _events.ExistsAsync(stripeEvent.Id))
-                return Ok();
-
-            try
-            {
-                switch (stripeEvent.Type)
-                {
-                    case "checkout.session.completed":
-                        await HandleCheckoutSessionCompleted(stripeEvent);
-                        break;
-                    case "invoice.paid":
-                    case "invoice.payment_succeeded":
-                        await HandleInvoicePaid(stripeEvent);
-                        break;
-                    case "customer.subscription.updated":
-                    case "customer.subscription.deleted":
-                        await HandleSubscriptionUpdated(stripeEvent);
-                        break;
-                    default:
-                        break;
-                }
-
-                await _events.CreateAsync(new Models.StripeEventRecord { EventId = stripeEvent.Id, Created = stripeEvent.Created });
-            }
-            catch (StripeException e)
-            {
-                _logger.LogError(e, "Stripe webhook error");
-                throw new StripeServiceException(e.Message, e.StripeError?.Code);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unhandled webhook error");
-                throw new WebhookProcessingException();
-            }
-
+            await events.CompleteAsync(ev.Id, claimId);
+            logger.LogInformation("Stripe webhook processing completed. Type={Type}", ev.Type);
             return Ok();
-        }
-
-        private async Task HandleCheckoutSessionCompleted(Event stripeEvent)
-        {
-            if (stripeEvent.Data.Object is Session session)
-            {
-                var userId = session.ClientReferenceId;
-                if (string.IsNullOrEmpty(userId)) return;
-                var user = await _users.GetByIdAsync(userId);
-                if (user == null) return;
-
-                user.StripeCustomerId = session.CustomerId;
-                user.StripeSubscriptionId = session.SubscriptionId;
-                user.Plan = session.Metadata != null && session.Metadata.TryGetValue("plan", out var plan)
-                    ? plan
-                    : user.Plan;
-
-                if (!string.IsNullOrEmpty(session.SubscriptionId))
-                {
-                    var subService = new SubscriptionService();
-                    var sub = await subService.GetAsync(session.SubscriptionId);
-                    user.SubscriptionStatus = sub.Status;
-                    var periodEndUnix = sub.RawJObject?["current_period_end"]?.Value<long?>();
-                    if (periodEndUnix.HasValue)
-                        user.CurrentPeriodEnd = DateTimeOffset.FromUnixTimeSeconds(periodEndUnix.Value);
-
-                    var priceId = sub.Items.Data.Count > 0 ? sub.Items.Data[0].Price.Id : null;
-                    if (!string.IsNullOrEmpty(priceId))
-                    {
-                        user.Plan = MapPlanFromPrice(priceId, user.Plan);
-                    }
-                }
-
-                await _users.UpdateBillingAsync(user);
-
-                var creditsToAdd = GetCreditsForPlan(user.Plan);
-                if (creditsToAdd > 0 && string.Equals(session.PaymentStatus, "paid", StringComparison.OrdinalIgnoreCase))
-                {
-                    var incremented = await _users.IncrementBillingCreditsOnceAsync(user.Id!, creditsToAdd, $"checkout-credit-{session.Id}");
-                    if (incremented)
-                    {
-                        _logger.LogInformation("Credits added on checkout session completed. UserId={UserId}, Plan={Plan}, Credits={Credits}, EventId={EventId}", user.Id, user.Plan, creditsToAdd, stripeEvent.Id);
-                    }
-                }
-            }
-        }
-
-        private async Task HandleSubscriptionUpdated(Event stripeEvent)
-        {
-            if (stripeEvent.Data.Object is Stripe.Subscription sub)
-            {
-                var user = await _users.GetByStripeCustomerIdAsync(sub.CustomerId);
-                if (user == null) return;
-
-                user.StripeSubscriptionId = sub.Id;
-                user.SubscriptionStatus = sub.Status;
-                var periodEnd = sub.RawJObject?["current_period_end"]?.Value<long?>();
-                if (periodEnd.HasValue)
-                    user.CurrentPeriodEnd = DateTimeOffset.FromUnixTimeSeconds(periodEnd.Value);
-
-                var priceId = sub.Items.Data.Count > 0 ? sub.Items.Data[0].Price.Id : null;
-                if (!string.IsNullOrEmpty(priceId))
-                {
-                    user.Plan = priceId == _settings.PricePro ? "PRO" :
-                                priceId == _settings.PriceUltra ? "ULTRA" : user.Plan;
-                }
-
-                await _users.UpdateBillingAsync(user);
-            }
-        }
-
-        private async Task HandleInvoicePaid(Event stripeEvent)
-        {
-            if (stripeEvent.Data.Object is Invoice invoice)
-            {
-                if (!string.Equals(invoice.Status, "paid", StringComparison.OrdinalIgnoreCase))
-                {
-                    return;
-                }
-
-                if (string.Equals(invoice.BillingReason, "subscription_create", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Crédito inicial já tratado no checkout
-                    return;
-                }
-
-                var customerId = invoice.CustomerId;
-
-                if (string.IsNullOrEmpty(customerId)) return;
-
-                var user = await _users.GetByStripeCustomerIdAsync(customerId);
-                if (user == null) return;
-
-                var subscriptionId = invoice.RawJObject?["subscription"]?.Value<string>() ?? user.StripeSubscriptionId;
-
-                Stripe.Subscription? subscription = null;
-                if (!string.IsNullOrEmpty(subscriptionId))
-                {
-                    var subscriptionService = new SubscriptionService();
-                    subscription = await subscriptionService.GetAsync(subscriptionId);
-
-                    user.StripeSubscriptionId = subscription.Id;
-                    user.SubscriptionStatus = subscription.Status;
-
-                    var periodEnd = subscription.RawJObject?["current_period_end"]?.Value<long?>();
-                    if (periodEnd.HasValue)
-                        user.CurrentPeriodEnd = DateTimeOffset.FromUnixTimeSeconds(periodEnd.Value);
-
-                    var priceId = subscription.Items.Data.Count > 0 ? subscription.Items.Data[0].Price.Id : null;
-                    if (!string.IsNullOrEmpty(priceId))
-                    {
-                        user.Plan = MapPlanFromPrice(priceId, user.Plan);
-                    }
-
-                    await _users.UpdateBillingAsync(user);
-                }
-
-                var creditsToAdd = GetCreditsForPlan(user.Plan);
-                if (creditsToAdd > 0)
-                {
-                    var creditEventId = $"invoice-credit-{invoice.Id}";
-                    if (await _events.ExistsAsync(creditEventId)) return;
-
-                    var incremented = await _users.IncrementBillingCreditsOnceAsync(user.Id!, creditsToAdd, creditEventId);
-                    if (incremented)
-                    {
-                        await _events.CreateAsync(new Models.StripeEventRecord { EventId = creditEventId, Created = DateTime.UtcNow });
-                        _logger.LogInformation("Credits added on invoice paid. UserId={UserId}, Plan={Plan}, Credits={Credits}, EventId={EventId}, InvoiceId={InvoiceId}", user.Id, user.Plan, creditsToAdd, stripeEvent.Id, invoice.Id);
-                    }
-                }
-            }
-        }
-
-        private int GetCreditsForPlan(string? plan)
-        {
-            if (string.IsNullOrEmpty(plan)) return 0;
-
-            return plan.ToUpperInvariant() switch
-            {
-                "PRO" => _settings.CreditsPro,
-                "ULTRA" => _settings.CreditsUltra,
-                _ => 0
-            };
-        }
-
-        private string MapPlanFromPrice(string priceId, string? currentPlan)
-        {
-            if (priceId == _settings.PricePro) return "PRO";
-            if (priceId == _settings.PriceUltra) return "ULTRA";
-            return currentPlan ?? string.Empty;
+        } catch (Exception) {
+            if (acquired) { try { await events.FailAsync(ev.Id, claimId); } catch (Exception) { } }
+            logger.LogWarning("Stripe webhook processing failed; retry required");
+            return StatusCode(503);
         }
     }
+    private async Task<Stripe.Subscription?> Reconcile(User user, string subscriptionId, DateTime created)
+    {
+        for (var attempt = 0; attempt < 3; attempt++) {
+            if (user.LastSubscriptionEventAt > created) return null;
+            // Fresh Stripe state handles equal-second events; CAS prevents stale reads overwriting concurrent updates.
+            var sub = await stripe.GetSubscriptionAsync(subscriptionId);
+            if (sub.CustomerId != user.StripeCustomerId || (TestOnly && sub.Livemode)) return null;
+            if (sub.Items?.Data?.Count != 1) return null;
+            var item = sub.Items.Data[0];
+            var plan = Plan(item.Price?.Id);
+            if (plan == null || item.Quantity != 1) return null;
+            user.StripeSubscriptionId = sub.Id;
+            user.SubscriptionStatus = sub.Status;
+            user.Plan = sub.Status is "canceled" or "incomplete_expired" ? null : plan;
+            user.Subscription = sub.Status is "active" or "trialing"
+                ? plan == "PRO" ? SubscriptionType.Premium : SubscriptionType.Ultra : SubscriptionType.Free;
+            user.CurrentPeriodEnd = new DateTimeOffset(DateTime.SpecifyKind(item.CurrentPeriodEnd, DateTimeKind.Utc));
+            if (await users.UpdateBillingSnapshotAsync(user, created)) return sub;
+            user = await users.GetByIdAsync(user.Id!) ?? throw new InvalidOperationException("Billing user missing");
+        }
+        throw new InvalidOperationException("Billing reconciliation contention");
+    }
+    private async Task CreditInvoice(Invoice invoice)
+    {
+        if (invoice.Status != "paid" || invoice.AmountPaid <= 0 || (TestOnly && invoice.Livemode) ||
+            invoice.BillingReason is not ("subscription_create" or "subscription_cycle") ||
+            string.IsNullOrEmpty(invoice.Id) || string.IsNullOrEmpty(invoice.CustomerId) ||
+            string.IsNullOrEmpty(invoice.Parent?.SubscriptionDetails?.SubscriptionId)) return;
+        var lines = invoice.Lines;
+        if (lines?.HasMore != false || lines.Data.Count != 1) return;
+        var line = lines.Data[0];
+        if (line.Quantity != 1 || line.Parent?.SubscriptionItemDetails?.Proration != false) return;
+        var plan = Plan(line.Pricing?.PriceDetails?.PriceId);
+        if (plan == null) return;
+        var user = await users.GetByStripeCustomerIdAsync(invoice.CustomerId);
+        if (user?.Id == null) return;
+        await users.IncrementBillingCreditsOnceAsync(user.Id, plan == "PRO" ? Settings.CreditsPro : Settings.CreditsUltra,
+            $"invoice-credit-{invoice.Id}");
+    }
+    private string? Plan(string? price) => !string.IsNullOrEmpty(price) && price == Settings.PricePro ? "PRO" :
+        !string.IsNullOrEmpty(price) && price == Settings.PriceUltra ? "ULTRA" : null;
 }

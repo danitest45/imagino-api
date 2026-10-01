@@ -1,84 +1,41 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+using Imagino.Api.Repository;
+using Imagino.Api.Settings;
 using Microsoft.Extensions.Options;
 using Stripe;
 using Stripe.Checkout;
-using Imagino.Api.Repository;
-using Imagino.Api.Settings;
-
-namespace Imagino.Api.Services.Billing
+namespace Imagino.Api.Services.Billing;
+public class BillingService(IUserRepository users, IOptions<StripeSettings> settings, IStripeBillingGateway stripe) : IBillingService
 {
-    public class BillingService : IBillingService
+    public async Task<string> CreateCheckoutSessionAsync(string userId, string plan)
     {
-        private readonly IUserRepository _users;
-        private readonly StripeSettings _settings;
-        private readonly ILogger<BillingService> _logger;
-
-        public BillingService(IUserRepository users, IOptions<StripeSettings> settings, ILogger<BillingService> logger)
-        {
-            _users = users;
-            _settings = settings.Value;
-            _logger = logger;
+        if (plan is not ("PRO" or "ULTRA")) throw new BillingRequestException(400, "Choose PRO or ULTRA");
+        var user = await users.GetByIdAsync(userId) ?? throw new BillingRequestException(404, "User not found");
+        if (string.IsNullOrWhiteSpace(settings.Value.ApiKey)) throw new BillingRequestException(503, "Billing is disabled");
+        if (!string.IsNullOrEmpty(user.StripeSubscriptionId) && user.SubscriptionStatus is not ("canceled" or "incomplete_expired"))
+            throw new BillingRequestException(409, "An existing subscription must be managed in the billing portal");
+        var customerId = user.StripeCustomerId;
+        if (string.IsNullOrEmpty(customerId)) {
+            var customer = await stripe.CreateCustomerAsync(new CustomerCreateOptions { Email = user.Email },
+                new RequestOptions { IdempotencyKey = $"imagino-customer-{userId}" });
+            customerId = customer.Id;
+            await users.SetStripeCustomerIdAsync(userId, customerId);
         }
-
-        public async Task<string> CreateCheckoutSessionAsync(string userId, string plan)
-        {
-            var user = await _users.GetByIdAsync(userId) ?? throw new Exception("User not found");
-
-            var customerId = user.StripeCustomerId;
-            if (string.IsNullOrEmpty(customerId))
-            {
-                var customerService = new CustomerService();
-                var customer = await customerService.CreateAsync(new CustomerCreateOptions
-                {
-                    Email = user.Email,
-                });
-                customerId = customer.Id;
-                user.StripeCustomerId = customerId;
-                await _users.SetStripeCustomerIdAsync(user.Id!, customerId);
-            }
-
-            var price = plan.ToUpper() switch
-            {
-                "PRO" => _settings.PricePro,
-                "ULTRA" => _settings.PriceUltra,
-                _ => throw new ArgumentException("Invalid plan"),
-            };
-
-            var options = new SessionCreateOptions
-            {
-                Mode = "subscription",
-                Customer = customerId,
-                SuccessUrl = $"{_settings.SuccessUrl}?session_id={{CHECKOUT_SESSION_ID}}",
-                CancelUrl = _settings.CancelUrl,
-                ClientReferenceId = userId,
-                Metadata = new Dictionary<string, string> { { "plan", plan.ToUpper() } },
-                LineItems = new List<SessionLineItemOptions>
-                {
-                    new SessionLineItemOptions { Price = price, Quantity = 1 }
-                }
-            };
-
-            var service = new SessionService();
-            var session = await service.CreateAsync(options);
-            return session.Url;
-        }
-
-        public async Task<string> CreateCustomerPortalSessionAsync(string userId)
-        {
-            var user = await _users.GetByIdAsync(userId) ?? throw new Exception("User not found");
-            if (string.IsNullOrEmpty(user.StripeCustomerId))
-                throw new Exception("Stripe customer not found");
-            var options = new Stripe.BillingPortal.SessionCreateOptions
-            {
-                Customer = user.StripeCustomerId,
-                ReturnUrl = _settings.PortalReturnUrl,
-            };
-            var portalService = new Stripe.BillingPortal.SessionService();
-            var session = await portalService.CreateAsync(options);
-            return session.Url;
-        }
+        // Concurrent attempts share this key, including conflicting plan choices.
+        var session = await stripe.CreateCheckoutAsync(new SessionCreateOptions {
+            Mode = "subscription", Customer = customerId,
+            SuccessUrl = settings.Value.SuccessUrl, CancelUrl = settings.Value.CancelUrl,
+            ClientReferenceId = userId,
+            LineItems = [new SessionLineItemOptions { Price = plan == "PRO" ? settings.Value.PricePro : settings.Value.PriceUltra, Quantity = 1 }]
+        }, new RequestOptions { IdempotencyKey = $"imagino-checkout-{userId}-{user.BillingRevision}" });
+        return session.Url;
+    }
+    public async Task<string> CreateCustomerPortalSessionAsync(string userId)
+    {
+        var user = await users.GetByIdAsync(userId) ?? throw new BillingRequestException(404, "User not found");
+        if (string.IsNullOrEmpty(user.StripeCustomerId)) throw new BillingRequestException(409, "No billing customer");
+        var session = await stripe.CreatePortalAsync(new Stripe.BillingPortal.SessionCreateOptions {
+            Customer = user.StripeCustomerId, ReturnUrl = settings.Value.PortalReturnUrl
+        });
+        return session.Url;
     }
 }

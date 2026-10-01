@@ -27,6 +27,8 @@ namespace Imagino.Api.Models
         public string? Plan { get; set; }
         public string? SubscriptionStatus { get; set; }
         public DateTimeOffset? CurrentPeriodEnd { get; set; }
+        public DateTime? LastSubscriptionEventAt { get; set; }
+        public long BillingRevision { get; set; }
 
         [BsonRepresentation(BsonType.String)]
         public SubscriptionType Subscription { get; set; } = SubscriptionType.Free;

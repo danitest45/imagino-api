@@ -47,6 +47,22 @@ namespace Imagino.Api.Repository
         public async Task UpdateBillingAsync(User user) =>
             await _collection.UpdateOneAsync(u => u.Id == user.Id, Imagino.Api.Security.UserUpdates.Billing(user));
 
+        public static FilterDefinition<User> BillingSnapshotFilter(User user, DateTime created)
+        {
+            var f = Builders<User>.Filter;
+            var revision = f.Eq(u => u.BillingRevision, user.BillingRevision);
+            if (user.BillingRevision == 0) revision |= f.Exists(u => u.BillingRevision, false);
+            return f.Eq(u => u.Id, user.Id) & revision &
+                (f.Eq(u => u.LastSubscriptionEventAt, null) | f.Lte(u => u.LastSubscriptionEventAt, created));
+        }
+        public async Task<bool> UpdateBillingSnapshotAsync(User user, DateTime created)
+        {
+            var update = Imagino.Api.Security.UserUpdates.Billing(user)
+                .Set(u => u.Subscription, user.Subscription)
+                .Set(u => u.LastSubscriptionEventAt, created).Inc(u => u.BillingRevision, 1);
+            return (await _collection.UpdateOneAsync(BillingSnapshotFilter(user, created), update)).ModifiedCount == 1;
+        }
+
         public async Task UpdateProfileAsync(string id, string username, string? phoneNumber, DateTime updatedAt)
         {
             var update = Builders<User>.Update

@@ -31,9 +31,6 @@ builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("F
 builder.Services.Configure<RefreshTokenCookieSettings>(builder.Configuration.GetSection("RefreshTokenCookie"));
 builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
 
-var stripeConfig = builder.Configuration.GetSection("Stripe").Get<StripeSettings>();
-Stripe.StripeConfiguration.ApiKey = stripeConfig?.ApiKey;
-
 builder.Services.AddSingleton<ImageJobRepository>();
 builder.Services.AddScoped<WebhookImageService>();
 

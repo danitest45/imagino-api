@@ -14,6 +14,7 @@ namespace Imagino.Api.Repository
         Task SetPasswordHashAsync(string id, string hash);
         Task SetStripeCustomerIdAsync(string id, string customerId);
         Task UpdateBillingAsync(User user);
+        Task<bool> UpdateBillingSnapshotAsync(User user, DateTime created);
         Task UpdateProfileAsync(string id, string username, string? phoneNumber, DateTime updatedAt);
         Task UpdateProfileImageAsync(string id, string imageUrl, DateTime updatedAt);
         Task DeleteAsync(string id);

@@ -311,6 +311,8 @@ internal sealed class SecurityApiFactory : WebApplicationFactory<Program>
     public Mock<IVideoJobRepository> VideoJobs { get; } = new();
     public Mock<IVideoModelProviderService> VideoProviders { get; } = new();
     public Mock<IGoogleOAuthClient> Google { get; } = new();
+    public Mock<Imagino.Api.Services.Billing.IStripeBillingGateway> Stripe { get; } = new();
+    public Mock<Imagino.Api.Repository.IStripeEventRepository> StripeEvents { get; } = new();
     public Dictionary<string, string> ExtraSettings { get; } = new();
     public Mock<Imagino.Api.Services.WebhookImage.IWebhookImageService> Webhooks { get; } = new();
 
@@ -360,6 +362,10 @@ internal sealed class SecurityApiFactory : WebApplicationFactory<Program>
             services.RemoveAll<Imagino.Api.Services.WebhookImage.IWebhookImageService>();
             services.AddSingleton(Google.Object);
             services.AddSingleton(Webhooks.Object);
+            services.RemoveAll<Imagino.Api.Services.Billing.IStripeBillingGateway>();
+            services.RemoveAll<Imagino.Api.Repository.IStripeEventRepository>();
+            services.AddSingleton(Stripe.Object);
+            services.AddSingleton(StripeEvents.Object);
         });
     }
 

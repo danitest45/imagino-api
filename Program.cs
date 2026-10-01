@@ -22,15 +22,14 @@ if (builder.Environment.IsDevelopment())
     builder.Configuration.AddUserSecrets<Program>();
 }
 
+StartupConfiguration.Validate(builder.Configuration, builder.Environment.IsDevelopment());
+
 // Configurações
 builder.Services.Configure<ImageGeneratorSettings>(builder.Configuration.GetSection("ImageGeneratorSettings"));
 builder.Services.Configure<ReplicateSettings>(builder.Configuration.GetSection("ReplicateSettings"));
 builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("Frontend"));
 builder.Services.Configure<RefreshTokenCookieSettings>(builder.Configuration.GetSection("RefreshTokenCookie"));
 builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
-
-var stripeConfig = builder.Configuration.GetSection("Stripe").Get<StripeSettings>();
-Stripe.StripeConfiguration.ApiKey = stripeConfig.ApiKey;
 
 builder.Services.AddSingleton<ImageJobRepository>();
 builder.Services.AddScoped<WebhookImageService>();
@@ -56,63 +55,12 @@ if (allowedPatterns.Length == 0)
         allowedPatterns = new[] { fb };
 }
 
-Console.WriteLine("CORS AllowedOrigins => " + string.Join(", ", allowedPatterns));
-
-static bool OriginMatches(string? origin, string[] patterns)
-{
-    if (string.IsNullOrEmpty(origin)) return false;
-    if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false;
-
-    var host = uri.Host.ToLowerInvariant();
-    var port = uri.IsDefaultPort ? (int?)null : uri.Port;
-
-    foreach (var raw in patterns)
-    {
-        if (string.IsNullOrWhiteSpace(raw)) continue;
-
-        // normaliza padrão: remove esquema, e separa host[:porta]
-        var p = raw.Trim().ToLowerInvariant()
-                   .Replace("https://", "")
-                   .Replace("http://", "")
-                   .TrimEnd('/');
-
-        string patternHost = p;
-        int? patternPort = null;
-
-        var col = p.IndexOf(':');
-        if (col >= 0)
-        {
-            patternHost = p[..col];
-            if (int.TryParse(p[(col + 1)..], out var parsed))
-                patternPort = parsed;
-        }
-
-        if (patternHost.StartsWith("*.")) // wildcard: *.vercel.app
-        {
-            var suffix = patternHost[2..]; // "vercel.app"
-            if (host == suffix || host.EndsWith("." + suffix))
-            {
-                if (patternPort is null || patternPort == port) return true;
-            }
-        }
-        else
-        {
-            if (host == patternHost)
-            {
-                if (patternPort is null || patternPort == port) return true;
-            }
-        }
-    }
-    return false;
-}
-
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(corsPolicyName, policy =>
     {
         policy
-            .SetIsOriginAllowed(origin => OriginMatches(origin, allowedPatterns))
+            .SetIsOriginAllowed(origin => CorsOrigins.Matches(origin, allowedPatterns))
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

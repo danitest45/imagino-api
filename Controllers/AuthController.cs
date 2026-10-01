@@ -1,4 +1,6 @@
-﻿using Imagino.Api.Models;
+﻿using Imagino.Api.Security;
+using Microsoft.AspNetCore.WebUtilities;
+using Imagino.Api.Models;
 using Imagino.Api.Repository;
 using Imagino.Api.Services;
 using Imagino.Api.DTOs;
@@ -20,6 +22,8 @@ namespace Imagino.Api.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
+        private readonly GoogleOAuthState _oauthState;
+        private readonly IGoogleOAuthClient _google;
         private readonly IUserRepository _users;
         private readonly IUserService _userService;
         private readonly IJwtService _jwt;
@@ -33,8 +37,10 @@ namespace Imagino.Api.Controllers
         private readonly EmailSettings _emailSettings;
         private readonly IWebHostEnvironment _env;
 
-        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IOptions<FrontendSettings> frontendSettings, IOptions<RefreshTokenCookieSettings> cookieSettings, IEmailSender emailSender, IEmailTokenRepository emailTokens, IMemoryCache cache, IOptions<EmailSettings> emailSettings, IWebHostEnvironment env)
+        public AuthController(IUserRepository users, IUserService userService, IJwtService jwt, IConfiguration config, IRefreshTokenRepository refreshTokens, IOptions<FrontendSettings> frontendSettings, IOptions<RefreshTokenCookieSettings> cookieSettings, IEmailSender emailSender, IEmailTokenRepository emailTokens, IMemoryCache cache, IOptions<EmailSettings> emailSettings, IWebHostEnvironment env, GoogleOAuthState oauthState, IGoogleOAuthClient google)
         {
+            _oauthState = oauthState;
+            _google = google;
             _users = users;
             _userService = userService;
             _jwt = jwt;
@@ -87,7 +93,7 @@ namespace Imagino.Api.Controllers
 
                 var user = await _userService.CreateAsync(dto);
 
-                var raw = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+                var raw = TokenSecurity.RandomToken() + TokenSecurity.RandomToken();
                 await _emailTokens.CreateAsync(user.Id!, "verify_email", raw, TimeSpan.FromMinutes(60), HttpContext.Connection.RemoteIpAddress?.ToString());
                 var link = $"{_frontendSettings.BaseUrl}/verify?token={raw}";
                 var verifyTemplateRelative = _emailSettings.Template.Verify ?? "EmailTemplates/VerifyEmail.html";
@@ -118,7 +124,7 @@ namespace Imagino.Api.Controllers
             if (!CheckRate($"rv_user_{user.Id}", 3, TimeSpan.FromHours(1)))
                 return Ok();
 
-            var raw = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+            var raw = TokenSecurity.RandomToken() + TokenSecurity.RandomToken();
             await _emailTokens.CreateAsync(user.Id!, "verify_email", raw, TimeSpan.FromMinutes(60), ip);
             var link = $"{_frontendSettings.BaseUrl}/verify?token={raw}";
             var verifyTemplateRelative = _emailSettings.Template.Verify ?? "EmailTemplates/VerifyEmail.html";
@@ -149,7 +155,7 @@ namespace Imagino.Api.Controllers
 
             user.EmailVerified = true;
             user.VerifiedAt = DateTime.UtcNow;
-            await _users.UpdateAsync(user);
+            await _users.MarkEmailVerifiedAsync(user.Id!, user.VerifiedAt!.Value);
             await _emailTokens.InvalidateByUserAsync(user.Id!, "verify_email");
 
             return Ok();
@@ -169,7 +175,7 @@ namespace Imagino.Api.Controllers
             if (!CheckRate($"fp_user_{user.Id}", 3, TimeSpan.FromHours(1)))
                 return Ok();
 
-            var raw = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+            var raw = TokenSecurity.RandomToken() + TokenSecurity.RandomToken();
             await _emailTokens.CreateAsync(user.Id!, "reset_password", raw, TimeSpan.FromMinutes(30), ip);
             var link = $"{_frontendSettings.BaseUrl}/reset-password?token={raw}";
             var resetTemplateRelative = _emailSettings.Template.Reset ?? "EmailTemplates/ResetPassword.html";
@@ -199,7 +205,7 @@ namespace Imagino.Api.Controllers
                 return BadRequest(new { title = "Invalid token", code = "TOKEN_INVALID" });
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            await _users.UpdateAsync(user);
+            await _users.SetPasswordHashAsync(user.Id!, user.PasswordHash);
             await _emailTokens.InvalidateByUserAsync(user.Id!, "reset_password");
             await _refreshTokens.DeleteByUserIdAsync(user.Id!);
 
@@ -212,24 +218,25 @@ namespace Imagino.Api.Controllers
             var user = await _users.GetByEmailAsync(request.Email);
             if (user == null) return StatusCode(401, new { title = "Invalid Credentials", code = "INVALID_CREDENTIALS" });
 
-            var valid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+            var valid = !string.IsNullOrEmpty(user.PasswordHash) && BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
             if (!valid) return StatusCode(401, new { title = "Invalid Credentials", code = "INVALID_CREDENTIALS" });
 
             if (!user.EmailVerified)
                 return StatusCode(403, new { title = "Email not verified", code = "EMAIL_NOT_VERIFIED" });
 
             var token = _jwt.GenerateToken(user.Id, user.Email);
-            var refreshToken = Guid.NewGuid().ToString("N");
+            var refreshToken = TokenSecurity.RandomToken();
             await _refreshTokens.CreateAsync(new RefreshToken
             {
                 UserId = user.Id!,
                 Token = refreshToken,
-                ExpiresAt = DateTime.UtcNow.AddDays(7)
+                ExpiresAt = DateTime.UtcNow.AddDays(_cookieSettings.Value.ExpiresDays)
             });
             var settings = _cookieSettings.Value;
             var cookieOptions = new CookieOptions
             {
-                HttpOnly = settings.HttpOnly,
+                HttpOnly = true,
+                Path = "/",
                 Secure = settings.SameSite.Equals("None", StringComparison.OrdinalIgnoreCase) ? true : settings.Secure,
                 SameSite = Enum.Parse<SameSiteMode>(settings.SameSite, true),
                 Expires = DateTime.UtcNow.AddDays(settings.ExpiresDays)
@@ -248,26 +255,30 @@ namespace Imagino.Api.Controllers
             if (!Request.Cookies.TryGetValue("refreshToken", out var oldToken))
                 return Unauthorized();
 
-            var existing = await _refreshTokens.GetByTokenAsync(oldToken);
+            var existing = await _refreshTokens.ConsumeAsync(oldToken);
             if (existing == null || existing.ExpiresAt <= DateTime.UtcNow)
                 return Unauthorized();
+
+            // Activate only during an explicitly approved JWT/session rotation.
+            var cutoff = _config.GetValue<DateTime?>("Auth:RefreshTokensValidAfter");
+            if (cutoff.HasValue && existing.CreatedAt < cutoff.Value.ToUniversalTime()) return Unauthorized();
 
             var user = await _users.GetByIdAsync(existing.UserId);
             if (user == null)
                 return Unauthorized();
 
-            await _refreshTokens.DeleteAsync(oldToken);
-            var newRefresh = Guid.NewGuid().ToString("N");
+            var newRefresh = TokenSecurity.RandomToken();
             await _refreshTokens.CreateAsync(new RefreshToken
             {
                 UserId = user.Id!,
                 Token = newRefresh,
-                ExpiresAt = DateTime.UtcNow.AddDays(7)
+                ExpiresAt = DateTime.UtcNow.AddDays(_cookieSettings.Value.ExpiresDays)
             });
             var settings = _cookieSettings.Value;
             var cookieOptions = new CookieOptions
             {
-                HttpOnly = settings.HttpOnly,
+                HttpOnly = true,
+                Path = "/",
                 Secure = settings.SameSite.Equals("None", StringComparison.OrdinalIgnoreCase) ? true : settings.Secure,
                 SameSite = Enum.Parse<SameSiteMode>(settings.SameSite, true),
                 Expires = DateTime.UtcNow.AddDays(settings.ExpiresDays)
@@ -288,28 +299,54 @@ namespace Imagino.Api.Controllers
             if (Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
             {
                 await _refreshTokens.DeleteAsync(refreshToken);
-                Response.Cookies.Delete("refreshToken");
+                Response.Cookies.Delete("refreshToken", new CookieOptions {
+                    Path = "/", Domain = string.IsNullOrWhiteSpace(_cookieSettings.Value.Domain) ? null : _cookieSettings.Value.Domain,
+                    HttpOnly = true, Secure = _cookieSettings.Value.Secure || _cookieSettings.Value.SameSite.Equals("None", StringComparison.OrdinalIgnoreCase),
+                    SameSite = Enum.Parse<SameSiteMode>(_cookieSettings.Value.SameSite, true)
+                });
             }
             return Ok();
         }
 
-        // Endpoint de callback do Google
-        [HttpGet("google/callback")]
-        public async Task<IActionResult> GoogleCallback([FromQuery] string code)
+        private CookieOptions OAuthCookieOptions() => new() {
+            HttpOnly = true, Secure = true, SameSite = SameSiteMode.Lax,
+            Path = "/", MaxAge = TimeSpan.FromMinutes(10)
+        };
+
+        [HttpGet("google/login")]
+        public IActionResult GoogleLogin()
         {
-            // Troca o code pelo id_token usando biblioteca Google.Apis.Auth
-            // Você precisará do clientId e clientSecret no appsettings.json
-            var clientId = _config["Google:ClientId"];
-            var clientSecret = _config["Google:ClientSecret"];
-            var redirectUri = _config["Google:RedirectUri"];
+            if (new[] { "Google:ClientId", "Google:ClientSecret", "Google:RedirectUri" }.Any(k => string.IsNullOrWhiteSpace(_config[k])))
+                return StatusCode(503, new { code = "GOOGLE_NOT_CONFIGURED" });
+            var tx = _oauthState.Begin();
+            Response.Cookies.Append("__Host-googleOAuth", tx.BrowserToken, OAuthCookieOptions());
+            Response.Headers.CacheControl = "no-store";
+            return Redirect(QueryHelpers.AddQueryString("https://accounts.google.com/o/oauth2/v2/auth", new Dictionary<string, string?> {
+                ["client_id"] = _config["Google:ClientId"], ["redirect_uri"] = _config["Google:RedirectUri"],
+                ["response_type"] = "code", ["scope"] = "openid email profile", ["prompt"] = "select_account",
+                ["state"] = tx.State, ["nonce"] = tx.Nonce, ["code_challenge"] = TokenSecurity.PkceChallenge(tx.Verifier),
+                ["code_challenge_method"] = "S256"
+            }));
+        }
 
-            var payload = await GoogleAuthHelper.ExchangeCodeForIdTokenAsync(code, clientId, clientSecret, redirectUri);
-            if (payload == null) return Unauthorized();
+        [HttpGet("google/callback")]
+        public async Task<IActionResult> GoogleCallback([FromQuery] string? code, [FromQuery] string? state)
+        {
+            Response.Headers.CacheControl = "no-store";
+            var tx = _oauthState.Consume(state, Request.Cookies["__Host-googleOAuth"]);
+            Response.Cookies.Delete("__Host-googleOAuth", OAuthCookieOptions());
+            if (tx == null || string.IsNullOrWhiteSpace(code)) return Unauthorized();
+            var payload = await _google.ExchangeAsync(code, tx.Verifier, tx.Nonce);
+            if (payload == null || !payload.EmailVerified) return Unauthorized();
 
-            // payload.Subject é o Google User ID (sub)
+            // Identity and owner come only from the verified Google token.
             var user = await _users.GetByGoogleIdAsync(payload.Subject);
             if (user == null)
             {
+                // Linking a password account requires an authenticated, separate flow.
+                // Never create another account with the same verified email implicitly.
+                if (await _users.GetByEmailAsync(payload.Email) != null)
+                    return Conflict(new { code = "ACCOUNT_LINK_REQUIRED" });
                 // cria novo usuário
                 var username = await _userService.GenerateUsernameFromEmailAsync(payload.Email);
                 user = new User
@@ -328,11 +365,10 @@ namespace Imagino.Api.Controllers
             {
                 user.EmailVerified = true;
                 user.VerifiedAt = DateTime.UtcNow;
-                await _users.UpdateAsync(user);
+                await _users.MarkEmailVerifiedAsync(user.Id!, user.VerifiedAt!.Value);
             }
 
-            var token = _jwt.GenerateToken(user.Id, user.Email);
-            var refreshToken = Guid.NewGuid().ToString("N");
+            var refreshToken = TokenSecurity.RandomToken();
             var settings = _cookieSettings.Value;
             await _refreshTokens.CreateAsync(new RefreshToken
             {
@@ -342,7 +378,8 @@ namespace Imagino.Api.Controllers
             });
             var cookieOptions = new CookieOptions
             {
-                HttpOnly = settings.HttpOnly,
+                HttpOnly = true,
+                Path = "/",
                 Secure = settings.SameSite.Equals("None", StringComparison.OrdinalIgnoreCase) ? true : settings.Secure,
                 SameSite = Enum.Parse<SameSiteMode>(settings.SameSite, true),
                 Expires = DateTime.UtcNow.AddDays(settings.ExpiresDays)
@@ -353,7 +390,7 @@ namespace Imagino.Api.Controllers
             }
             Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
 
-            var redirectUrl = $"{_frontendSettings.BaseUrl}/google-auth?token={token}&username={user.Username}";
+            var redirectUrl = $"{_frontendSettings.BaseUrl.TrimEnd('/')}/google-auth";
             return Redirect(redirectUrl);
         }
     }

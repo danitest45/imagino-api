@@ -6,6 +6,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Imagino.Api.Models
 {
+    [BsonIgnoreExtraElements]
     public class ImageJob
     {
         [BsonId]
@@ -31,6 +32,15 @@ namespace Imagino.Api.Models
 
         [BsonElement("jobId")]
         public string? JobId { get; set; }
+
+        [BsonElement("callbackProvider")]
+        public string? CallbackProvider { get; set; }
+        [BsonElement("webhookLease")]
+        [JsonIgnore]
+        public string? WebhookLease { get; set; }
+        [BsonElement("webhookLeaseExpiresAt")]
+        [JsonIgnore]
+        public DateTime? WebhookLeaseExpiresAt { get; set; }
 
         [BsonElement("providerJobId")]
         public string? ProviderJobId { get; set; }

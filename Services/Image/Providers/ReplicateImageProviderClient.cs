@@ -45,7 +45,7 @@ namespace Imagino.Api.Services.Image.Providers
             var client = _httpClientFactory.CreateClient("ImageModelProvider");
 
             var baseUrl = _configuration["ReplicateSettings:BaseUrl"] ?? "https://api.replicate.com";
-            var endpointUrl = BuildEndpointUrl(baseUrl, version.EndpointUrl);
+            var endpointUrl = Imagino.Api.Security.RemoteUrlPolicy.Validate(BuildEndpointUrl(baseUrl, version.EndpointUrl), "api.replicate.com");
 
             using var message = new HttpRequestMessage(HttpMethod.Post, endpointUrl);
 

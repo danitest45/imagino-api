@@ -7,6 +7,7 @@ namespace Imagino.Api.Repository
     {
         Task CreateAsync(RefreshToken token);
         Task<RefreshToken?> GetByTokenAsync(string token);
+        Task<RefreshToken?> ConsumeAsync(string token);
         Task DeleteAsync(string token);
         Task DeleteByUserIdAsync(string userId);
     }

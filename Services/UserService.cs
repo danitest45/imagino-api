@@ -110,9 +110,12 @@ namespace Imagino.Api.Services
             var user = await _repository.GetByIdAsync(id);
             if (user == null) return null;
 
-            var fileName = $"profile-images/{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            using var stream = file.OpenReadStream();
-            var url = await _storage.UploadAsync(stream, fileName, file.ContentType);
+            using var source = file.OpenReadStream();
+            var bytes = await Imagino.Api.Security.AvatarValidator.ReadAsync(source, file.Length);
+            var format = Imagino.Api.Security.AvatarValidator.Identify(bytes);
+            var fileName = $"profile-images/{Guid.NewGuid():N}{format.Extension}";
+            using var stream = new MemoryStream(bytes, writable: false);
+            var url = await _storage.UploadAsync(stream, fileName, format.ContentType);
 
             user.ProfileImageUrl = url;
             user.UpdatedAt = DateTime.UtcNow;

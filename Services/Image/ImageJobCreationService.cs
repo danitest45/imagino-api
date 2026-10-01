@@ -121,6 +121,7 @@ namespace Imagino.Api.Services.Image
                     AspectRatio = aspectRatio,
                     CreatedAt = now,
                     UpdatedAt = now,
+                    CallbackProvider = provider.ProviderType.ToString(),
                     TokenConsumed = true
                 };
 

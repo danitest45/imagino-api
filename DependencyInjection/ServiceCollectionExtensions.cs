@@ -41,7 +41,15 @@ namespace Imagino.Api.DependencyInjection
             services.AddTransient<IVideoModelVersionService, VideoModelVersionService>();
             services.AddTransient<IVideoModelPresetService, VideoModelPresetService>();
             services.AddTransient<IVideoModelProviderService, VideoModelProviderService>();
-            services.AddHttpClient("ImageModelProvider");
+            services.AddSingleton<Imagino.Api.Security.GoogleOAuthState>();
+            services.AddTransient<IGoogleOAuthClient, GoogleOAuthClient>();
+            services.AddSingleton<Imagino.Api.Security.SafeMediaDownloader>();
+            services.AddHttpClient("ProviderSecure", c => c.Timeout = TimeSpan.FromMinutes(2))
+                .ConfigurePrimaryHttpMessageHandler(Imagino.Api.Security.RemoteUrlPolicy.CreateHandler)
+                .RedactLoggedHeaders(new[] { "Authorization", "x-goog-api-key" });
+            services.AddHttpClient("ImageModelProvider", c => c.Timeout = TimeSpan.FromMinutes(2))
+                .ConfigurePrimaryHttpMessageHandler(Imagino.Api.Security.RemoteUrlPolicy.CreateHandler)
+                .RedactLoggedHeaders(new[] { "Authorization" });
             services.AddSingleton<IImageProviderClient, GoogleGeminiImageProviderClient>();
             services.AddSingleton<IImageProviderClient, ReplicateImageProviderClient>();
             services.AddSingleton<IVideoProviderClient, GoogleVeoVideoProviderClient>();
@@ -49,6 +57,7 @@ namespace Imagino.Api.DependencyInjection
             services.AddTransient<IUserRepository, UserRepository>();
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<IBillingService, BillingService>();
+            services.AddTransient<IStripeBillingGateway, StripeBillingGateway>();
             services.AddTransient<IStripeEventRepository, StripeEventRepository>();
             services.AddTransient<IJwtService, JwtService>();
             services.AddTransient<IRefreshTokenRepository, RefreshTokenRepository>();

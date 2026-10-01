@@ -98,6 +98,7 @@ namespace Imagino.Api.Controllers
 
         [HttpPost("{id}/profile-image")]
         [Consumes("multipart/form-data")]
+        [RequestSizeLimit(AvatarValidator.MaxBytes + 65536)]
         public async Task<ActionResult> UploadProfileImage(string id, [FromForm] UploadProfileImageDto form)
         {
             if (!IsSelf(id)) return NotFound();
@@ -105,14 +106,18 @@ namespace Imagino.Api.Controllers
             if (file == null || file.Length == 0)
                 return BadRequest(new { message = "File not provided" });
 
-            var imageUrl = await _service.UpdateProfileImageAsync(id, file);
-            if (imageUrl == null) return NotFound();
-
-            return Ok(new { imageUrl });
+            try
+            {
+                var imageUrl = await _service.UpdateProfileImageAsync(id, file);
+                if (imageUrl == null) return NotFound();
+                return Ok(new { imageUrl });
+            }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
         }
 
         [HttpPost("me/profile-image")]
         [Consumes("multipart/form-data")]
+        [RequestSizeLimit(AvatarValidator.MaxBytes + 65536)]
         public async Task<ActionResult> UploadMyProfileImage([FromForm] UploadProfileImageDto form)
         {
             var userId = CurrentUserId();

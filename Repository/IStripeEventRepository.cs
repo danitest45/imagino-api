@@ -1,11 +1,9 @@
-using System.Threading.Tasks;
 using Imagino.Api.Models;
-
-namespace Imagino.Api.Repository
+namespace Imagino.Api.Repository;
+public enum StripeClaim { Acquired, Completed, Busy }
+public interface IStripeEventRepository
 {
-    public interface IStripeEventRepository
-    {
-        Task<bool> ExistsAsync(string eventId);
-        Task CreateAsync(StripeEventRecord record);
-    }
+    Task<StripeClaim> TryClaimAsync(StripeEventRecord record);
+    Task CompleteAsync(string eventId, string claimId);
+    Task FailAsync(string eventId, string claimId);
 }

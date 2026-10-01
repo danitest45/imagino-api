@@ -13,14 +13,16 @@ API de geração de imagens desenvolvida em ASP.NET Core 8.
    docker run -p 5000:5000 imagino-api
    ```
 
-A aplicação utiliza as configurações de `appsettings.json` em produção.
+A aplicação usa defaults seguros do JSON e credenciais de variáveis de ambiente.
+O comando acima exige configuração externa antes de iniciar. Veja
+[CONFIGURATION.md](CONFIGURATION.md) e [SECURITY_OPERATIONAL_PLAN.md](SECURITY_OPERATIONAL_PLAN.md).
 
 ## Variáveis de ambiente
 
 | Nome | Descrição |
 | --- | --- |
 | `EMAIL__PROVIDER` | Provedor de e-mail (ex.: `Resend`) |
-| `RESEND__API_KEY` | API key do Resend |
+| `Resend__ApiKey` | Chave canônica do Resend; aliases legados somente para transição |
 | `EMAIL__FROM` | Endereço de envio |
-| `EMAIL__FROM_NAME` | Nome exibido no envio |
+| `Email__FromName` | Nome exibido no envio |
 | `FRONTEND__BASEURL` | URL base do frontend para links de verificação e reset |

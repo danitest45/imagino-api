@@ -1,5 +1,13 @@
 # Imagino Revival — Phase 0A: Security Containment
 
+## Staging de mídia — blocker pré-produção (30/09/2026)
+
+- r2.dev público está autorizado somente para objetos sintéticos de `imagino-images-staging`. Não é solução de mídia privada para produção.
+- **Blocker de promoção:** decidir e implementar signed URLs/presigned R2 com expiração curta e autorização antes da emissão, ou entrega autenticada. Manter objetos privados sem URL pública permanente, para que acesso direto ao objeto não contorne ownership da API. Rever também cache, revogação, URLs de vídeo e proxy público antes de promoção.
+- Fixtures Replicate podem usar apenas o host r2.dev exato configurado em staging mediante `Webhooks:StagingFixturesEnabled=true`. Configuração exige banco `imagino_staging`, os dois buckets staging, PublicUrl correspondente e nenhuma API key Replicate. Desativada por padrão; configuração fora desse isolamento falha no startup. Download continua com HTTPS, DNS público fixado, sem redirects e limite de 20 MiB; GeneratedImageValidator continua PNG/JPEG/WebP com magic bytes.
+- Nenhuma prediction real, segredo de produção, bucket de produção ou recurso Little Haven faz parte desse teste.
+- Validação runtime detectou que imagem inválida ou acima do limite recebia HTTP 500 embora a lease fosse liberada. O serviço agora converte ArgumentException de URL/formato/tamanho em ValidationAppException (HTTP 400), preservando liberação da lease e ausência de upload/conclusão; testes cobrem os quatro casos Replicate/RunPod.
+
 Data: 29 de setembro de 2026. Repositório: `danitest45/imagino-api`. Branch: `fix/revival-security-containment`. Base da PR: `master`.
 
 ## Escopo e decisões
@@ -83,3 +91,57 @@ Também para a Phase 0B: testar produção equivalente em staging, revisar índi
 - Testes: `Imagino.Api.Tests/Imagino.Api.Tests.csproj`, `Imagino.Api.Tests/ImageJobCreationServiceTests.cs`, `Imagino.Api.Tests/SecurityContainmentTests.cs`, `Imagino.Api.Tests/UserServiceTests.cs`.
 - Este relatório: `SECURITY_CONTAINMENT_REPORT.md`.
 - Frontend, em PR separada: `imagino-front/src/lib/download.ts`, `src/lib/api.ts`, `src/types/user.ts`, `src/components/Navbar.tsx`, `src/components/profile/UserInfo.tsx`.
+## Continuação Phase 0B.1 — 2026-09-30
+
+A preparação operacional está em `SECURITY_OPERATIONAL_PLAN.md`, em uma nova
+branch dependente desta Phase 0A. Acrescenta OAuth state/nonce/PKCE sem JWT na URL,
+assinatura/vínculo/idempotência de callbacks, SSRF também no proxy frontend,
+avatar com limites/magic bytes, hash/rotação atômica de refresh, updates parciais
+de usuário e ledger de crédito Stripe, configuração sanitizada e remoção da
+referência ASP.NET 2.3.0. Nenhum merge/deploy/rotação ocorreu.
+
+Gates operacionais incluem credencial Atlas administrativa, um grupo de e-mails
+duplicados, jobs legados, signing secret Replicate ausente e isolamento dos envs
+Preview. Tests desta fase: API 65/65; frontend 7/7; build/typecheck aprovados.
+
+## Ajustes finais antes da Phase 0B.2 — 2026-09-30
+
+- `GeneratedImageValidator` separado do validator de avatar: limite de 20 MiB,
+  PNG/JPEG/WebP por magic bytes. O avatar permanece em 5 MiB. AVIF não foi
+  habilitado por ausência de necessidade/suporte confirmado.
+- `VerifiedWebhookImageService` usa o validator de geração para Replicate e
+  RunPod. Replicate limita o download a 20 MiB; RunPod limita base64, bytes
+  decodificados e envelope JSON assinado, sem habilitar o provider por padrão.
+- Startup rejeita Replicate com API key ou webhook configurado e signing secret
+  ausente. A mensagem identifica apenas o nome da configuração.
+- Os redirects após login normal e OAuth no frontend agora levam a `/images`,
+  cujo catálogo existente resolve o modelo disponível. As duas referências
+  restantes a `/images/replicate` são links de galeria: `src/app/page.tsx`
+  (Explore gallery) e `src/app/_components/ClientGallery.tsx` (Browse entire
+  library). Permanecem para revisão posterior, conforme o escopo solicitado.
+- Verificações locais: `dotnet build` sem erros (30 warnings de nulabilidade
+  existentes); `dotnet test` 82/82; `npm test` 7/7; `npx tsc --noEmit` sem erros.
+  Testes incluem PNG completo acima de 5 MiB, rejeição acima de 20 MiB/formato
+  inválido, ambos os callbacks, envelope RunPod assinado e config Replicate.
+
+PRs atuais #55/#86 atualizados por commits adicionais. Nenhum merge/deploy ou
+alteração de configuração em produção; staging ainda não criado nesta etapa.
+
+## Phase 0B.2C — hardening local Google OAuth — 2026-09-30
+
+- Corrigida ativação do grupo Google: qualquer uma das três configurações,
+  inclusive RedirectUri isolada, exige ClientId/ClientSecret/RedirectUri completos.
+  Erros de startup incluem somente nomes das configurações.
+- Fixtures RSA locais exercitam o GoogleOAuthClient e a validação oficial do
+  Google.Apis.Auth 1.70.0: assinatura, issuer, audience, expiry, nonce e e-mail
+  verificado. O cache de certificados é preparado/restaurado apenas no projeto
+  de testes, em collection sem paralelismo; nenhuma requisição real ao Google.
+- Testes adicionais: ausência do cookie de browser, código inválido, identidade
+  não verificada, consumo único após falha e ACCOUNT_LINK_REQUIRED com 409,
+  sem criação de usuário duplicado nem sessão. Account linking segue como
+  feature futura, sem vinculação automática por coincidência de e-mail.
+- dotnet build: 0 erros, 30 warnings existentes; dotnet test: 126/126.
+  Frontend: npm ci --no-audit --no-fund, npm test 10/10 e tsc --noEmit passaram.
+  O E2E Google real é um gate separado, ainda pendente nesta evidência local.
+
+Nenhum merge, alteração em produção, Stripe ou provider de IA pago nesta etapa.

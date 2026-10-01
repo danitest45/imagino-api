@@ -22,13 +22,17 @@ namespace Imagino.Api.Controllers.Image
     {
         private readonly IImageJobCreationService _jobCreationService;
         private readonly IImageJobRepository _jobRepository;
+        private readonly Imagino.Api.Security.SafeMediaDownloader _media;
+        private readonly IConfiguration _config;
         private readonly IUserRepository _userRepository;
 
         public ImageJobsController(
             IImageJobCreationService jobCreationService,
             IImageJobRepository jobRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository, Imagino.Api.Security.SafeMediaDownloader media, IConfiguration config)
         {
+            _media = media;
+            _config = config;
             _jobCreationService = jobCreationService;
             _jobRepository = jobRepository;
             _userRepository = userRepository;
@@ -105,8 +109,9 @@ namespace Imagino.Api.Controllers.Image
 
             try
             {
-                using var client = new HttpClient();
-                var bytes = await client.GetByteArrayAsync(imageUrl);
+                var hosts = new List<string> { "replicate.delivery", "*.replicate.delivery" };
+                if (Uri.TryCreate(_config["R2Settings:PublicUrl"], UriKind.Absolute, out var publicUrl)) hosts.Add(publicUrl.IdnHost);
+                var bytes = await _media.DownloadAsync(imageUrl, hosts.ToArray(), 20 * 1024 * 1024, ct: HttpContext.RequestAborted);
 
                 var extension = Path.GetExtension(new Uri(imageUrl).AbsolutePath).ToLowerInvariant();
                 var contentType = extension switch

@@ -21,6 +21,7 @@ namespace Imagino.Api.Services.Video.Providers
     {
         public VideoProviderType ProviderType => VideoProviderType.GoogleVeo;
 
+        private readonly Imagino.Api.Security.SafeMediaDownloader _media;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly VeoSettings _settings;
         private readonly IStorageService _storage;
@@ -30,8 +31,9 @@ namespace Imagino.Api.Services.Video.Providers
             IHttpClientFactory httpClientFactory,
             IOptions<VeoSettings> settings,
             IStorageService storage,
-            ILogger<GoogleVeoVideoProviderClient> logger)
+            ILogger<GoogleVeoVideoProviderClient> logger, Imagino.Api.Security.SafeMediaDownloader media)
         {
+            _media = media;
             _httpClientFactory = httpClientFactory;
             _settings = settings.Value;
             _storage = storage;
@@ -65,7 +67,7 @@ namespace Imagino.Api.Services.Video.Providers
 
             var endpoint = "https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview:predictLongRunning";
 
-            var client = _httpClientFactory.CreateClient();
+            var client = _httpClientFactory.CreateClient("ProviderSecure");
             using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
             {
                 Content = JsonContent.Create(payload, options: new JsonSerializerOptions
@@ -104,8 +106,10 @@ namespace Imagino.Api.Services.Video.Providers
                 throw new InvalidOperationException("Veo API key not configured");
             }
 
+            if (!System.Text.RegularExpressions.Regex.IsMatch(providerJobId, @"^(models/[a-zA-Z0-9._-]+/)?operations/[a-zA-Z0-9._-]+$"))
+                throw new ArgumentException("Invalid Veo operation name.");
             var endpoint = $"https://generativelanguage.googleapis.com/v1beta/{providerJobId}";
-            var client = _httpClientFactory.CreateClient();
+            var client = _httpClientFactory.CreateClient("ProviderSecure");
 
             using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
             request.Headers.Add("x-goog-api-key", _settings.ApiKey);
@@ -145,20 +149,9 @@ namespace Imagino.Api.Services.Video.Providers
 
         private async Task<string> DownloadAndStoreVideoAsync(string videoUri, string fileName, CancellationToken cancellationToken)
         {
-            var client = _httpClientFactory.CreateClient();
-            using var request = new HttpRequestMessage(HttpMethod.Get, videoUri);
-            request.Headers.Add("x-goog-api-key", _settings.ApiKey);
-
-            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogError("Failed to download video from Veo. Status: {Status}. Body: {Body}", response.StatusCode, errorBody);
-                throw new Exception($"Failed to download video from Veo: {response.StatusCode} - {errorBody}");
-            }
-
-            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var bytes = await _media.DownloadAsync(videoUri, new[] { "generativelanguage.googleapis.com", "storage.googleapis.com" },
+                100 * 1024 * 1024, _settings.ApiKey, cancellationToken);
+            using var stream = new MemoryStream(bytes, writable: false);
             var normalizedFileName = fileName.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase)
                 ? fileName
                 : $"{fileName}.mp4";

@@ -62,4 +62,12 @@ Smoke tools/smoke-generation-staging.cjs executado em 02/10/2026 às 23:20 UTC: 
 
 Calendário Google final revelou retirada prevista dos Veo 3.1 Preview em 22/10. Código, catálogo Atlas e snapshot frontend foram corrigidos: COMPATIBILITY/migration_required; bloqueio antes de reserva/POST, inclusive para documento ACTIVE antigo; após retirada, quote recusada. Testes específicos passaram. As três ofertas de imagem usam endpoints distintos e permanecem candidatas de homologação. Vídeo não está pronto para lançamento.
 
-O backend permanece no último deploy saudável anterior; o novo SHA não será redeployado nesta fase enquanto existir o gate preexistente. Os PRs e SHA finais serão registrados abaixo após publicação. Nenhum gasto de provider foi executado.
+O backend permanece no último deploy saudável anterior; o novo código não será redeployado nesta fase enquanto existir o gate preexistente. Nenhum gasto de provider foi executado.
+
+Vercel final READY: dpl_7gLHTJTeML422Q2bAr3GexHcLEfu, SHA 39d32eadb1af7995677807608000f2507faf285c, target Preview (null), alias da branch acima. Também foi confirmado no navegador que 1080p/4s mostra erro de regra e 1080p/8s remove esse erro; os inputs de frames e áudio nativo aparecem. A última publicação compilou com a revisão .2 do snapshot. Capturas: GENERATION_V2_IMAGE_PREVIEW.jpg e GENERATION_V2_VIDEO_PREVIEW.jpg no workspace.
+
+PRs em draft, base fix/revival-operational-security, anexados a esta conversa:
+- [Backend #56](https://github.com/danitest45/imagino-api/pull/56): implementação ff2c14c; pesquisa/lifecycle/migração/smoke 4a99617; evidência final em commit documental seguinte.
+- [Frontend #87](https://github.com/danitest45/imagino-front/pull/87): af22619, 54aeae1, 378f841, 39d32ea. Último commit corresponde ao Preview READY.
+
+Os PRs não foram mergeados. Ambos deixam explícitas as verificações pendentes, sem declarar o pipeline staging concluído. Os sete documentos deste diretório também foram disponibilizados com os nomes pedidos na raiz do workspace para leitura/download.

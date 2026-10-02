@@ -107,6 +107,35 @@ public class GenerationV2Tests
         Assert.Throws<ValidationAppException>(() => GenerationPolicy.Validate(model, Request(model)));
     }
     [Fact]
+    public void UpcomingRetirementBlocksActivationEvenForOldActiveCatalogRows()
+    {
+        var repo = new Mock<IGenerationRepository>();
+        var provider = new Mock<IGenerationProvider>();
+        provider.SetupGet(p => p.Name).Returns("google-veo"); provider.SetupGet(p => p.IsConfigured).Returns(true);
+        var model = Model("veo-fast-20261002");
+        model.Lifecycle = "ACTIVE"; // A previously seeded document cannot bypass the safety schedule.
+        var service = Service(repo, provider.Object, true);
+        Assert.Equal("migration_required", service.Availability(model, new DateTime(2026, 10, 2, 0, 0, 0, DateTimeKind.Utc)));
+        var retired = new DateTime(2026, 10, 22, 0, 0, 0, DateTimeKind.Utc);
+        Assert.Equal("retired", service.Availability(model, retired));
+        var input = GenerationPolicy.Validate(model, Request(model));
+        Assert.Throws<ValidationAppException>(() => GenerationPolicy.Quote(model, input, retired));
+        Assert.Null(GenerationLifecycle.RetirementAt(Model("gemini-edit-20261002")));
+    }
+    [Fact]
+    public async Task MigratingVideoCannotReserveCreditsOrDispatchProvider()
+    {
+        var repo = new Mock<IGenerationRepository>(); var model = Model("veo-cinema-20261002");
+        repo.Setup(r => r.CatalogAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<GenerationModel> { model });
+        var provider = new Mock<IGenerationProvider>(); provider.SetupGet(p => p.Name).Returns("google-veo"); provider.SetupGet(p => p.IsConfigured).Returns(true);
+        await Assert.ThrowsAsync<ForbiddenFeatureException>(() => Service(repo, provider.Object, true).CreateAsync("owner", "a-valid-key-123456", Request(model), default));
+        repo.Verify(r => r.ReserveAsync(It.IsAny<GenerationJob>(), It.IsAny<CancellationToken>()), Times.Never);
+        var job = Job(model); job.Status = GenerationStatus.Starting;
+        await Processor(repo, provider.Object, new()).ProcessAsync(job, default);
+        provider.Verify(p => p.StartAsync(It.IsAny<GenerationJob>(), It.IsAny<CancellationToken>()), Times.Never);
+        repo.Verify(r => r.SettleAsync(job, GenerationStatus.Failed, null, "generation_disabled", It.IsAny<CancellationToken>()), Times.Once);
+    }
+    [Fact]
     public void VideoConstraintsRejectUnsupportedCombinations()
     {
         var model = Model("veo-fast-20261002"); var request = Request(model);

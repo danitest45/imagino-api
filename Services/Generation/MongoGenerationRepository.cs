@@ -35,6 +35,12 @@ public sealed class MongoGenerationRepository : IGenerationRepository
             document.Remove("_id");
             await models.UpdateOneAsync(m => m.Id == model.Id, new BsonDocument("$setOnInsert", document),
                 new UpdateOptions { IsUpsert = true }, ct);
+            // Narrow, replay-safe migration of our two original staging seed rows.
+            // Keep pricing, capabilities and any independently managed catalog entries.
+            if (model.Provider == "google-veo" && model.Version == "2026-10-02.2")
+                await models.UpdateOneAsync(m => m.Id == model.Id && m.Version == "2026-10-02.1" && m.ProviderModel == model.ProviderModel,
+                    Builders<GenerationModel>.Update.Set(m => m.Version, model.Version)
+                        .Set(m => m.Lifecycle, model.Lifecycle).Set(m => m.Description, model.Description), cancellationToken: ct);
         }
     }
     public Task<List<GenerationModel>> CatalogAsync(CancellationToken ct) => models.Find(_ => true).SortBy(m => m.SortOrder).ToListAsync(ct);

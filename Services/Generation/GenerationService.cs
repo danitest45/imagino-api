@@ -9,8 +9,11 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
 {
     public async Task<GenerationModel> ModelAsync(string id, CancellationToken ct) =>
         (await repository.CatalogAsync(ct)).FirstOrDefault(m => m.Id == id) ?? throw new ValidationAppException("Unknown model.");
-    public string Availability(GenerationModel model)
+    public string Availability(GenerationModel model, DateTime? now = null)
     {
+        var currentTime = now ?? DateTime.UtcNow;
+        if (GenerationLifecycle.IsRetired(model, currentTime)) return "retired";
+        if (GenerationLifecycle.RequiresMigration(model, currentTime)) return "migration_required";
         if (!model.Enabled || model.Lifecycle != "ACTIVE" || !model.ProviderEnabled) return "disabled";
         if (model.Provider == "fixture") return options.Value.StagingFixtureEnabled ? "synthetic_demo" : "disabled";
         if (!options.Value.PaidGenerationEnabled) return "approval_required";

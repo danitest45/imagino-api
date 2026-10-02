@@ -22,8 +22,10 @@ public sealed class GenerationController(IGenerationRepository repository, Gener
         var models = await repository.CatalogAsync(ct);
         return Ok(new { revision = GenerationCatalog.Revision, models = models.Select(m => new {
             m.Id, m.Version, m.DisplayName, m.Category, m.Description, m.MediaType, m.ProviderModel,
-            m.Capabilities, m.Fields, m.Inputs, m.Rules, m.Lifecycle, availability = service.Availability(m),
-            startingCredits = GenerationPolicy.Quote(m, new("preview", m.Fields.ToDictionary(f => f.Key, f => f.DefaultValue), new()), DateTime.UtcNow).Credits
+            m.Capabilities, m.Fields, m.Inputs, m.Rules,
+            lifecycle = GenerationLifecycle.RequiresMigration(m, DateTime.UtcNow) ? "COMPATIBILITY" : m.Lifecycle,
+            retirementAt = GenerationLifecycle.RetirementAt(m), availability = service.Availability(m),
+            startingCredits = GenerationLifecycle.IsRetired(m, DateTime.UtcNow) ? 0 : GenerationPolicy.Quote(m, new("preview", m.Fields.ToDictionary(f => f.Key, f => f.DefaultValue), new()), DateTime.UtcNow).Credits
         }) });
     }
     [HttpPost("quote"), Authorize]

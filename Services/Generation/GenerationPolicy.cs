@@ -10,7 +10,8 @@ public static class GenerationPolicy
 {
     public static ValidatedGeneration Validate(GenerationModel model, GenerationRequest request)
     {
-        if (!model.Enabled || model.Lifecycle != "ACTIVE") throw new ValidationAppException("Model is disabled.");
+        if (!model.Enabled || model.Lifecycle is not ("ACTIVE" or "COMPATIBILITY")) throw new ValidationAppException("Model is disabled.");
+        if (GenerationLifecycle.IsRetired(model, DateTime.UtcNow)) throw new ValidationAppException("Model endpoint is retired. Migration required.");
         if (!model.ProviderEnabled) throw new ValidationAppException("Provider is disabled.");
         var prompt = request.Prompt?.Trim() ?? "";
         if (prompt.Length is < 1 or > 2000) throw new ValidationAppException("Prompt must contain 1 to 2000 characters.");
@@ -86,6 +87,7 @@ public static class GenerationPolicy
 
     public static GenerationQuote Quote(GenerationModel model, ValidatedGeneration input, DateTime now)
     {
+        if (GenerationLifecycle.IsRetired(model, now)) throw new ValidationAppException("Model endpoint is retired. Migration required.");
         var pricing = model.Pricing;
         var resolution = input.Settings.GetValueOrDefault("resolution", "1MP");
         if (!pricing.RatesUsd.TryGetValue(resolution, out var cost)) throw new ValidationAppException("Pricing unavailable for this resolution.");

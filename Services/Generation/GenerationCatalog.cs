@@ -2,7 +2,7 @@ namespace Imagino.Api.Services.Generation;
 
 public static class GenerationCatalog
 {
-    public const string Revision = "2026-10-02.1";
+    public const string Revision = "2026-10-02.2";
     public static List<GenerationModel> Seed(bool fixture)
     {
         var aspect = new GenerationField("aspectRatio", "Aspect ratio", "enum", "1:1", new[] { "1:1", "16:9", "9:16" });
@@ -36,7 +36,8 @@ public static class GenerationCatalog
     }
     private static GenerationModel Video(string id, string name, string description, string providerModel, decimal hd, decimal fullHd, int order) =>
         new() { Id = id, DisplayName = name, Category = "Motion", MediaType = "video", Provider = "google-veo", ProviderModel = providerModel,
-            Description = description, SortOrder = order, TimeoutSeconds = 1200,
+            Description = description + " Compatibility preview; endpoint retires October 22. Migration required before activation.", Lifecycle = "COMPATIBILITY",
+            Version = "2026-10-02.2", SortOrder = order, TimeoutSeconds = 1200,
             Capabilities = new[] { "textToVideo", "imageToVideo", "firstFrame", "lastFrame", "nativeAudio" },
             Fields = new() { new("aspectRatio", "Aspect ratio", "enum", "16:9", new[] { "16:9", "9:16" }),
                 new("resolution", "Resolution", "enum", "720p", new[] { "720p", "1080p" }),

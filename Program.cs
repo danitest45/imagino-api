@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Imagino.Api.Security;
+using Imagino.Api.Services.Generation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -70,6 +71,7 @@ builder.Services.AddCors(options =>
 
 // Adicionar serviços do projeto
 builder.Services.AddAppServices(builder.Configuration);
+builder.Services.AddGenerationV2(builder.Configuration);
 builder.Services.AddMemoryCache();
 
 // Controllers, Swagger, Endpoints

@@ -56,6 +56,7 @@ public sealed class GenerationModel
     public int SortOrder { get; set; }
 }
 public sealed record GenerationInput(string Role, string Data);
+public sealed record GenerationJournalEntry(string Stage, DateTime AtUtc);
 public sealed class GenerationRequest
 {
     public string ModelId { get; set; } = "";
@@ -94,6 +95,7 @@ public sealed class GenerationJob
     public string? OutputUrl { get; set; }
     public string? ErrorCode { get; set; }
     public decimal? ProviderReportedCostUsd { get; set; }
+    public List<GenerationJournalEntry> Journal { get; set; } = new();
 }
 public sealed record GenerationJobView(string Id, string ModelId, string DisplayName, string MediaType,
     string Status, string CreditState, int Credits, string Prompt, Dictionary<string, string> Settings,

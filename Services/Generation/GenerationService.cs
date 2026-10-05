@@ -39,6 +39,7 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
         return await repository.ReserveAsync(new GenerationJob {
             UserId = userId, IdempotencyKey = key, RequestHash = hash, Model = model, Prompt = input.Prompt,
             Settings = input.Settings, Inputs = input.Inputs, Quote = quote,
+            Journal = new() { new("QueuedReserved", DateTime.UtcNow) },
             DeadlineAt = DateTime.UtcNow.AddSeconds(model.TimeoutSeconds)
         }, ct);
     }

@@ -4,7 +4,7 @@ namespace Imagino.Api.Services.Generation;
 
 public static class GenerationRegistration
 {
-    public static void AddGenerationV2(this IServiceCollection services, IConfiguration config)
+    public static void AddGenerationV2(this IServiceCollection services, IConfiguration config, bool fixtureOnly = false)
     {
         ValidateStaging(config);
         services.Configure<GenerationSettings>(config.GetSection("GenerationV2"));
@@ -13,9 +13,12 @@ public static class GenerationRegistration
         services.AddSingleton<GenerationProcessor>();
         services.AddSingleton<IGenerationOutputStore, GenerationOutputStore>();
         services.AddSingleton<GenerationProviderHttp>();
-        services.AddSingleton<IGenerationProvider, BflGenerationProvider>();
-        services.AddSingleton<IGenerationProvider, GeminiImageGenerationProvider>();
-        services.AddSingleton<IGenerationProvider, VeoGenerationProvider>();
+        if (!fixtureOnly)
+        {
+            services.AddSingleton<IGenerationProvider, BflGenerationProvider>();
+            services.AddSingleton<IGenerationProvider, GeminiImageGenerationProvider>();
+            services.AddSingleton<IGenerationProvider, VeoGenerationProvider>();
+        }
         services.AddSingleton<IGenerationProvider, StagingGenerationProvider>();
         services.AddHttpClient("GenerationPrivate", c => c.Timeout = TimeSpan.FromMinutes(2))
             .ConfigurePrimaryHttpMessageHandler(RemoteUrlPolicy.CreateHandler)

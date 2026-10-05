@@ -38,7 +38,11 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
                 // Exactly one application-level POST attempt. No retry for ambiguous submissions.
                 var result = await provider.StartAsync(job, ct);
                 if (result.ErrorCode != null) await FinishAsync(job, GenerationStatus.Failed, null, result.ErrorCode, stoppingToken);
-                else await repository.BindAsync(job, result, ct);
+                else
+                {
+                    await repository.BindAsync(job, result, ct);
+                    logger.LogInformation("Generation provider bound job={Job} provider={Provider} stage=provider_bound", job.Id, job.Model.Provider);
+                }
                 return;
             }
             var polled = await provider.PollAsync(job, ct);
@@ -61,6 +65,7 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
                     job.Model.MediaType == "video" ? 100 * 1024 * 1024 : GeneratedImageValidator.MaxBytes, ct);
             }
             var url = await storage.StoreAsync(job, bytes, ct);
+            logger.LogInformation("Generation output stored job={Job} provider={Provider} bytes={Bytes} stage=output_stored", job.Id, job.Model.Provider, bytes.Length);
             await FinishAsync(job, GenerationStatus.Completed, url, null, ct);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -101,7 +106,11 @@ public sealed class GenerationWorker(IServiceProvider services, IOptions<Generat
             try
             {
                 var job = await repository.ClaimAsync(stoppingToken);
-                if (job != null) await processor.ProcessAsync(job, stoppingToken);
+                if (job != null)
+                {
+                    logger.LogInformation("Generation claimed job={Job} provider={Provider} status={Status} stage=worker_claim", job.Id, job.Model.Provider, job.Status);
+                    await processor.ProcessAsync(job, stoppingToken);
+                }
                 else await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }

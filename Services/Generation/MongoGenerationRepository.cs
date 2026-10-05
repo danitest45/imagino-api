@@ -90,7 +90,8 @@ public sealed class MongoGenerationRepository : IGenerationRepository
             (f.Eq(j => j.Status, GenerationStatus.Processing) & f.Lte(j => j.NextPollAt, now)) |
             (f.Eq(j => j.Status, GenerationStatus.Starting) & f.Lte(j => j.DeadlineAt, now)));
         var job = await jobs.FindOneAndUpdateAsync(due,
-            Builders<GenerationJob>.Update.Set(j => j.Lease, Guid.NewGuid().ToString("N")).Set(j => j.LeaseUntil, now.AddMinutes(5)),
+            Builders<GenerationJob>.Update.Set(j => j.Lease, Guid.NewGuid().ToString("N")).Set(j => j.LeaseUntil, now.AddMinutes(5))
+                .Push(j => j.Journal, new GenerationJournalEntry("WorkerClaim", now)),
             new FindOneAndUpdateOptions<GenerationJob> { ReturnDocument = ReturnDocument.After, Sort = Builders<GenerationJob>.Sort.Ascending(j => j.NextPollAt) }, ct);
         if (job?.Status == GenerationStatus.Queued)
         {
@@ -108,6 +109,7 @@ public sealed class MongoGenerationRepository : IGenerationRepository
             Builders<GenerationJob>.Update.Set(j => j.ProviderJobId, result.JobId).Set(j => j.PollingUrl, result.PollingUrl)
                 .Set(j => j.ProviderReportedCostUsd, result.CostUsd).Set(j => j.Status, GenerationStatus.Processing)
                 .Set(j => j.NextPollAt, DateTime.UtcNow.AddSeconds(3)).Set(j => j.UpdatedAt, DateTime.UtcNow)
+                .Push(j => j.Journal, new GenerationJournalEntry("ProviderBound", DateTime.UtcNow))
                 .Set(j => j.Lease, null).Set(j => j.LeaseUntil, null), cancellationToken: ct);
         if (r.ModifiedCount != 1) throw new InvalidOperationException("Provider binding lease lost.");
     }
@@ -142,6 +144,10 @@ public sealed class MongoGenerationRepository : IGenerationRepository
                 .Set(j => j.CreditState, charged ? CreditState.Charged : CreditState.Refunded)
                 .Set(j => j.OutputUrl, url).Set(j => j.ErrorCode, error).Set(j => j.UpdatedAt, DateTime.UtcNow)
                 .Set(j => j.Lease, null).Set(j => j.LeaseUntil, null).Set(j => j.Inputs, new List<GenerationInput>());
+            var events = new List<GenerationJournalEntry>();
+            if (charged) events.Add(new("OutputStored", DateTime.UtcNow));
+            events.Add(new(charged ? "CompletedCharged" : status == GenerationStatus.Cancelled ? "CancelledRefunded" : "FailedRefunded", DateTime.UtcNow));
+            update = update.PushEach(j => j.Journal, events);
             var changed = await jobs.UpdateOneAsync(s, filter, update, cancellationToken: token);
             if (changed.ModifiedCount != 1) return false;
             if (!charged)

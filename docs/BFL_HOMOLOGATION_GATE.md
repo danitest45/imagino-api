@@ -1,6 +1,6 @@
 # Finite BFL staging authorization
 
-This is the technical gate for the user's three-call authorization on 2026-10-05, total maximum USD 0.15. Real homologation is still pending the user's manual API-key entry. No paid POST has been sent during preparation.
+This is the technical gate for the user's three-call authorization on 2026-10-05, total maximum USD 0.15. The run is now closed: exactly three paid POSTs completed and charged, observed total USD 0.089, all slots consumed and reconciled. PaidGenerationEnabled=false is deployed. The user entered the key manually; its value was not read or copied by the agent. Do not repeat this run. See [the real staging report](BFL_ADAPTER_REAL_STAGING.md) for evidence, the reported-cost precision fix and the browser download-event capture limitation.
 
 Only the AIStaging profile on Render service `srv-db1tmv17lnhs73efdjp0`, host `imagino-api-ai-staging.onrender.com`, branch `codex/imagino-ai-revival-v2` can enable `GenerationV2__BflHomologationEnabled=true`. Its registration contains BFL and the synthetic fixture; Gemini, Veo and optional external integrations remain excluded. Adding a BFL key while `PaidGenerationEnabled=false` is supported and does not activate spending.
 

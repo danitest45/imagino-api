@@ -13,6 +13,7 @@ public sealed class GenerationSettings
     public bool SeedStagingCatalog { get; set; }
     public bool StagingFixtureEnabled { get; set; }
     public bool PaidGenerationEnabled { get; set; }
+    public bool BflHomologationEnabled { get; set; }
     public int StagingFixtureDelaySeconds { get; set; }
     public string BflApiKey { get; set; } = "";
     public string GeminiApiKey { get; set; } = "";
@@ -96,6 +97,9 @@ public sealed class GenerationJob
     public string? OutputUrl { get; set; }
     public string? ErrorCode { get; set; }
     public decimal? ProviderReportedCostUsd { get; set; }
+    public double? ProviderAcceptanceLatencyMs { get; set; }
+    public int? BflHomologationCall { get; set; }
+    public GenerationOutputMetrics? OutputMetrics { get; set; }
     public List<GenerationJournalEntry> Journal { get; set; } = new();
 }
 public sealed record GenerationJobView(string Id, string ModelId, string DisplayName, string MediaType,
@@ -106,8 +110,11 @@ public sealed record GenerationJobView(string Id, string ModelId, string Display
         j.Model.MediaType, j.Status.ToString(), j.CreditState.ToString(), j.Quote.Credits, j.Prompt,
         j.Settings, j.OutputUrl, j.ErrorCode, j.CreatedAt, j.UpdatedAt);
 }
+public sealed record GenerationOutputMetrics(DateTime ProviderReadyAtUtc, DateTime DownloadStartedAtUtc,
+    DateTime DownloadFinishedAtUtc, DateTime StoredAtUtc, int Bytes, string Format, int Width, int Height);
 public sealed record ProviderResult(string? JobId, string? PollingUrl, bool Completed = false,
-    byte[]? Bytes = null, string? OutputUrl = null, string? ErrorCode = null, decimal? CostUsd = null);
+    byte[]? Bytes = null, string? OutputUrl = null, string? ErrorCode = null, decimal? CostUsd = null,
+    double? AcceptanceLatencyMs = null);
 public interface IGenerationProvider
 {
     string Name { get; }
@@ -125,6 +132,7 @@ public interface IGenerationRepository
     Task<GenerationJob> ReserveAsync(GenerationJob job, CancellationToken ct);
     Task<GenerationJob?> ClaimAsync(CancellationToken ct);
     Task BindAsync(GenerationJob job, ProviderResult result, CancellationToken ct);
+    Task<bool> BeginBflSubmissionAsync(GenerationJob job, CancellationToken ct);
     Task DeferAsync(GenerationJob job, bool failedPoll, CancellationToken ct);
     Task<bool> SettleAsync(GenerationJob job, GenerationStatus status, string? url, string? error, CancellationToken ct);
     Task<bool> CancelAsync(string id, string userId, CancellationToken ct);

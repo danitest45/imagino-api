@@ -16,13 +16,19 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
         if (GenerationLifecycle.RequiresMigration(model, currentTime)) return "migration_required";
         if (!model.Enabled || model.Lifecycle != "ACTIVE" || !model.ProviderEnabled) return "disabled";
         if (model.Provider == "fixture") return options.Value.StagingFixtureEnabled ? "synthetic_demo" : "disabled";
+        if (options.Value.BflHomologationEnabled && (!BflHomologationPolicy.AllowsModel(model) || currentTime >= BflHomologationPolicy.ExpiresAtUtc))
+            return "approval_required";
         if (!options.Value.PaidGenerationEnabled) return "approval_required";
         return providers.Any(p => p.Name == model.Provider && p.IsConfigured) ? "ready" : "credentials_required";
     }
-    public async Task<GenerationQuote> QuoteAsync(GenerationRequest request, CancellationToken ct)
+    public async Task<GenerationQuote> QuoteAsync(GenerationRequest request, CancellationToken ct, string? owner = null)
     {
         var model = await ModelAsync(request.ModelId, ct);
-        return GenerationPolicy.Quote(model, GenerationPolicy.Validate(model, request), DateTime.UtcNow);
+        var input = GenerationPolicy.Validate(model, request);
+        var quote = GenerationPolicy.Quote(model, input, DateTime.UtcNow);
+        if (options.Value.BflHomologationEnabled && model.Provider != "fixture")
+            BflHomologationPolicy.Validate(owner ?? "", model, input, quote, DateTime.UtcNow);
+        return quote;
     }
     public async Task<GenerationJob> CreateAsync(string userId, string? key, GenerationRequest request, CancellationToken ct)
     {
@@ -36,11 +42,13 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
             throw new ForbiddenFeatureException("Generation requires provider credentials and explicit spending approval.");
         GenerationPolicy.ValidateQuote(request.QuoteId, hash, DateTime.UtcNow);
         var quote = GenerationPolicy.Quote(model, input, DateTime.UtcNow);
-        return await repository.ReserveAsync(new GenerationJob {
+        var job = new GenerationJob {
             UserId = userId, IdempotencyKey = key, RequestHash = hash, Model = model, Prompt = input.Prompt,
             Settings = input.Settings, Inputs = input.Inputs, Quote = quote,
             Journal = new() { new("QueuedReserved", DateTime.UtcNow) },
             DeadlineAt = DateTime.UtcNow.AddSeconds(model.TimeoutSeconds)
-        }, ct);
+        };
+        if (options.Value.BflHomologationEnabled && model.Provider != "fixture") BflHomologationPolicy.ValidateJob(job);
+        return await repository.ReserveAsync(job, ct);
     }
 }

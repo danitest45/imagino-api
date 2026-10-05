@@ -30,7 +30,7 @@ public sealed class GenerationController(IGenerationRepository repository, Gener
     }
     [HttpPost("quote"), Authorize]
     public async Task<IActionResult> Quote(GenerationRequest request, CancellationToken ct) =>
-        !options.Value.Enabled ? NotFound() : Ok(await service.QuoteAsync(request, ct));
+        !options.Value.Enabled ? NotFound() : Ok(await service.QuoteAsync(request, ct, Owner));
     [HttpPost("jobs"), Authorize]
     public async Task<IActionResult> Create(GenerationRequest request, CancellationToken ct)
     {

@@ -56,6 +56,13 @@ public sealed class GenerationProviderContractTests
         Assert.Equal(start.PollingUrl, wire.Requests[1].Url); Assert.Equal("GET", wire.Requests[1].Method);
     }
     [Fact]
+    public async Task BflNullableReportedCostStillBindsTheAcceptedJob()
+    {
+        var wire = new Wire("""{"id":"bound-1","polling_url":"https://api.us1.bfl.ai/v1/get_result?id=bound-1","cost":null}""");
+        var result = await new BflGenerationProvider(new(wire), OptionsForTest()).StartAsync(Job("flux-fast-20261002"), default);
+        Assert.Equal("bound-1", result.JobId); Assert.Null(result.CostUsd); Assert.Single(wire.Requests);
+    }
+    [Fact]
     public async Task GeminiBindsStoredInteractionAndReadsOnlyModelOutput()
     {
         var wire = new Wire("""{"id":"interaction-1","status":"completed"}""",

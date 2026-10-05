@@ -35,6 +35,12 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
                     await FinishAsync(job, GenerationStatus.Failed, null, "generation_disabled", stoppingToken);
                     return;
                 }
+                if (options.Value.BflHomologationEnabled && job.Model.Provider == "bfl" &&
+                    !await repository.BeginBflSubmissionAsync(job, ct))
+                {
+                    await FinishAsync(job, GenerationStatus.Failed, null, "bfl_submission_blocked", stoppingToken);
+                    return;
+                }
                 // Exactly one application-level POST attempt. No retry for ambiguous submissions.
                 var result = await provider.StartAsync(job, ct);
                 if (result.ErrorCode != null) await FinishAsync(job, GenerationStatus.Failed, null, result.ErrorCode, stoppingToken);
@@ -56,6 +62,8 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
                 await repository.DeferAsync(job, false, ct);
                 return;
             }
+            var readyAt = DateTime.UtcNow;
+            var downloadStartedAt = DateTime.UtcNow;
             var bytes = polled.Bytes;
             if (bytes == null)
             {
@@ -64,7 +72,12 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
                 bytes = await http.DownloadAsync(polled.OutputUrl, hosts, job.Model.Provider == "google-veo" ? options.Value.GeminiApiKey : null,
                     job.Model.MediaType == "video" ? 100 * 1024 * 1024 : GeneratedImageValidator.MaxBytes, ct);
             }
+            var downloadedAt = DateTime.UtcNow;
+            var dims = options.Value.BflHomologationEnabled && job.Model.Provider == "bfl"
+                ? BflHomologationPolicy.ValidateOutput(bytes) : (Width: 0, Height: 0);
             var url = await storage.StoreAsync(job, bytes, ct);
+            if (options.Value.BflHomologationEnabled && job.Model.Provider == "bfl")
+                job.OutputMetrics = new(readyAt, downloadStartedAt, downloadedAt, DateTime.UtcNow, bytes.Length, "png", dims.Width, dims.Height);
             logger.LogInformation("Generation output stored job={Job} provider={Provider} bytes={Bytes} stage=output_stored", job.Id, job.Model.Provider, bytes.Length);
             await FinishAsync(job, GenerationStatus.Completed, url, null, ct);
         }

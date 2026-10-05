@@ -10,9 +10,16 @@ public sealed class BflGenerationProvider(GenerationProviderHttp http, IOptions<
     public async Task<ProviderResult> StartAsync(GenerationJob job, CancellationToken ct)
     {
         if (job.Model.ProviderModel is not ("flux-2-klein-4b" or "flux-2-pro")) throw new InvalidOperationException("Unsupported BFL endpoint.");
+        if (options.Value.BflHomologationEnabled) BflHomologationPolicy.ValidateJob(job);
         var (width, height) = GenerationPolicy.Dimensions(job.Settings);
         var body = new Dictionary<string, object> { ["prompt"] = job.Prompt, ["width"] = width, ["height"] = height, ["output_format"] = "png", ["safety_tolerance"] = 2 };
+        if (options.Value.BflHomologationEnabled)
+        {
+            body["seed"] = 20261005;
+            if (job.Model.ProviderModel == "flux-2-pro") body["disable_pup"] = true;
+        }
         for (var i = 0; i < job.Inputs.Count; i++) body[i == 0 ? "input_image" : "input_image_" + (i + 1)] = job.Inputs[i].Data.Split(',')[1];
+        var acceptance = System.Diagnostics.Stopwatch.StartNew();
         using var response = await http.SendAsync(HttpMethod.Post, "https://api.bfl.ai/v1/" + job.Model.ProviderModel,
             "x-key", options.Value.BflApiKey, body, new[] { "api.bfl.ai" }, ct);
         var root = response.RootElement;
@@ -20,8 +27,8 @@ public sealed class BflGenerationProvider(GenerationProviderHttp http, IOptions<
         var pollingUrl = root.GetProperty("polling_url").GetString()!;
         ValidatePolling(pollingUrl, id);
         // BFL reports cost in provider credits (1 credit = $0.01), not Imagino credits.
-        decimal? cost = root.TryGetProperty("cost", out var c) && c.TryGetDecimal(out var n) ? n * 0.01m : null;
-        return new(id, pollingUrl, CostUsd: cost);
+        decimal? cost = root.TryGetProperty("cost", out var c) && c.ValueKind == System.Text.Json.JsonValueKind.Number && c.TryGetDecimal(out var n) ? n * 0.01m : null;
+        return new(id, pollingUrl, CostUsd: cost, AcceptanceLatencyMs: acceptance.Elapsed.TotalMilliseconds);
     }
     public async Task<ProviderResult> PollAsync(GenerationJob job, CancellationToken ct)
     {

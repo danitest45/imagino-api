@@ -10,9 +10,14 @@ public static class AIStagingConfiguration
         foreach (var section in new[] { "Stripe", "Google", "Resend", "ReplicateSettings", "GeminiSettings", "VeoSettings" })
             if (config.GetSection(section).GetChildren().Any()) throw new InvalidOperationException("AI staging forbids configuration for optional external integrations.");
         var settings = config.GetSection("GenerationV2").Get<GenerationSettings>() ?? new();
-        if (!settings.Enabled || !settings.SeedStagingCatalog || !settings.StagingFixtureEnabled || settings.PaidGenerationEnabled ||
-            !string.IsNullOrEmpty(settings.BflApiKey) || !string.IsNullOrEmpty(settings.GeminiApiKey))
-            throw new InvalidOperationException("AI staging requires fixture-only Generation V2 with paid generation disabled and no provider keys.");
+        if (!settings.Enabled || !settings.SeedStagingCatalog || !settings.StagingFixtureEnabled ||
+            !string.IsNullOrEmpty(settings.GeminiApiKey) ||
+            (!settings.BflHomologationEnabled && (settings.PaidGenerationEnabled || !string.IsNullOrEmpty(settings.BflApiKey))))
+            throw new InvalidOperationException("AI staging permits only synthetic generation or the finite BFL authorization; other provider keys are forbidden.");
+        if (settings.BflHomologationEnabled && (config["RENDER_SERVICE_ID"] != BflHomologationPolicy.ServiceId ||
+            config["RENDER_GIT_BRANCH"] != "codex/imagino-ai-revival-v2" ||
+            config["RENDER_EXTERNAL_HOSTNAME"] != "imagino-api-ai-staging.onrender.com"))
+            throw new InvalidOperationException("BFL homologation is restricted to its exact AI staging service and branch.");
         GenerationRegistration.ValidateStaging(config);
         if (settings.StagingFixtureDelaySeconds is < 0 or > 120)
             throw new InvalidOperationException("Synthetic staging delay must be between 0 and 120 seconds.");

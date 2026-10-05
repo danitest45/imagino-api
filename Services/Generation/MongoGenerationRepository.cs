@@ -14,16 +14,26 @@ public sealed class MongoGenerationRepository : IGenerationRepository
     private readonly IMongoCollection<GenerationJob> jobs;
     private readonly IMongoCollection<GenerationModel> models;
     private readonly IMongoCollection<User> users;
-    public MongoGenerationRepository(IMongoClient client, IOptions<ImageGeneratorSettings> options)
+    private readonly IMongoCollection<BflHomologationLedger> bflLedger;
+    private readonly bool homologation;
+    public MongoGenerationRepository(IMongoClient client, IOptions<ImageGeneratorSettings> options, IOptions<GenerationSettings> generation)
     {
         this.client = client;
         var db = client.GetDatabase(options.Value.MongoDatabase);
         jobs = db.GetCollection<GenerationJob>("generation_jobs_v2");
         models = db.GetCollection<GenerationModel>("generation_catalog_v2");
         users = db.GetCollection<User>("Users");
+        bflLedger = db.GetCollection<BflHomologationLedger>("generation_bfl_homologation_v1");
+        homologation = generation.Value.BflHomologationEnabled;
     }
     public async Task InitializeAsync(IEnumerable<GenerationModel> seed, CancellationToken ct)
     {
+        if (homologation)
+        {
+            var ledger = new BflHomologationLedger().ToBsonDocument(); ledger.Remove("_id");
+            await bflLedger.UpdateOneAsync(l => l.Id == BflHomologationPolicy.RunId,
+                new BsonDocument("$setOnInsert", ledger), new UpdateOptions { IsUpsert = true }, ct);
+        }
         await jobs.Indexes.CreateManyAsync(new[] {
             new CreateIndexModel<GenerationJob>(Builders<GenerationJob>.IndexKeys.Ascending(j => j.UserId).Ascending(j => j.IdempotencyKey), new CreateIndexOptions { Unique = true, Name = "owner_idempotency" }),
             new CreateIndexModel<GenerationJob>(Builders<GenerationJob>.IndexKeys.Ascending(j => j.Status).Ascending(j => j.NextPollAt).Ascending(j => j.LeaseUntil), new CreateIndexOptions { Name = "worker_due" }),
@@ -60,6 +70,22 @@ public sealed class MongoGenerationRepository : IGenerationRepository
             {
                 var existing = await jobs.Find(s, j => j.UserId == job.UserId && j.IdempotencyKey == job.IdempotencyKey).FirstOrDefaultAsync(token);
                 if (existing != null) return Match(existing, job);
+                if (homologation && job.Model.Provider == "bfl")
+                {
+                    var call = BflHomologationPolicy.ValidateJob(job);
+                    job.BflHomologationCall = call;
+                    var f = Builders<BflHomologationLedger>.Filter;
+                    var allowed = f.Eq(l => l.Id, BflHomologationPolicy.RunId) & f.Eq(l => l.OwnerId, job.UserId) &
+                        f.Eq(l => l.Halted, false) & f.Gt(l => l.ExpiresAtUtc, DateTime.UtcNow) &
+                        f.Eq(l => l.BudgetUsd, BflHomologationPolicy.BudgetUsd) &
+                        f.Lte(l => l.CommittedUsd, BflHomologationPolicy.BudgetUsd - BflHomologationPolicy.Cost(call)) &
+                        f.Eq($"Calls.{call}.State", "Available");
+                    if (call > 1) allowed &= f.Eq($"Calls.{call - 1}.State", "Completed") & f.Eq($"Calls.{call - 1}.Reconciled", true);
+                    var slot = await bflLedger.UpdateOneAsync(s, allowed, Builders<BflHomologationLedger>.Update
+                        .Set($"Calls.{call}.State", "Reserved").Set($"Calls.{call}.JobId", job.Id)
+                        .Inc(l => l.CommittedUsd, BflHomologationPolicy.Cost(call)), cancellationToken: token);
+                    if (slot.ModifiedCount != 1) throw new ForbiddenFeatureException("BFL call is consumed, unreconciled, halted or outside its budget.");
+                }
                 var debit = await users.UpdateOneAsync(s, u => u.Id == job.UserId && u.Credits >= job.Quote.Credits,
                     Builders<User>.Update.Inc(u => u.Credits, -job.Quote.Credits), cancellationToken: token);
                 if (debit.ModifiedCount != 1)
@@ -80,6 +106,27 @@ public sealed class MongoGenerationRepository : IGenerationRepository
     }
     private static GenerationJob Match(GenerationJob existing, GenerationJob requested) =>
         existing.RequestHash == requested.RequestHash ? existing : throw new ConflictAppException("Idempotency key already belongs to another request.");
+
+    public async Task<bool> BeginBflSubmissionAsync(GenerationJob job, CancellationToken ct)
+    {
+        if (!homologation) return false;
+        var call = BflHomologationPolicy.ValidateJob(job);
+        using var session = await client.StartSessionAsync(cancellationToken: ct);
+        return await session.WithTransactionAsync(async (s, token) =>
+        {
+            var f = Builders<BflHomologationLedger>.Filter;
+            var allowed = f.Eq(l => l.Id, BflHomologationPolicy.RunId) & f.Eq(l => l.OwnerId, job.UserId) & f.Eq(l => l.Halted, false) &
+                f.Eq($"Calls.{call}.JobId", job.Id) & f.Eq($"Calls.{call}.State", "Reserved");
+            var now = DateTime.UtcNow;
+            var changed = await bflLedger.UpdateOneAsync(s, allowed, Builders<BflHomologationLedger>.Update
+                .Set($"Calls.{call}.State", "SubmissionAttempted").Set($"Calls.{call}.AttemptedAtUtc", now), cancellationToken: token);
+            if (changed.ModifiedCount != 1) return false;
+            var marked = await jobs.UpdateOneAsync(s, j => j.Id == job.Id && j.Lease == job.Lease && j.Status == GenerationStatus.Starting && j.ProviderJobId == null,
+                Builders<GenerationJob>.Update.Push(j => j.Journal, new GenerationJournalEntry("BflPostAttemptAuthorized", now)), cancellationToken: token);
+            if (marked.ModifiedCount != 1) throw new ConflictAppException("BFL submission lease lost before POST.");
+            return true;
+        }, cancellationToken: ct);
+    }
 
     public async Task<GenerationJob?> ClaimAsync(CancellationToken ct)
     {
@@ -105,13 +152,35 @@ public sealed class MongoGenerationRepository : IGenerationRepository
     public async Task BindAsync(GenerationJob job, ProviderResult result, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(result.JobId)) throw new InvalidOperationException("Missing provider job binding.");
-        var r = await jobs.UpdateOneAsync(j => j.Id == job.Id && j.Lease == job.Lease && j.Status == GenerationStatus.Starting,
-            Builders<GenerationJob>.Update.Set(j => j.ProviderJobId, result.JobId).Set(j => j.PollingUrl, result.PollingUrl)
+        var update = Builders<GenerationJob>.Update.Set(j => j.ProviderJobId, result.JobId).Set(j => j.PollingUrl, result.PollingUrl)
                 .Set(j => j.ProviderReportedCostUsd, result.CostUsd).Set(j => j.Status, GenerationStatus.Processing)
+                .Set(j => j.ProviderAcceptanceLatencyMs, result.AcceptanceLatencyMs)
                 .Set(j => j.NextPollAt, DateTime.UtcNow.AddSeconds(3)).Set(j => j.UpdatedAt, DateTime.UtcNow)
                 .Push(j => j.Journal, new GenerationJournalEntry("ProviderBound", DateTime.UtcNow))
-                .Set(j => j.Lease, null).Set(j => j.LeaseUntil, null), cancellationToken: ct);
-        if (r.ModifiedCount != 1) throw new InvalidOperationException("Provider binding lease lost.");
+                .Set(j => j.Lease, null).Set(j => j.LeaseUntil, null);
+        var filter = Builders<GenerationJob>.Filter.Where(j => j.Id == job.Id && j.Lease == job.Lease && j.Status == GenerationStatus.Starting);
+        if (!homologation || job.Model.Provider != "bfl")
+        {
+            var r = await jobs.UpdateOneAsync(filter, update, cancellationToken: ct);
+            if (r.ModifiedCount != 1) throw new InvalidOperationException("Provider binding lease lost.");
+            return;
+        }
+        var call = job.BflHomologationCall ?? throw new InvalidOperationException("Missing BFL authorization.");
+        using var session = await client.StartSessionAsync(cancellationToken: ct);
+        await session.WithTransactionAsync(async (s, token) =>
+        {
+            var r = await jobs.UpdateOneAsync(s, filter, update, cancellationToken: token);
+            if (r.ModifiedCount != 1) throw new InvalidOperationException("Provider binding lease lost.");
+            var f = Builders<BflHomologationLedger>.Filter;
+            var ledgerUpdate = Builders<BflHomologationLedger>.Update.Set($"Calls.{call}.State", "Accepted")
+                .Set($"Calls.{call}.ReportedUsd", result.CostUsd).Set($"Calls.{call}.AcceptedAtUtc", DateTime.UtcNow);
+            if (result.CostUsd != BflHomologationPolicy.Cost(call))
+                ledgerUpdate = ledgerUpdate.Set(l => l.Halted, true).Set(l => l.HaltReason, result.CostUsd == null ? "cost_unreported" : "cost_changed");
+            var bound = await bflLedger.UpdateOneAsync(s, f.Eq(l => l.Id, BflHomologationPolicy.RunId) &
+                f.Eq($"Calls.{call}.JobId", job.Id) & f.Eq($"Calls.{call}.State", "SubmissionAttempted"), ledgerUpdate, cancellationToken: token);
+            if (bound.ModifiedCount != 1) throw new InvalidOperationException("BFL ledger binding lost.");
+            return true;
+        }, cancellationToken: ct);
     }
     public async Task DeferAsync(GenerationJob job, bool failedPoll, CancellationToken ct)
     {
@@ -121,12 +190,12 @@ public sealed class MongoGenerationRepository : IGenerationRepository
                 .Set(j => j.PollFailures, failures).Set(j => j.Lease, null).Set(j => j.LeaseUntil, null), cancellationToken: ct);
     }
     public Task<bool> SettleAsync(GenerationJob job, GenerationStatus status, string? url, string? error, CancellationToken ct) =>
-        SettleTransactionAsync(job.Id, job.UserId, job.Lease, false, status, url, error, ct);
+        SettleTransactionAsync(job.Id, job.UserId, job.Lease, false, status, url, error, job.OutputMetrics, ct);
     public Task<bool> CancelAsync(string id, string userId, CancellationToken ct) =>
-        !ObjectId.TryParse(id, out _) ? Task.FromResult(false) : SettleTransactionAsync(id, userId, null, true, GenerationStatus.Cancelled, null, "cancelled", ct);
+        !ObjectId.TryParse(id, out _) ? Task.FromResult(false) : SettleTransactionAsync(id, userId, null, true, GenerationStatus.Cancelled, null, "cancelled", null, ct);
 
     private async Task<bool> SettleTransactionAsync(string id, string userId, string? lease, bool cancel,
-        GenerationStatus status, string? url, string? error, CancellationToken ct)
+        GenerationStatus status, string? url, string? error, GenerationOutputMetrics? metrics, CancellationToken ct)
     {
         if (!GenerationPolicy.IsTerminal(status)) throw new ArgumentException("Settlement requires a terminal status.");
         using var session = await client.StartSessionAsync(cancellationToken: ct);
@@ -143,6 +212,7 @@ public sealed class MongoGenerationRepository : IGenerationRepository
             var update = Builders<GenerationJob>.Update.Set(j => j.Status, status)
                 .Set(j => j.CreditState, charged ? CreditState.Charged : CreditState.Refunded)
                 .Set(j => j.OutputUrl, url).Set(j => j.ErrorCode, error).Set(j => j.UpdatedAt, DateTime.UtcNow)
+                .Set(j => j.OutputMetrics, metrics)
                 .Set(j => j.Lease, null).Set(j => j.LeaseUntil, null).Set(j => j.Inputs, new List<GenerationInput>());
             var events = new List<GenerationJournalEntry>();
             if (charged) events.Add(new("OutputStored", DateTime.UtcNow));
@@ -155,6 +225,17 @@ public sealed class MongoGenerationRepository : IGenerationRepository
                 var refund = await users.UpdateOneAsync(s, u => u.Id == job.UserId,
                     Builders<User>.Update.Inc(u => u.Credits, job.Quote.Credits), cancellationToken: token);
                 if (refund.MatchedCount != 1) throw new InvalidOperationException("Refund wallet not found.");
+            }
+            if (homologation && job.Model.Provider == "bfl")
+            {
+                var call = job.BflHomologationCall ?? throw new InvalidOperationException("Missing BFL authorization.");
+                var fLedger = Builders<BflHomologationLedger>.Filter;
+                var ledgerUpdate = Builders<BflHomologationLedger>.Update.Set($"Calls.{call}.State", charged ? "Completed" : "Failed")
+                    .Set($"Calls.{call}.SettledAtUtc", DateTime.UtcNow);
+                if (!charged) ledgerUpdate = ledgerUpdate.Set(l => l.Halted, true).Set(l => l.HaltReason, error ?? "generation_failed");
+                var settled = await bflLedger.UpdateOneAsync(s, fLedger.Eq(l => l.Id, BflHomologationPolicy.RunId) &
+                    fLedger.Eq($"Calls.{call}.JobId", job.Id), ledgerUpdate, cancellationToken: token);
+                if (settled.MatchedCount != 1) throw new InvalidOperationException("BFL ledger settlement lost.");
             }
             return true;
         }, cancellationToken: ct);

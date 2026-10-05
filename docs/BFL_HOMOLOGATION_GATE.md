@@ -1,0 +1,19 @@
+# Finite BFL staging authorization
+
+This is the technical gate for the user's three-call authorization on 2026-10-05, total maximum USD 0.15. Real homologation is still pending the user's manual API-key entry. No paid POST has been sent during preparation.
+
+Only the AIStaging profile on Render service `srv-db1tmv17lnhs73efdjp0`, host `imagino-api-ai-staging.onrender.com`, branch `codex/imagino-ai-revival-v2` can enable `GenerationV2__BflHomologationEnabled=true`. Its registration contains BFL and the synthetic fixture; Gemini, Veo and optional external integrations remain excluded. Adding a BFL key while `PaidGenerationEnabled=false` is supported and does not activate spending.
+
+The authorization is fixed to owner `6ac038cb05509cea703277eb`, the exact three briefs in BflHomologationPolicy, catalogue versions 2026-10-02.1, square 1024×1024 PNG output and seed 20261005. Pro disables automatic prompt upsampling for controlled comparisons. The third call accepts exactly the locally drawn reference with SHA-256 `f528f7cdc43f68d75f27e3fd3cbc491a02bb296a6f73c5fe57b374834517b333`, stored in Fixtures/bfl-reference-20261005.png. No private photo or extra generation was used.
+
+Calls use fixed Idempotency-Key values `bfl-homologation-20261005-call-1`, `...-2`, `...-3`. Estimated provider costs are USD 0.014, 0.030, 0.045 (USD 0.089 total), with quotes of 5, 10, 15 Imagino credits. Pricing is unchanged. The [official endpoint contract](https://docs.bfl.ai/api-reference/models/generate-or-edit-an-image-with-flux2-%5Bpro%5D) reports request cost in BFL credits, each USD 0.01. [Official pricing](https://docs.bfl.ai/quick_start/pricing) was checked on October 5.
+
+`generation_bfl_homologation_v1` has one ledger, `_id=bfl-three-calls-20261005`, with exactly three slots and USD 0.15 budget. Startup uses setOnInsert and cannot reset it. Wallet reservation, slot binding and the budget commitment share one Mongo transaction. The worker durably marks SubmissionAttempted before performing a single POST; no POST happens inside a retried Mongo transaction. Binding persists the returned job and cost atomically with the ledger. Settlement updates the ledger, terminal job and wallet in one transaction.
+
+Call 2 or 3 requires the previous slot to be Completed and explicitly Reconciled in the ledger after checking the completed job, reported cost, balance and output. Consumed slots stay consumed, including failures/cancellations. A failed/ambiguous call, changed cost or unreported cost halts subsequent calls. Existing provider polling and storage recovery never resubmit POST. Authorization expires at 2026-10-07 00:00 UTC; existing bound jobs may finish after expiry.
+
+Metrics persist acceptance latency, provider-ready/download/storage timestamps, bytes, PNG format and dimensions, in addition to the existing job journal and cost. Operational logs omit complete prompts, keys and signed URLs. Owner-only API history/download behavior and the existing public R2 staging URL policy remain as previously homologated.
+
+Before manual key entry: deploy this change only on the named AI service, set BflHomologationEnabled=true and keep PaidGenerationEnabled=false; confirm the ledger has all three Available slots, zero committed cost and not halted; run tools/verify-bfl-preflight.cjs. Then leave the Render field GenerationV2__BflApiKey for the user to fill and save. The agent must not read or copy the clipboard or secret value.
+
+After the user confirms manual key entry: confirm health and provider configuration, prepare synthetic fixture credits with an explicit grant record, then enable PaidGenerationEnabled only on this service. Submit one Imagino job at a time, reconcile before the next, and stop after three POSTs or the budget cap. Disable PaidGenerationEnabled afterward. No Stripe, merge, production, old staging service, other provider or video operation is part of this authorization.

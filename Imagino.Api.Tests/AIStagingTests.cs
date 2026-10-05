@@ -15,7 +15,7 @@ namespace Imagino.Api.Tests;
 
 public class AIStagingTests
 {
-    private static IConfiguration Valid(Dictionary<string, string> extra = null)
+    internal static IConfiguration Valid(Dictionary<string, string> extra = null)
     {
         var data = new Dictionary<string, string> {
             ["ImageGeneratorSettings:MongoConnection"] = "mongodb://localhost", ["ImageGeneratorSettings:MongoDatabase"] = "imagino_staging",

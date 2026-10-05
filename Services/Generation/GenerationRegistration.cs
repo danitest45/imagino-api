@@ -19,6 +19,8 @@ public static class GenerationRegistration
             services.AddSingleton<IGenerationProvider, GeminiImageGenerationProvider>();
             services.AddSingleton<IGenerationProvider, VeoGenerationProvider>();
         }
+        else if (config.GetValue<bool>("GenerationV2:BflHomologationEnabled"))
+            services.AddSingleton<IGenerationProvider, BflGenerationProvider>();
         services.AddSingleton<IGenerationProvider, StagingGenerationProvider>();
         services.AddHttpClient("GenerationPrivate", c => c.Timeout = TimeSpan.FromMinutes(2))
             .ConfigurePrimaryHttpMessageHandler(RemoteUrlPolicy.CreateHandler)
@@ -27,6 +29,8 @@ public static class GenerationRegistration
     }
     public static void ValidateStaging(IConfiguration config)
     {
+        if (config.GetValue<bool>("GenerationV2:BflHomologationEnabled") && config["ASPNETCORE_ENVIRONMENT"] != "AIStaging")
+            throw new InvalidOperationException("The finite BFL authorization requires the isolated AIStaging profile.");
         var enabled = config.GetValue<bool>("GenerationV2:Enabled");
         var seed = config.GetValue<bool>("GenerationV2:SeedStagingCatalog");
         var fixture = config.GetValue<bool>("GenerationV2:StagingFixtureEnabled");

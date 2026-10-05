@@ -13,6 +13,7 @@ public sealed class GenerationSettings
     public bool SeedStagingCatalog { get; set; }
     public bool StagingFixtureEnabled { get; set; }
     public bool PaidGenerationEnabled { get; set; }
+    public int StagingFixtureDelaySeconds { get; set; }
     public string BflApiKey { get; set; } = "";
     public string GeminiApiKey { get; set; } = "";
 }

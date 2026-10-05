@@ -36,6 +36,7 @@ public class AIStagingTests
     [InlineData("GenerationV2:PaidGenerationEnabled", "true")]
     [InlineData("GenerationV2:BflApiKey", "never-copy")]
     [InlineData("GenerationV2:GeminiApiKey", "never-copy")]
+    [InlineData("GenerationV2:StagingFixtureDelaySeconds", "121")]
     [InlineData("ImageGeneratorSettings:MongoDatabase", "imagino")]
     [InlineData("Cors:AllowedOrigins:1", "https://other.example")]
     [InlineData("RefreshTokenCookie:Domain", "imagino-api-staging.onrender.com")]
@@ -50,6 +51,16 @@ public class AIStagingTests
         Assert.DoesNotContain(services, s => s.ServiceType.Name.Contains("Billing") || s.ServiceType.Name.Contains("Stripe"));
         Assert.Single(services.Where(s => s.ServiceType == typeof(IGenerationProvider)));
         Assert.Equal(typeof(StagingGenerationProvider), services.Single(s => s.ServiceType == typeof(IGenerationProvider)).ImplementationType);
+    }
+    [Fact]
+    public async System.Threading.Tasks.Task DelayedFixtureHonorsShutdownBeforeProducingOutput()
+    {
+        var provider = new StagingGenerationProvider(Microsoft.Extensions.Options.Options.Create(new GenerationSettings {
+            StagingFixtureEnabled = true, StagingFixtureDelaySeconds = 60
+        }));
+        var job = new GenerationJob { Id = "synthetic-test", ProviderJobId = "fixture-synthetic-test" };
+        using var stopping = new System.Threading.CancellationTokenSource(); stopping.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => provider.PollAsync(job, stopping.Token));
     }
     [Fact]
     public void DedicatedProfileDoesNotExposeBillingLegacyGenerationOrUserMutation()

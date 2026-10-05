@@ -14,6 +14,8 @@ public static class AIStagingConfiguration
             !string.IsNullOrEmpty(settings.BflApiKey) || !string.IsNullOrEmpty(settings.GeminiApiKey))
             throw new InvalidOperationException("AI staging requires fixture-only Generation V2 with paid generation disabled and no provider keys.");
         GenerationRegistration.ValidateStaging(config);
+        if (settings.StagingFixtureDelaySeconds is < 0 or > 120)
+            throw new InvalidOperationException("Synthetic staging delay must be between 0 and 120 seconds.");
         foreach (var key in new[] { "ImageGeneratorSettings:MongoConnection", "Jwt:Issuer", "Jwt:Audience", "R2Settings:AccessKeyId", "R2Settings:SecretAccessKey" })
             if (string.IsNullOrWhiteSpace(config[key])) throw new InvalidOperationException("AI staging requires " + key);
         if (System.Text.Encoding.UTF8.GetByteCount(config["Jwt:Secret"] ?? "") < 32)

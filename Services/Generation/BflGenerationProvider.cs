@@ -27,7 +27,10 @@ public sealed class BflGenerationProvider(GenerationProviderHttp http, IOptions<
         var pollingUrl = root.GetProperty("polling_url").GetString()!;
         ValidatePolling(pollingUrl, id);
         // BFL reports cost in provider credits (1 credit = $0.01), not Imagino credits.
-        decimal? cost = root.TryGetProperty("cost", out var c) && c.ValueKind == System.Text.Json.JsonValueKind.Number && c.TryGetDecimal(out var n) ? n * 0.01m : null;
+        // The live API can serialize 1.4 credits as 1.4000000000000001. Remove only
+        // sub-picodollar floating-point noise; meaningful price changes still halt the gate.
+        decimal? cost = root.TryGetProperty("cost", out var c) && c.ValueKind == System.Text.Json.JsonValueKind.Number && c.TryGetDecimal(out var n)
+            ? decimal.Round(n * 0.01m, 12, MidpointRounding.AwayFromZero) : null;
         return new(id, pollingUrl, CostUsd: cost, AcceptanceLatencyMs: acceptance.Elapsed.TotalMilliseconds);
     }
     public async Task<ProviderResult> PollAsync(GenerationJob job, CancellationToken ct)

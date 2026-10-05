@@ -62,6 +62,18 @@ public sealed class GenerationProviderContractTests
         var result = await new BflGenerationProvider(new(wire), OptionsForTest()).StartAsync(Job("flux-fast-20261002"), default);
         Assert.Equal("bound-1", result.JobId); Assert.Null(result.CostUsd); Assert.Single(wire.Requests);
     }
+    [Theory]
+    [InlineData("1.4000000000000001", "0.014")]
+    [InlineData("3.0000000000000004", "0.030")]
+    [InlineData("4.500000000000001", "0.045")]
+    [InlineData("3.001", "0.03001")]
+    public async Task BflNormalizesWirePrecisionWithoutHidingPriceChanges(string credits, string expectedUsd)
+    {
+        var wire = new Wire("{\"id\":\"bound-1\",\"polling_url\":\"https://api.us1.bfl.ai/v1/get_result?id=bound-1\",\"cost\":" + credits + "}");
+        var result = await new BflGenerationProvider(new(wire), OptionsForTest()).StartAsync(Job("flux-fast-20261002"), default);
+        Assert.Equal(decimal.Parse(expectedUsd, System.Globalization.CultureInfo.InvariantCulture), result.CostUsd);
+        Assert.Single(wire.Requests);
+    }
     [Fact]
     public async Task GeminiBindsStoredInteractionAndReadsOnlyModelOutput()
     {

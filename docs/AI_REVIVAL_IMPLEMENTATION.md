@@ -1,5 +1,7 @@
 # Entrega e validação — Imagino AI Generation 2.0
 
+Atualização 05/10/2026: **Generation V2 Core Staging = PASS** no serviço separado imagino-api-ai-staging. O registro abaixo preserva a entrega de 02/10; a homologação atual, saldos, deployments, jobs, journal, logs e limites estão em [GENERATION_V2_CORE_STAGING.md](GENERATION_V2_CORE_STAGING.md).
+
 Data: 02/10/2026. Branch codex/imagino-ai-revival-v2 nos dois repositórios, criada a partir de fix/revival-operational-security. Nenhum merge. Não houve acesso ao banco/buckets de produção, alteração Stripe, mudança de planos, rotação de segredo ou chamada paga de IA.
 
 ## Código entregue

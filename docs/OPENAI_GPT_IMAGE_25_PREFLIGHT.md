@@ -1,5 +1,7 @@
 # OpenAI GPT Image 2.5 — staging adapter and financial preflight
 
+Historical preflight record, completed before paid authorization. A later, separate single-call operator authorization was executed successfully; current paid count, usage and closed flags are documented in [OPENAI_FLARE_SINGLE_REAL_SMOKE.md](OPENAI_FLARE_SINGLE_REAL_SMOKE.md). The three-call plan below remains unexecuted and closed.
+
 Status: **software checks and real model-metadata preflight PASS; paid image homologation BLOCKED / NOT EXECUTED.**
 
 Reviewed on 6 October 2026. Authorization remains at most three paid POST attempts and an absolute aggregate US$0.50 usage cap. This pass has sent **0 paid OpenAI requests, US$0**. The user manually inserted the staging key into Render. Its field name was observed with the value masked; the successful backend metadata requests confirm a usable credential without exposing it. The agent has not created, copied or inspected its value, purchased credit or opened a paid flag. Funded API billing and disabled auto-recharge remain user-reported facts, not a billing-account inspection.

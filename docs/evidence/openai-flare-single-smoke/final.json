@@ -1,0 +1,88 @@
+{
+  "result": "PASS",
+  "jobId": "6ac56f781375278f112d5654",
+  "runtimeCommit": "7b4a18d8c9634a376c8b4687ca8feb7c09f59f00",
+  "closedDeploy": "dep-db2mv2ugekts73fiim70",
+  "providerPostCount": 1,
+  "settlementCount": 1,
+  "retryCount": 0,
+  "slotCount": 1,
+  "secondSlotExists": false,
+  "endpoint": "POST /v1/images/generations",
+  "model": "gpt-image-2.5-flare-2026-09-08",
+  "usage": {
+    "textInputTokens": 46,
+    "imageInputTokens": 0,
+    "imageOutputTokens": 439,
+    "inputTokens": 46,
+    "outputTokens": 439,
+    "totalTokens": 485,
+    "cachedInputTokens": 0,
+    "pricingRevision": "openai-standard-2026-10-06.1-experimental"
+  },
+  "calculatedCostUsd": 0.0134,
+  "hardRequestCostCap": false,
+  "operationalObservedCeilingUsd": 0.1,
+  "projectionUsd": 0.01573,
+  "credits": {
+    "reserved": 6,
+    "before": 16,
+    "experimentalSuggestion": 5,
+    "after": 10,
+    "refunded": 0,
+    "charged": 6
+  },
+  "latencyMs": {
+    "validation": 0.2378,
+    "apiClientElapsed": null,
+    "r2": 1886.7941,
+    "decode": 96.712,
+    "post": 19404.7114,
+    "serverEndToEnd": 22412.0
+  },
+  "output": {
+    "sha256": "955f0e497567dec36fa8ff84dafa39d9ae022e657c860c5f6a4ca10540580bb4",
+    "r2Url": "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev/generation-v2/6ac038cb05509cea703277eb/6ac56f781375278f112d5654.png",
+    "bytes": 1426902,
+    "cacheControl": "no-store, private",
+    "width": 1024,
+    "height": 1024,
+    "pngMagic": true
+  },
+  "ownership": {
+    "foreignDownload": 404,
+    "ownerDownload": 200,
+    "foreignProof": 404,
+    "foreignJob": 404
+  },
+  "closure": {
+    "openAiSingleSmokeEnabled": false,
+    "paidGenerationEnabled": false,
+    "ledgerHalted": true,
+    "health": 200
+  },
+  "localClientIssue": {
+    "recoveredBy": "GET only",
+    "rootCause": "not_retained",
+    "phase": "creation_response",
+    "reposted": false,
+    "category": "InvalidOperationException"
+  },
+  "bflComparison": {
+    "jobId": "6ac40507e10e977b2df88393",
+    "serverEndToEndMs": 8717,
+    "credits": 5,
+    "newCalls": 0,
+    "costUsd": 0.014
+  },
+  "excludedCalls": [
+    "Sunburst",
+    "edit",
+    "second_generation",
+    "Gemini",
+    "Compare",
+    "video",
+    "Stripe",
+    "production"
+  ]
+}

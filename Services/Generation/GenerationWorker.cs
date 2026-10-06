@@ -13,11 +13,13 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
         var remaining = job.DeadlineAt - DateTime.UtcNow;
         if (remaining <= TimeSpan.Zero)
         {
-            await FinishAsync(job, GenerationStatus.Failed, null, job.ProviderJobId == null && job.Status == GenerationStatus.Starting ? "submission_unknown" : "generation_timeout", stoppingToken);
+            await FinishAsync(job, GenerationStatus.Failed, null, job.SynchronousResponseAtUtc != null ? "synchronous_result_lost" :
+                job.ProviderJobId == null && job.Status == GenerationStatus.Starting ? "submission_unknown" : "generation_timeout", stoppingToken);
             return;
         }
         deadline.CancelAfter(remaining < TimeSpan.FromMinutes(2) ? remaining : TimeSpan.FromMinutes(2));
         var ct = deadline.Token;
+        var synchronousResponseReceived = false;
         var provider = providers.FirstOrDefault(p => p.Name == job.Model.Provider);
         if (provider == null || !provider.IsConfigured)
         {
@@ -41,9 +43,33 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
                     await FinishAsync(job, GenerationStatus.Failed, null, "bfl_submission_blocked", stoppingToken);
                     return;
                 }
+                if (job.Model.Provider == "openai" && (!options.Value.OpenAiHomologationEnabled ||
+                    !await repository.BeginOpenAiSubmissionAsync(job, ct)))
+                {
+                    await FinishAsync(job, GenerationStatus.Failed, null, "openai_submission_blocked", stoppingToken);
+                    return;
+                }
                 // Exactly one application-level POST attempt. No retry for ambiguous submissions.
                 var result = await provider.StartAsync(job, ct);
-                if (result.ErrorCode != null) await FinishAsync(job, GenerationStatus.Failed, null, result.ErrorCode, stoppingToken);
+                if (result.Completed)
+                {
+                    synchronousResponseReceived = true;
+                    await repository.RecordSynchronousResultAsync(job, result, ct);
+                    if (result.Usage != null)
+                        logger.LogInformation("Generation measured job={Job} provider={Provider} model={Model} textInputTokens={Text} imageInputTokens={Image} imageOutputTokens={Output} calculatedUsd={Cost} pricingRevision={Revision} providerLatencyMs={Latency}",
+                            job.Id, job.Model.Provider, job.Model.ProviderModel, result.Usage.TextInputTokens, result.Usage.ImageInputTokens,
+                            result.Usage.ImageOutputTokens, result.CostUsd, result.Usage.PricingRevision, result.AcceptanceLatencyMs);
+                    if (job.Model.Provider == "openai" && (OpenAiHomologationPolicy.VerifiedMaximumUsd(job.OpenAiHomologationCall ?? 0) is not > 0 ||
+                        result.CostUsd == null || result.Usage == null ||
+                        result.CostUsd > OpenAiHomologationPolicy.VerifiedMaximumUsd(job.OpenAiHomologationCall ?? 0)))
+                    {
+                        await FinishAsync(job, GenerationStatus.Failed, null, "cost_bound_exceeded", stoppingToken);
+                        return;
+                    }
+                    if (result.ErrorCode != null) await FinishAsync(job, GenerationStatus.Failed, null, result.ErrorCode, stoppingToken);
+                    else await StoreAndFinishAsync(job, result, ct);
+                }
+                else if (result.ErrorCode != null) await FinishAsync(job, GenerationStatus.Failed, null, result.ErrorCode, stoppingToken);
                 else
                 {
                     await repository.BindAsync(job, result, ct);
@@ -62,24 +88,7 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
                 await repository.DeferAsync(job, false, ct);
                 return;
             }
-            var readyAt = DateTime.UtcNow;
-            var downloadStartedAt = DateTime.UtcNow;
-            var bytes = polled.Bytes;
-            if (bytes == null)
-            {
-                if (polled.OutputUrl == null) throw new InvalidDataException("Missing provider output.");
-                var hosts = job.Model.Provider == "bfl" ? new[] { "*.bfl.ai" } : new[] { "generativelanguage.googleapis.com", "storage.googleapis.com" };
-                bytes = await http.DownloadAsync(polled.OutputUrl, hosts, job.Model.Provider == "google-veo" ? options.Value.GeminiApiKey : null,
-                    job.Model.MediaType == "video" ? 100 * 1024 * 1024 : GeneratedImageValidator.MaxBytes, ct);
-            }
-            var downloadedAt = DateTime.UtcNow;
-            var dims = options.Value.BflHomologationEnabled && job.Model.Provider == "bfl"
-                ? BflHomologationPolicy.ValidateOutput(bytes) : (Width: 0, Height: 0);
-            var url = await storage.StoreAsync(job, bytes, ct);
-            if (options.Value.BflHomologationEnabled && job.Model.Provider == "bfl")
-                job.OutputMetrics = new(readyAt, downloadStartedAt, downloadedAt, DateTime.UtcNow, bytes.Length, "png", dims.Width, dims.Height);
-            logger.LogInformation("Generation output stored job={Job} provider={Provider} bytes={Bytes} stage=output_stored", job.Id, job.Model.Provider, bytes.Length);
-            await FinishAsync(job, GenerationStatus.Completed, url, null, ct);
+            await StoreAndFinishAsync(job, polled, ct);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
@@ -90,11 +99,33 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
             logger.LogWarning("Generation attempt error job={Job} provider={Provider} model={Model} type={ErrorType}",
                 job.Id, job.Model.Provider, job.Model.ProviderModel, ex.GetType().Name);
             if (job.Status == GenerationStatus.Starting)
-                await FinishAsync(job, GenerationStatus.Failed, null, ex is ProviderCallException p && p.Status is >= 400 and < 500 ? "provider_rejected" : "submission_unknown", stoppingToken);
+                await FinishAsync(job, GenerationStatus.Failed, null, synchronousResponseReceived
+                    ? ex is ArgumentException or InvalidDataException or FormatException ? "invalid_provider_output" : "output_storage_failed"
+                    : ex is ProviderCallException p && p.Status is >= 400 and < 500 ? "provider_rejected" : "submission_unknown", stoppingToken);
             else if (ex is ArgumentException or InvalidDataException or FormatException)
                 await FinishAsync(job, GenerationStatus.Failed, null, "invalid_provider_output", stoppingToken);
             else await repository.DeferAsync(job, true, stoppingToken);
         }
+    }
+    private async Task StoreAndFinishAsync(GenerationJob job, ProviderResult result, CancellationToken ct)
+    {
+        var readyAt = DateTime.UtcNow;
+        var downloadStartedAt = DateTime.UtcNow;
+        var bytes = result.Bytes;
+        if (bytes == null)
+        {
+            if (result.OutputUrl == null) throw new InvalidDataException("Missing provider output.");
+            var hosts = job.Model.Provider == "bfl" ? new[] { "*.bfl.ai" } : new[] { "generativelanguage.googleapis.com", "storage.googleapis.com" };
+            bytes = await http.DownloadAsync(result.OutputUrl, hosts, job.Model.Provider == "google-veo" ? options.Value.GeminiApiKey : null,
+                job.Model.MediaType == "video" ? 100 * 1024 * 1024 : GeneratedImageValidator.MaxBytes, ct);
+        }
+        var downloadedAt = DateTime.UtcNow;
+        var measuredPng = job.Model.Provider == "openai" || options.Value.BflHomologationEnabled && job.Model.Provider == "bfl";
+        var dims = measuredPng ? BflHomologationPolicy.ValidateOutput(bytes) : (Width: 0, Height: 0);
+        var url = await storage.StoreAsync(job, bytes, ct);
+        if (measuredPng) job.OutputMetrics = new(readyAt, downloadStartedAt, downloadedAt, DateTime.UtcNow, bytes.Length, "png", dims.Width, dims.Height);
+        logger.LogInformation("Generation output stored job={Job} provider={Provider} bytes={Bytes} stage=output_stored", job.Id, job.Model.Provider, bytes.Length);
+        await FinishAsync(job, GenerationStatus.Completed, url, null, ct);
     }
     private async Task FinishAsync(GenerationJob job, GenerationStatus status, string? url, string? error, CancellationToken ct)
     {

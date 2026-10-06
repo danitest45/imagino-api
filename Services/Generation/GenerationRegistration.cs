@@ -21,6 +21,8 @@ public static class GenerationRegistration
         }
         else if (config.GetValue<bool>("GenerationV2:BflHomologationEnabled"))
             services.AddSingleton<IGenerationProvider, BflGenerationProvider>();
+        if (config["ASPNETCORE_ENVIRONMENT"] == "AIStaging" && config.GetValue<bool>("GenerationV2:OpenAiHomologationEnabled"))
+            services.AddSingleton<IGenerationProvider, OpenAiImageGenerationProvider>();
         services.AddSingleton<IGenerationProvider, StagingGenerationProvider>();
         services.AddHttpClient("GenerationPrivate", c => c.Timeout = TimeSpan.FromMinutes(2))
             .ConfigurePrimaryHttpMessageHandler(RemoteUrlPolicy.CreateHandler)
@@ -31,6 +33,8 @@ public static class GenerationRegistration
     {
         if (config.GetValue<bool>("GenerationV2:BflHomologationEnabled") && config["ASPNETCORE_ENVIRONMENT"] != "AIStaging")
             throw new InvalidOperationException("The finite BFL authorization requires the isolated AIStaging profile.");
+        if (config.GetValue<bool>("GenerationV2:OpenAiHomologationEnabled") && config["ASPNETCORE_ENVIRONMENT"] != "AIStaging")
+            throw new InvalidOperationException("The finite OpenAI authorization requires the isolated AIStaging profile.");
         var enabled = config.GetValue<bool>("GenerationV2:Enabled");
         var seed = config.GetValue<bool>("GenerationV2:SeedStagingCatalog");
         var fixture = config.GetValue<bool>("GenerationV2:StagingFixtureEnabled");

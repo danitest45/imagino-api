@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "reviewedAtUtc": "2026-10-06T17:47:32Z",
+  "status": "software_mock_pass_real_homologation_blocked",
+  "authorizedPaidPostMaximum": 3,
+  "aggregateAbsoluteCapUsd": 0.5,
+  "paidPostAttempts": 0,
+  "observedOpenAiCostUsd": 0,
+  "credentialCreatedOrCopied": false,
+  "configurationChanged": false,
+  "purchaseOrRecharge": false,
+  "verifiedRequestMaximumUsd": null,
+  "blockedReason": "No verified complete billable input/output bound for fixed GPT Image 2.5 requests; account hard spend enforcement may lag.",
+  "projection": {
+    "modelFamily": "gpt-image-2.5",
+    "quality": "medium",
+    "size": "1024x1024",
+    "imagesPerRequest": 1,
+    "calculatorGrid": 24,
+    "outputTokensPerImage": 439,
+    "usdPerMillionImageOutputTokens": 30,
+    "outputUsdPerImage": 0.01317,
+    "threeOutputUsd": 0.03951,
+    "isCompleteRequestCost": false,
+    "isGuaranteedMaximum": false
+  },
+  "pricing": {
+    "revision": "openai-standard-2026-10-06.1-experimental",
+    "source": "https://developers.openai.com/api/docs/pricing",
+    "checkedDate": "2026-10-06",
+    "textInputPerMillionUsd": 5,
+    "imageInputPerMillionUsd": 8,
+    "imageOutputPerMillionUsd": 30,
+    "cachedDiscountApplicable": false
+  },
+  "calls": [
+    {
+      "slot": 1,
+      "snapshot": "gpt-image-2.5-flare-2026-09-08",
+      "endpoint": "/v1/images/generations",
+      "reference": false,
+      "status": "not_executed"
+    },
+    {
+      "slot": 2,
+      "snapshot": "gpt-image-2.5-sunburst-2026-09-08",
+      "endpoint": "/v1/images/generations",
+      "reference": false,
+      "status": "not_executed"
+    },
+    {
+      "slot": 3,
+      "snapshot": "gpt-image-2.5-sunburst-2026-09-08",
+      "endpoint": "/v1/images/edits",
+      "reference": true,
+      "referenceSha256": "f528f7cdc43f68d75f27e3fd3cbc491a02bb296a6f73c5fe57b374834517b333",
+      "status": "not_executed"
+    }
+  ],
+  "fixedConfiguration": {
+    "size": "1024x1024",
+    "quality": "medium",
+    "n": 1,
+    "output_format": "png",
+    "background": "opaque",
+    "stream": false,
+    "partial_images": false,
+    "mask": false,
+    "input_fidelity": false,
+    "external_tools": false
+  },
+  "calculator": {
+    "assetUrl": "https://developers.openai.com/_astro/GptImageTokenCalculator.react.BZX5zunw.js",
+    "sha256": "a9373471402624a9f3fc1f4960de3c9e3a61d39143e9e1c30a5636d9bc99c899",
+    "readOnly": true,
+    "executed": false
+  },
+  "validation": {
+    "build": {
+      "outcome": "passed",
+      "errors": 0,
+      "existingNullableWarnings": 25
+    },
+    "tests": {
+      "total": 280,
+      "passed": 280,
+      "failed": 0,
+      "skipped": 0,
+      "newOpenAiCases": 37,
+      "realOpenAiHttp": false,
+      "liveMongoTransactions": false,
+      "liveR2": false
+    },
+    "frontend": "Existing generic field/capability rendering inspected; no frontend change.",
+    "runtime": {
+      "sha": "76aec87644f8a55532a0a1a36175b5792f23b565",
+      "deployId": "dep-db25r4rbc2fs73fbucug",
+      "serviceId": "srv-db1tmv17lnhs73efdjp0",
+      "branch": "codex/imagino-ai-revival-v2",
+      "autoDeploy": false,
+      "healthStatus": 200,
+      "newClosedAdapterDeploy": "pending"
+    },
+    "paidFlag": {
+      "key": "GenerationV2__PaidGenerationEnabled",
+      "value": false,
+      "observedAtUtc": null,
+      "observedDateLocal": "2026-10-06",
+      "method": "Render Environment UI: reveal only non-secret boolean; other values masked; masked again afterward.",
+      "screenshotAvailable": false
+    }
+  },
+  "officialSources": [
+    "https://developers.openai.com/api/docs/guides/image-generation",
+    "https://developers.openai.com/api/docs/models/gpt-image-2.5-flare",
+    "https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst",
+    "https://developers.openai.com/api/reference/resources/images/methods/generate",
+    "https://developers.openai.com/api/reference/resources/images/methods/edit",
+    "https://developers.openai.com/api/docs/pricing",
+    "https://developers.openai.com/api/docs/guides/images-vision#calculating-costs",
+    "https://developers.openai.com/api/docs/guides/spend-limits",
+    "https://developers.openai.com/api/docs/quickstart",
+    "https://developers.openai.com/api/docs/guides/rate-limits",
+    "https://developers.openai.com/api/docs/guides/error-codes"
+  ]
+}

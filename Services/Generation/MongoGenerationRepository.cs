@@ -16,6 +16,8 @@ public sealed class MongoGenerationRepository : IGenerationRepository
     private readonly IMongoCollection<User> users;
     private readonly IMongoCollection<BflHomologationLedger> bflLedger;
     private readonly bool homologation;
+    private readonly IMongoCollection<OpenAiHomologationLedger> openAiLedger;
+    private readonly bool openAiHomologation;
     public MongoGenerationRepository(IMongoClient client, IOptions<ImageGeneratorSettings> options, IOptions<GenerationSettings> generation)
     {
         this.client = client;
@@ -25,9 +27,17 @@ public sealed class MongoGenerationRepository : IGenerationRepository
         users = db.GetCollection<User>("Users");
         bflLedger = db.GetCollection<BflHomologationLedger>("generation_bfl_homologation_v1");
         homologation = generation.Value.BflHomologationEnabled;
+        openAiLedger = db.GetCollection<OpenAiHomologationLedger>("generation_openai_homologation_v1");
+        openAiHomologation = generation.Value.OpenAiHomologationEnabled;
     }
     public async Task InitializeAsync(IEnumerable<GenerationModel> seed, CancellationToken ct)
     {
+        if (openAiHomologation)
+        {
+            var initial = new OpenAiHomologationLedger().ToBsonDocument(); initial.Remove("_id");
+            await openAiLedger.UpdateOneAsync(l => l.Id == OpenAiHomologationPolicy.RunId,
+                new BsonDocument("$setOnInsert", initial), new UpdateOptions { IsUpsert = true }, ct);
+        }
         if (homologation)
         {
             var ledger = new BflHomologationLedger().ToBsonDocument(); ledger.Remove("_id");
@@ -70,6 +80,22 @@ public sealed class MongoGenerationRepository : IGenerationRepository
             {
                 var existing = await jobs.Find(s, j => j.UserId == job.UserId && j.IdempotencyKey == job.IdempotencyKey).FirstOrDefaultAsync(token);
                 if (existing != null) return Match(existing, job);
+                if (job.Model.Provider == "openai")
+                {
+                    if (!openAiHomologation || !OpenAiHomologationPolicy.CostBoundsVerified) throw new ForbiddenFeatureException("OpenAI financial gate is closed.");
+                    var call = OpenAiHomologationPolicy.ValidateJob(job);
+                    var maximum = OpenAiHomologationPolicy.VerifiedMaximumUsd(call) ?? throw new ForbiddenFeatureException("Unknown maximum OpenAI cost.");
+                    job.OpenAiHomologationCall = call;
+                    var ledger = await openAiLedger.Find(s, l => l.Id == OpenAiHomologationPolicy.RunId).FirstOrDefaultAsync(token);
+                    if (ledger == null || !OpenAiHomologationPolicy.CanReserve(ledger, call, maximum, DateTime.UtcNow))
+                        throw new ForbiddenFeatureException("OpenAI slot is consumed, unreconciled, halted or outside budget.");
+                    var f = Builders<OpenAiHomologationLedger>.Filter;
+                    var changed = await openAiLedger.UpdateOneAsync(s, f.Eq(l => l.Id, ledger.Id) & f.Eq(l => l.CommittedUsd, ledger.CommittedUsd) &
+                        f.Eq(l => l.Halted, false) & f.Eq($"Calls.{call}.State", "Available"), Builders<OpenAiHomologationLedger>.Update
+                        .Set($"Calls.{call}.State", "Reserved").Set($"Calls.{call}.JobId", job.Id).Set($"Calls.{call}.MaximumUsd", maximum)
+                        .Inc(l => l.CommittedUsd, maximum), cancellationToken: token);
+                    if (changed.ModifiedCount != 1) throw new ConflictAppException("OpenAI reservation ledger changed.");
+                }
                 if (homologation && job.Model.Provider == "bfl")
                 {
                     var call = BflHomologationPolicy.ValidateJob(job);
@@ -126,6 +152,66 @@ public sealed class MongoGenerationRepository : IGenerationRepository
             if (marked.ModifiedCount != 1) throw new ConflictAppException("BFL submission lease lost before POST.");
             return true;
         }, cancellationToken: ct);
+    }
+
+    public async Task<bool> BeginOpenAiSubmissionAsync(GenerationJob job, CancellationToken ct)
+    {
+        if (!openAiHomologation || !OpenAiHomologationPolicy.CostBoundsVerified) return false;
+        var call = OpenAiHomologationPolicy.ValidateJob(job);
+        using var session = await client.StartSessionAsync(cancellationToken: ct);
+        return await session.WithTransactionAsync(async (s, token) =>
+        {
+            var f = Builders<OpenAiHomologationLedger>.Filter;
+            var maximum = OpenAiHomologationPolicy.VerifiedMaximumUsd(call)!.Value;
+            var allowed = f.Eq(l => l.Id, OpenAiHomologationPolicy.RunId) & f.Eq(l => l.OwnerId, job.UserId) &
+                f.Eq(l => l.Halted, false) & f.Gt(l => l.ExpiresAtUtc, DateTime.UtcNow) & f.Eq(l => l.BudgetUsd, OpenAiHomologationPolicy.BudgetUsd) &
+                f.Lte(l => l.CommittedUsd, OpenAiHomologationPolicy.BudgetUsd) & f.Eq($"Calls.{call}.MaximumUsd", maximum) &
+                f.Eq($"Calls.{call}.JobId", job.Id) & f.Eq($"Calls.{call}.State", "Reserved");
+            var changed = await openAiLedger.UpdateOneAsync(s, allowed, Builders<OpenAiHomologationLedger>.Update
+                .Set($"Calls.{call}.State", "SubmissionAttempted").Set($"Calls.{call}.AttemptedAtUtc", DateTime.UtcNow), cancellationToken: token);
+            if (changed.ModifiedCount != 1) return false;
+            var marked = await jobs.UpdateOneAsync(s, j => j.Id == job.Id && j.Lease == job.Lease && j.Status == GenerationStatus.Starting,
+                Builders<GenerationJob>.Update.Push(j => j.Journal, new GenerationJournalEntry("OpenAiPostAttemptAuthorized", DateTime.UtcNow)), cancellationToken: token);
+            if (marked.ModifiedCount != 1) throw new ConflictAppException("OpenAI submission lease lost before POST.");
+            return true;
+        }, cancellationToken: ct);
+    }
+
+    public async Task RecordSynchronousResultAsync(GenerationJob job, ProviderResult result, CancellationToken ct)
+    {
+        if (!result.Completed || result.Bytes == null && result.ErrorCode == null) throw new InvalidDataException("Missing synchronous provider result.");
+        if (job.Model.Provider == "openai" && (result.Usage == null || result.CostUsd != OpenAiImagePricing.Calculate(result.Usage)))
+            throw new InvalidDataException("Inconsistent OpenAI measured cost.");
+        using var session = await client.StartSessionAsync(cancellationToken: ct);
+        await session.WithTransactionAsync(async (s, token) =>
+        {
+            var changed = await jobs.UpdateOneAsync(s, j => j.Id == job.Id && j.Lease == job.Lease && j.Status == GenerationStatus.Starting && j.SynchronousResponseAtUtc == null,
+                Builders<GenerationJob>.Update.Set(j => j.ProviderUsage, result.Usage).Set(j => j.ProviderReportedCostUsd, result.CostUsd)
+                    .Set(j => j.ProviderAcceptanceLatencyMs, result.AcceptanceLatencyMs).Set(j => j.SynchronousResponseAtUtc, DateTime.UtcNow)
+                    .Push(j => j.Journal, new GenerationJournalEntry("SynchronousResponseReceived", DateTime.UtcNow)), cancellationToken: token);
+            if (changed.ModifiedCount != 1) throw new InvalidOperationException("Synchronous result lease lost.");
+            if (job.Model.Provider == "openai")
+            {
+                if (!openAiHomologation || result.CostUsd == null || result.Usage == null) throw new InvalidDataException("Missing OpenAI measured cost.");
+                var call = job.OpenAiHomologationCall ?? throw new InvalidOperationException("Missing OpenAI slot.");
+                var f = Builders<OpenAiHomologationLedger>.Filter;
+                var ledger = await openAiLedger.Find(s, f.Eq(l => l.Id, OpenAiHomologationPolicy.RunId) & f.Eq($"Calls.{call}.JobId", job.Id) &
+                    f.Eq($"Calls.{call}.State", "SubmissionAttempted")).FirstOrDefaultAsync(token);
+                if (ledger == null) throw new InvalidOperationException("OpenAI response ledger lost.");
+                var maximum = ledger.Calls[call.ToString()].MaximumUsd;
+                var actual = result.CostUsd.Value;
+                var exceeded = actual > maximum || ledger.ObservedUsd + actual > ledger.BudgetUsd;
+                var update = Builders<OpenAiHomologationLedger>.Update.Set($"Calls.{call}.State", "ResponseReceived")
+                    .Set($"Calls.{call}.ObservedUsd", actual).Set($"Calls.{call}.Usage", result.Usage)
+                    .Set($"Calls.{call}.ResponseAtUtc", DateTime.UtcNow).Inc(l => l.ObservedUsd, actual)
+                    .Inc(l => l.CommittedUsd, actual - maximum);
+                if (exceeded) update = update.Set(l => l.Halted, true).Set(l => l.HaltReason, "cost_bound_exceeded");
+                await openAiLedger.UpdateOneAsync(s, l => l.Id == ledger.Id, update, cancellationToken: token);
+            }
+            return true;
+        }, cancellationToken: ct);
+        job.ProviderUsage = result.Usage; job.ProviderReportedCostUsd = result.CostUsd;
+        job.ProviderAcceptanceLatencyMs = result.AcceptanceLatencyMs; job.SynchronousResponseAtUtc = DateTime.UtcNow;
     }
 
     public async Task<GenerationJob?> ClaimAsync(CancellationToken ct)
@@ -236,6 +322,18 @@ public sealed class MongoGenerationRepository : IGenerationRepository
                 var settled = await bflLedger.UpdateOneAsync(s, fLedger.Eq(l => l.Id, BflHomologationPolicy.RunId) &
                     fLedger.Eq($"Calls.{call}.JobId", job.Id), ledgerUpdate, cancellationToken: token);
                 if (settled.MatchedCount != 1) throw new InvalidOperationException("BFL ledger settlement lost.");
+            }
+            if (job.Model.Provider == "openai")
+            {
+                var call = job.OpenAiHomologationCall ?? throw new InvalidOperationException("Missing OpenAI authorization.");
+                var fLedger = Builders<OpenAiHomologationLedger>.Filter;
+                var updateLedger = Builders<OpenAiHomologationLedger>.Update.Set($"Calls.{call}.State", charged ? "Completed" : "Failed")
+                    .Set($"Calls.{call}.Reconciled", charged && job.ProviderUsage != null && job.ProviderReportedCostUsd != null);
+                // Any failure/ambiguity stops the entire run. A third completion also closes it.
+                if (!charged || call == 3) updateLedger = updateLedger.Set(l => l.Halted, true).Set(l => l.HaltReason, charged ? "three_calls_completed" : error ?? "generation_failed");
+                var settled = await openAiLedger.UpdateOneAsync(s, fLedger.Eq(l => l.Id, OpenAiHomologationPolicy.RunId) &
+                    fLedger.Eq($"Calls.{call}.JobId", job.Id), updateLedger, cancellationToken: token);
+                if (settled.MatchedCount != 1) throw new InvalidOperationException("OpenAI ledger settlement lost.");
             }
             return true;
         }, cancellationToken: ct);

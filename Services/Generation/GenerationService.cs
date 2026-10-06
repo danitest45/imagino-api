@@ -16,7 +16,9 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
         if (GenerationLifecycle.RequiresMigration(model, currentTime)) return "migration_required";
         if (!model.Enabled || model.Lifecycle != "ACTIVE" || !model.ProviderEnabled) return "disabled";
         if (model.Provider == "fixture") return options.Value.StagingFixtureEnabled ? "synthetic_demo" : "disabled";
-        if (options.Value.BflHomologationEnabled && (!BflHomologationPolicy.AllowsModel(model) || currentTime >= BflHomologationPolicy.ExpiresAtUtc))
+        if (model.Provider == "openai" && (!options.Value.OpenAiHomologationEnabled || !OpenAiHomologationPolicy.AllowsModel(model) ||
+            !OpenAiHomologationPolicy.CostBoundsVerified || currentTime >= OpenAiHomologationPolicy.ExpiresAtUtc)) return "approval_required";
+        if (options.Value.BflHomologationEnabled && model.Provider != "openai" && (!BflHomologationPolicy.AllowsModel(model) || currentTime >= BflHomologationPolicy.ExpiresAtUtc))
             return "approval_required";
         if (!options.Value.PaidGenerationEnabled) return "approval_required";
         return providers.Any(p => p.Name == model.Provider && p.IsConfigured) ? "ready" : "credentials_required";
@@ -25,8 +27,9 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
     {
         var model = await ModelAsync(request.ModelId, ct);
         var input = GenerationPolicy.Validate(model, request);
+        if (model.Provider == "openai") OpenAiHomologationPolicy.ValidateRequest(owner ?? "", model, input);
         var quote = GenerationPolicy.Quote(model, input, DateTime.UtcNow);
-        if (options.Value.BflHomologationEnabled && model.Provider != "fixture")
+        if (options.Value.BflHomologationEnabled && model.Provider != "fixture" && model.Provider != "openai")
             BflHomologationPolicy.Validate(owner ?? "", model, input, quote, DateTime.UtcNow);
         return quote;
     }
@@ -48,7 +51,8 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
             Journal = new() { new("QueuedReserved", DateTime.UtcNow) },
             DeadlineAt = DateTime.UtcNow.AddSeconds(model.TimeoutSeconds)
         };
-        if (options.Value.BflHomologationEnabled && model.Provider != "fixture") BflHomologationPolicy.ValidateJob(job);
+        if (model.Provider == "openai") OpenAiHomologationPolicy.ValidateJob(job);
+        else if (options.Value.BflHomologationEnabled && model.Provider != "fixture") BflHomologationPolicy.ValidateJob(job);
         return await repository.ReserveAsync(job, ct);
     }
 }

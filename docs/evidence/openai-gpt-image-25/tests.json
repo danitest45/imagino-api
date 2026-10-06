@@ -1,0 +1,201 @@
+{
+  "command": "dotnet test Imagino.Api.Tests/Imagino.Api.Tests.csproj --no-restore --logger trx --results-directory docs/evidence/openai-gpt-image-25/test-results -v quiet -p:WarningLevel=0",
+  "counters": {
+    "total": 280,
+    "executed": 280,
+    "passed": 280,
+    "failed": 0,
+    "error": 0,
+    "inconclusive": 0,
+    "notExecuted": 0
+  },
+  "startedUtc": "2026-10-06T17:47:27.1058996Z",
+  "finishedUtc": "2026-10-06T17:47:31.5174106Z",
+  "newOpenAiCases": [
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.IsolatedRegistrationLeavesOtherPaidProvidersUnregisteredAndQuotesUseTokenPricing",
+      "outcome": "Passed",
+      "duration": "00:00:00.0007693"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.InconsistentOrUnpricedUsageFailsClosed(oldValue: \"\\\"image_tokens\\\":100\", newValue: \"\\\"image_tokens\\\":99\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0457540"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.TimeoutHasExactlyOneHttpPostAttempt",
+      "outcome": "Passed",
+      "duration": "00:00:00.0008223"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.InconsistentOrUnpricedUsageFailsClosed(oldValue: \"\\\"total_tokens\\\":589\", newValue: \"\\\"total_tokens\\\":590\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0007709"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.MissingMalformedOrNegativeUsageIsRejected(response: \"{\\\"usage\\\":{\\\"input_tokens\\\":\\\"150\\\"}}\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0000348"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.UnsupportedConfigurationsNeverReachTheHttpHandler(field: \"quality\", value: \"high\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0004906"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.ClosedOpenAiOffersSerializeInTheSharedCatalogWithoutAttemptingPaidQuotes",
+      "outcome": "Passed",
+      "duration": "00:00:00.0163423"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.NumericUsageIncludesReferenceInputAndNeverAppliesDirectApiCacheDiscounts",
+      "outcome": "Passed",
+      "duration": "00:00:00.0092933"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.OpenAiConfigurationRejectsWrongScopeOrUnboundedSpending(key: \"GenerationV2:PaidGenerationEnabled\", value: \"true\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0011053"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.DirectContractMapsOnlyTheApprovedSettingsAndReturnsAnInlineResult(call: 1, endpoint: \"generations\", model: \"gpt-image-2.5-flare-2026-09-08\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0182607"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.ModerationAndHttpFailuresContainOnlyStatusAndDoNotRetry(status: 403)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0004365"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.MissingMalformedOrNegativeUsageIsRejected(response: \"{\\\"data\\\":[]}\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0006123"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.ModerationAndHttpFailuresContainOnlyStatusAndDoNotRetry(status: 500)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0212882"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.DirectContractMapsOnlyTheApprovedSettingsAndReturnsAnInlineResult(call: 2, endpoint: \"generations\", model: \"gpt-image-2.5-sunburst-2026-09-08\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0147016"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.ModerationAndHttpFailuresContainOnlyStatusAndDoNotRetry(status: 429)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0007165"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.SynchronousPipelineStoresBeforeSettlementAndRefundsAStorageFailureWithoutPolling(storageFails: False)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0077756"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.MissingMalformedOrNegativeUsageIsRejected(response: \"{\\\"usage\\\":{\\\"input_tokens\\\":-1}}\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001932"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.UnsupportedConfigurationsNeverReachTheHttpHandler(field: \"quality\", value: \"auto\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0011401"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.MissingVerifiedBoundsBlocksQuoteReservationAndWorkerEvenWithAKeyAndPaidFlag",
+      "outcome": "Passed",
+      "duration": "00:00:00.0022870"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.OpenAiConfigurationRejectsWrongScopeOrUnboundedSpending(key: \"RENDER_SERVICE_ID\", value: \"other\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002362"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.OutputWithoutDetailedBreakdownStillUsesTheImageOutputTokenTotal",
+      "outcome": "Passed",
+      "duration": "00:00:00.0007064"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.UnsupportedConfigurationsNeverReachTheHttpHandler(field: \"outputFormat\", value: \"jpeg\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0069964"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.UnsupportedSnapshotOwnerBriefOrReferenceCannotReachHttp",
+      "outcome": "Passed",
+      "duration": "00:00:00.0042934"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.ModerationAndHttpFailuresContainOnlyStatusAndDoNotRetry(status: 400)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002417"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.ModerationAndHttpFailuresContainOnlyStatusAndDoNotRetry(status: 401)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003164"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.Base64IsBoundedAndInvalidPngIsRejectedBeforeStorage",
+      "outcome": "Passed",
+      "duration": "00:00:00.1266371"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.SynchronousPipelineStoresBeforeSettlementAndRefundsAStorageFailureWithoutPolling(storageFails: True)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0041457"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.OpenAiConfigurationRejectsWrongScopeOrUnboundedSpending(key: \"ASPNETCORE_ENVIRONMENT\", value: \"Production\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0188754"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.InconsistentOrUnpricedUsageFailsClosed(oldValue: \"\\\"cached_tokens\\\":50\", newValue: \"\\\"cached_tokens\\\":151\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0009373"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.InconsistentOrUnpricedUsageFailsClosed(oldValue: \"\\\"text_tokens\\\":0\", newValue: \"\\\"text_tokens\\\":1\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0007691"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.UnsupportedConfigurationsNeverReachTheHttpHandler(field: \"background\", value: \"transparent\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0007303"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.FiniteLedgerSurvivesSerializationAndNeverAuthorizesAFourthOrAnUnboundedRequest",
+      "outcome": "Passed",
+      "duration": "00:00:00.0091150"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.DirectContractMapsOnlyTheApprovedSettingsAndReturnsAnInlineResult(call: 3, endpoint: \"edits\", model: \"gpt-image-2.5-sunburst-2026-09-08\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0318688"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.UnsupportedConfigurationsNeverReachTheHttpHandler(field: \"size\", value: \"1536x1024\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0005748"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.RestartAfterSyncResponseFailsWithoutRepostingAndKeepsKnownUsage",
+      "outcome": "Passed",
+      "duration": "00:00:00.0032573"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.OpenAiConfigurationRejectsWrongScopeOrUnboundedSpending(key: \"RENDER_GIT_BRANCH\", value: \"master\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001984"
+    },
+    {
+      "name": "Imagino.Api.Tests.OpenAiImageTests.MissingMalformedOrNegativeUsageIsRejected(response: \"{\\\"usage\\\":{\\\"input_tokens\\\":150,\\\"output_tokens\\\"\"···)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0000318"
+    }
+  ]
+}

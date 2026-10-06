@@ -25,7 +25,7 @@ public sealed class GenerationController(IGenerationRepository repository, Gener
             m.Capabilities, m.Fields, m.Inputs, m.Rules,
             lifecycle = GenerationLifecycle.RequiresMigration(m, DateTime.UtcNow) ? "COMPATIBILITY" : m.Lifecycle,
             retirementAt = GenerationLifecycle.RetirementAt(m), availability = service.Availability(m),
-            startingCredits = GenerationLifecycle.IsRetired(m, DateTime.UtcNow) ? 0 : GenerationPolicy.Quote(m, new("preview", m.Fields.ToDictionary(f => f.Key, f => f.DefaultValue), new()), DateTime.UtcNow).Credits
+            startingCredits = GenerationPolicy.CatalogStartingCredits(m, DateTime.UtcNow)
         }) });
     }
     [HttpPost("quote"), Authorize]

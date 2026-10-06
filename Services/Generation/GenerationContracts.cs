@@ -14,9 +14,11 @@ public sealed class GenerationSettings
     public bool StagingFixtureEnabled { get; set; }
     public bool PaidGenerationEnabled { get; set; }
     public bool BflHomologationEnabled { get; set; }
+    public bool OpenAiHomologationEnabled { get; set; }
     public int StagingFixtureDelaySeconds { get; set; }
     public string BflApiKey { get; set; } = "";
     public string GeminiApiKey { get; set; } = "";
+    public string OpenAiApiKey { get; set; } = "";
 }
 public sealed record GenerationField(string Key, string Label, string Type, string DefaultValue, string[] Options);
 public sealed record GenerationInputSchema(string Role, string Label, int MaxCount);
@@ -99,6 +101,9 @@ public sealed class GenerationJob
     public decimal? ProviderReportedCostUsd { get; set; }
     public double? ProviderAcceptanceLatencyMs { get; set; }
     public int? BflHomologationCall { get; set; }
+    public int? OpenAiHomologationCall { get; set; }
+    public GenerationUsage? ProviderUsage { get; set; }
+    public DateTime? SynchronousResponseAtUtc { get; set; }
     public GenerationOutputMetrics? OutputMetrics { get; set; }
     public List<GenerationJournalEntry> Journal { get; set; } = new();
 }
@@ -114,7 +119,9 @@ public sealed record GenerationOutputMetrics(DateTime ProviderReadyAtUtc, DateTi
     DateTime DownloadFinishedAtUtc, DateTime StoredAtUtc, int Bytes, string Format, int Width, int Height);
 public sealed record ProviderResult(string? JobId, string? PollingUrl, bool Completed = false,
     byte[]? Bytes = null, string? OutputUrl = null, string? ErrorCode = null, decimal? CostUsd = null,
-    double? AcceptanceLatencyMs = null);
+    double? AcceptanceLatencyMs = null, GenerationUsage? Usage = null);
+public sealed record GenerationUsage(long TextInputTokens, long ImageInputTokens, long ImageOutputTokens,
+    long InputTokens, long OutputTokens, long TotalTokens, long CachedInputTokens, string PricingRevision);
 public interface IGenerationProvider
 {
     string Name { get; }
@@ -133,6 +140,8 @@ public interface IGenerationRepository
     Task<GenerationJob?> ClaimAsync(CancellationToken ct);
     Task BindAsync(GenerationJob job, ProviderResult result, CancellationToken ct);
     Task<bool> BeginBflSubmissionAsync(GenerationJob job, CancellationToken ct);
+    Task<bool> BeginOpenAiSubmissionAsync(GenerationJob job, CancellationToken ct);
+    Task RecordSynchronousResultAsync(GenerationJob job, ProviderResult result, CancellationToken ct);
     Task DeferAsync(GenerationJob job, bool failedPoll, CancellationToken ct);
     Task<bool> SettleAsync(GenerationJob job, GenerationStatus status, string? url, string? error, CancellationToken ct);
     Task<bool> CancelAsync(string id, string userId, CancellationToken ct);

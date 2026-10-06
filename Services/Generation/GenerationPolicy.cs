@@ -8,6 +8,14 @@ namespace Imagino.Api.Services.Generation;
 
 public static class GenerationPolicy
 {
+    public static int CatalogStartingCredits(GenerationModel model, DateTime now)
+    {
+        if (GenerationLifecycle.IsRetired(model, now)) return 0;
+        // A displayed starting estimate is never a reservable quote. Input usage is unknown.
+        if (model.Provider == "openai") return OpenAiImagePricing.ExperimentalCredits(
+            OpenAiImagePricing.OutputOnlyProjectedTokens * OpenAiImagePricing.ImageOutputPerMillion / 1_000_000m, model.Pricing);
+        return Quote(model, new("preview", model.Fields.ToDictionary(f => f.Key, f => f.DefaultValue), new()), now).Credits;
+    }
     public static ValidatedGeneration Validate(GenerationModel model, GenerationRequest request)
     {
         if (!model.Enabled || model.Lifecycle is not ("ACTIVE" or "COMPATIBILITY")) throw new ValidationAppException("Model is disabled.");
@@ -89,6 +97,19 @@ public static class GenerationPolicy
     {
         if (GenerationLifecycle.IsRetired(model, now)) throw new ValidationAppException("Model endpoint is retired. Migration required.");
         var pricing = model.Pricing;
+        if (model.Provider == "openai")
+        {
+            var call = (model.ProviderModel, input.Prompt, input.Inputs.Count) switch {
+                (OpenAiHomologationPolicy.Flare, BflHomologationPolicy.FastPrompt, 0) => 1,
+                (OpenAiHomologationPolicy.Sunburst, BflHomologationPolicy.StudioPrompt, 0) => 2,
+                (OpenAiHomologationPolicy.Sunburst, BflHomologationPolicy.ReferencePrompt, 1) => 3, _ => 0 };
+            var maximum = OpenAiHomologationPolicy.VerifiedMaximumUsd(call);
+            if (!OpenAiHomologationPolicy.AllowsModel(model) || call == 0 || maximum is not > 0)
+                throw new ForbiddenFeatureException("OpenAI quote requires a verified full-request cost bound.");
+            var creditsForBound = OpenAiImagePricing.ExperimentalCredits(maximum.Value, pricing);
+            return new(Fingerprint(model, input) + ":" + now.AddMinutes(10).Ticks, model.Id, model.Version, creditsForBound,
+                maximum.Value, maximum.Value * pricing.RiskMultiplier + pricing.OverheadUsd, pricing.Revision, now.AddMinutes(10), input.Settings);
+        }
         var resolution = input.Settings.GetValueOrDefault("resolution", "1MP");
         if (!pricing.RatesUsd.TryGetValue(resolution, out var cost)) throw new ValidationAppException("Pricing unavailable for this resolution.");
         if (pricing.Unit == "megapixel")

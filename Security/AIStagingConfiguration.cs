@@ -13,12 +13,16 @@ public static class AIStagingConfiguration
         var settings = config.GetSection("GenerationV2").Get<GenerationSettings>() ?? new();
         if (!settings.Enabled || !settings.SeedStagingCatalog || !settings.StagingFixtureEnabled ||
             !string.IsNullOrEmpty(settings.GeminiApiKey) ||
-            (!settings.BflHomologationEnabled && (settings.PaidGenerationEnabled || !string.IsNullOrEmpty(settings.BflApiKey))))
-            throw new InvalidOperationException("AI staging permits only synthetic generation or the finite BFL authorization; other provider keys are forbidden.");
-        if (settings.BflHomologationEnabled && (config["RENDER_SERVICE_ID"] != BflHomologationPolicy.ServiceId ||
+            (!settings.BflHomologationEnabled && !string.IsNullOrEmpty(settings.BflApiKey)) ||
+            (!settings.OpenAiHomologationEnabled && !string.IsNullOrEmpty(settings.OpenAiApiKey)) ||
+            (settings.PaidGenerationEnabled && !settings.BflHomologationEnabled && !settings.OpenAiHomologationEnabled))
+            throw new InvalidOperationException("AI staging permits only synthetic generation or finite BFL/OpenAI authorizations; other provider keys are forbidden.");
+        if (settings.OpenAiHomologationEnabled && settings.PaidGenerationEnabled && !OpenAiHomologationPolicy.CostBoundsVerified)
+            throw new InvalidOperationException("OpenAI paid authorization requires verified complete cost bounds.");
+        if ((settings.BflHomologationEnabled || settings.OpenAiHomologationEnabled) && (config["RENDER_SERVICE_ID"] != BflHomologationPolicy.ServiceId ||
             config["RENDER_GIT_BRANCH"] != "codex/imagino-ai-revival-v2" ||
             config["RENDER_EXTERNAL_HOSTNAME"] != "imagino-api-ai-staging.onrender.com"))
-            throw new InvalidOperationException("BFL homologation is restricted to its exact AI staging service and branch.");
+            throw new InvalidOperationException("Paid homologation is restricted to its exact AI staging service and branch.");
         GenerationRegistration.ValidateStaging(config);
         if (settings.StagingFixtureDelaySeconds is < 0 or > 120)
             throw new InvalidOperationException("Synthetic staging delay must be between 0 and 120 seconds.");

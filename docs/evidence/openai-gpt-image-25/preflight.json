@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedAtUtc": "2026-10-06T17:47:32Z",
+  "reviewedAtUtc": "2026-10-06T17:57:24Z",
   "status": "software_mock_pass_real_homologation_blocked",
   "authorizedPaidPostMaximum": 3,
   "aggregateAbsoluteCapUsd": 0.5,
@@ -91,23 +91,157 @@
       "liveMongoTransactions": false,
       "liveR2": false
     },
-    "frontend": "Existing generic field/capability rendering inspected; no frontend change.",
+    "frontend": {
+      "browser": "existing protected Working Studio Preview / in-app browser",
+      "authenticatedSyntheticCreditsObserved": 16,
+      "existingRecentCreationsObserved": 8,
+      "openAiOffersShown": true,
+      "sunburstSnapshotShown": "gpt-image-2.5-sunburst-2026-09-08",
+      "size": "1024x1024",
+      "quality": "medium",
+      "outputFormat": "png",
+      "referenceCapabilityShown": true,
+      "createDisabled": true,
+      "currentCost": null,
+      "newQuoteOrGenerationAction": false,
+      "initialModelRestored": true,
+      "temporaryTabClosed": true,
+      "screenshots": [
+        "catalog-approval-required.png",
+        "studio-closed-offer.png"
+      ],
+      "frontendCodeChanged": false
+    },
     "runtime": {
-      "sha": "76aec87644f8a55532a0a1a36175b5792f23b565",
-      "deployId": "dep-db25r4rbc2fs73fbucug",
+      "sha": "de47b5875696f93e0329ff490f70f0f301ed6232",
+      "deployId": "dep-db2jas1srm7s73bkqgvg",
       "serviceId": "srv-db1tmv17lnhs73efdjp0",
       "branch": "codex/imagino-ai-revival-v2",
       "autoDeploy": false,
       "healthStatus": 200,
-      "newClosedAdapterDeploy": "pending"
+      "newClosedAdapterDeploy": "live",
+      "deploymentFinishedAtUtc": "2026-10-06T17:53:41.913554Z"
     },
     "paidFlag": {
       "key": "GenerationV2__PaidGenerationEnabled",
       "value": false,
       "observedAtUtc": null,
-      "observedDateLocal": "2026-10-06",
       "method": "Render Environment UI: reveal only non-secret boolean; other values masked; masked again afterward.",
-      "screenshotAvailable": false
+      "screenshotAvailable": false,
+      "observedDateLocal": "2026-10-06"
+    },
+    "remoteCatalog": {
+      "observedAtUtc": "2026-10-06T17:54:33.6296357Z",
+      "healthStatus": 200,
+      "catalogStatus": 200,
+      "catalogRevision": "2026-10-06.1",
+      "modelCount": 8,
+      "openAiOffers": [
+        {
+          "id": "openai-fast-20261006",
+          "version": "2026-10-06.1",
+          "providerModel": "gpt-image-2.5-flare-2026-09-08",
+          "availability": "approval_required",
+          "startingCredits": 5,
+          "capabilities": [
+            "textToImage"
+          ],
+          "fields": [
+            {
+              "key": "size",
+              "label": "Output size",
+              "type": "enum",
+              "defaultValue": "1024x1024",
+              "options": [
+                "1024x1024"
+              ]
+            },
+            {
+              "key": "quality",
+              "label": "Quality",
+              "type": "enum",
+              "defaultValue": "medium",
+              "options": [
+                "medium"
+              ]
+            },
+            {
+              "key": "outputFormat",
+              "label": "Output format",
+              "type": "enum",
+              "defaultValue": "png",
+              "options": [
+                "png"
+              ]
+            }
+          ],
+          "inputs": []
+        },
+        {
+          "id": "openai-studio-20261006",
+          "version": "2026-10-06.1",
+          "providerModel": "gpt-image-2.5-sunburst-2026-09-08",
+          "availability": "approval_required",
+          "startingCredits": 5,
+          "capabilities": [
+            "textToImage",
+            "imageEditing",
+            "referenceImages"
+          ],
+          "fields": [
+            {
+              "key": "size",
+              "label": "Output size",
+              "type": "enum",
+              "defaultValue": "1024x1024",
+              "options": [
+                "1024x1024"
+              ]
+            },
+            {
+              "key": "quality",
+              "label": "Quality",
+              "type": "enum",
+              "defaultValue": "medium",
+              "options": [
+                "medium"
+              ]
+            },
+            {
+              "key": "outputFormat",
+              "label": "Output format",
+              "type": "enum",
+              "defaultValue": "png",
+              "options": [
+                "png"
+              ]
+            }
+          ],
+          "inputs": [
+            {
+              "role": "reference",
+              "label": "Controlled reference",
+              "maxCount": 1
+            }
+          ]
+        }
+      ],
+      "existingBflCount": 2
+    },
+    "logs": {
+      "sinceUtc": "2026-10-06T17:53:00Z",
+      "type": "app",
+      "count": 21,
+      "hasMore": false,
+      "secretMarkerMatches": {
+        "credentials": 0,
+        "imagePayload": 0,
+        "privateSignedUrl": 0,
+        "benchmarkPrompt": 0
+      },
+      "failurePrefixCount": 0,
+      "warningPrefixCount": 2,
+      "existingDataProtectionWarningCount": 2
     }
   },
   "officialSources": [
@@ -122,5 +256,6 @@
     "https://developers.openai.com/api/docs/quickstart",
     "https://developers.openai.com/api/docs/guides/rate-limits",
     "https://developers.openai.com/api/docs/guides/error-codes"
-  ]
+  ],
+  "pauseAt": "financial_bound_before_human_credential_and_billing"
 }

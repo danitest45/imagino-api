@@ -1,8 +1,8 @@
 # OpenAI GPT Image 2.5 — staging adapter and financial preflight
 
-Status: **mock contract/software checks PASS; real provider homologation BLOCKED / NOT EXECUTED.**
+Status: **software checks and real model-metadata preflight PASS; paid image homologation BLOCKED / NOT EXECUTED.**
 
-Reviewed on 6 October 2026. Authorization remains at most three paid POST attempts and an absolute aggregate US$0.50 usage cap. This pass has sent **0 paid OpenAI requests, US$0**. The agent has not created, copied or inspected a credential, purchased credit or opened a paid flag. The user reports creating the API staging project/key, funding API billing and disabling auto-recharge; the key is **not yet configured in Render**. These are user-reported facts, not an account inspection.
+Reviewed on 6 October 2026. Authorization remains at most three paid POST attempts and an absolute aggregate US$0.50 usage cap. This pass has sent **0 paid OpenAI requests, US$0**. The user manually inserted the staging key into Render. Its field name was observed with the value masked; the successful backend metadata requests confirm a usable credential without exposing it. The agent has not created, copied or inspected its value, purchased credit or opened a paid flag. Funded API billing and disabled auto-recharge remain user-reported facts, not a billing-account inspection.
 
 ## Confirmed official contract and planned calls
 
@@ -73,15 +73,15 @@ Therefore a complete bound satisfying `already_spent + next_request_maximum <= U
 
 The user has already created the key and configured funded API billing with auto-recharge disabled. No new key or purchase is requested. GPT Image access **may** require API Organization Verification according to the image guide; the current account's state has not been inspected. Any further purchase remains a separate human decision.
 
-Only the user configures these fields together in [the existing AI staging Render Environment](https://dashboard.render.com/web/srv-db1tmv17lnhs73efdjp0/env), then saves and deploys:
+The following fields are now configured in [the existing AI staging Render Environment](https://dashboard.render.com/web/srv-db1tmv17lnhs73efdjp0/env). The user inserted the key; the agent added the missing non-secret authorization flag and enforced the already-false paid flag through a merge-only environment update, without retrieving existing secrets:
 
 | Environment key | Value |
 | --- | --- |
-| GenerationV2__OpenAiApiKey | Manually paste the already-created staging secret; never send it in chat |
+| GenerationV2__OpenAiApiKey | Inserted manually by the user; its value stays masked |
 | GenerationV2__OpenAiHomologationEnabled | true for this metadata preflight |
 | GenerationV2__PaidGenerationEnabled | false |
 
-The key and authorization flag must be configured together: the existing startup guard rejects an OpenAI key with its authorization flag false. Keeping the paid flag false leaves generation closed; complete-cost bounds remain unverified in source. Do not insert the key into another service, frontend, repository or local test environment. The agent will not access the clipboard or reveal a Render secret.
+The key and authorization flag must be configured together: the existing startup guard rejects an OpenAI key with its authorization flag false. Keeping the paid flag false leaves generation closed; complete-cost bounds remain unverified in source. No key was inserted into another service, frontend, repository or local test environment. The clipboard and Render credential value were not accessed.
 
 An authenticated synthetic-owner-only `GET /api/generation/openai/preflight` now performs at most one metadata GET per approved snapshot through [Retrieve model](https://developers.openai.com/api/reference/resources/models/methods/retrieve):
 
@@ -90,9 +90,13 @@ An authenticated synthetic-owner-only `GET /api/generation/openai/preflight` now
 
 The probe requires the exact AIStaging service/branch/hostname, OpenAI authorization and a **closed paid flag**. Foreign owners and other scopes receive 404 before network access. It returns only model IDs, HTTP statuses, sanitized categories and a timestamp; keys, headers and raw provider responses are neither returned nor logged. Each GET has a 15-second deadline and no retry. It has no job, wallet or storage dependency and sends no image-generation POST. Responses are private/no-store.
 
-Successful matching model metadata confirms metadata access only. It does **not** establish Images API permission, organization verification, available quota, actual image rate limits, successful billing or a full cost maximum. `imageEndpointAccessVerified` and `costBoundsVerified` remain false. No real metadata GET has run yet because the credential is not configured.
+The real preflight at **2026-10-06T21:41:26.7425073Z** returned matching metadata with **HTTP 200 for both snapshots**. Exactly two upstream GETs were attempted, with no retry or paid POST. Successful matching model metadata confirms metadata access only. It does **not** establish Images API permission, organization verification, available quota, actual image rate limits, successful billing or a full cost maximum. `imageEndpointAccessVerified` and `costBoundsVerified` remain false.
 
-Metadata-preflight deploy **dep-db2mbami0phs7394esv0** is Live at SHA **3fd91d2f7d0862623de1565fcbb96def1f0d082b**, finished 2026-10-06T21:19:13.431661Z. Remote checks at 21:20:28.5986776Z returned health 200, catalog 200 and anonymous preflight 401. The eight-offer catalog still shows both OpenAI snapshots as approval_required. No environment variable was changed; the manual credential handoff is pending. Since this deploy began, 23 application log entries (hasMore=false) contain zero failure prefixes and two existing DataProtection warnings; no listed credential/payload/private-URL/full-brief marker matched. This is a marker check, not exhaustive secret validation.
+Current deploy **dep-db2ml81ca7us73fkjfs0** is Live at SHA **2cad86a2bc2aadb87704bd7dd58c2e6377707fbb**, finished 2026-10-06T21:40:57.702261Z. The environment update also initiated deploy dep-db2ml49srm7s73c17dkg; the subsequent explicit redeploy is the current Live instance. Source code is unchanged from the 299-test pass. The preflight's authenticated HTTP 200 demonstrates that its exact runtime/owner/OpenAI-flag/closed-paid prerequisites all passed.
+
+Postchecks returned health/catalog 200 and both offers approval_required. The isolated synthetic HTTP session returned login/logout 200; browser sessions were not changed. The known owner retained **16 credits and the same eight job IDs** before/after. Only model metadata was requested. [Sanitized live results](evidence/openai-gpt-image-25/model-access.json).
+
+Application logs since 21:39Z: 44 entries, hasMore=false, zero failure prefixes and four existing DataProtection warnings across the two restarts. No listed credential/payload/private-URL/full-brief marker matched. This is a marker check, not exhaustive secret validation.
 
 ## Validation and remaining evidence
 
@@ -102,7 +106,7 @@ Coverage: request mapping/generation/edit, exact size/quality, base64 bounds, ma
 
 These tests use simulated HTTP, repository and storage boundaries plus BSON round trips. Mongo transaction/restart behavior of the new ledger and real R2/OpenAI settlement have **not** been exercised live. The original exactly-once wallet transaction/CreditState filter is preserved; there is no new wallet replacement. No real OpenAI idempotency guarantee is asserted.
 
-Closed-adapter deploy **dep-db2jas1srm7s73bkqgvg** is Live at source SHA **de47b5875696f93e0329ff490f70f0f301ed6232**, finished 2026-10-06T17:53:41.913554Z. Health and catalog return 200; catalog revision 2026-10-06.1 contains eight offers, including the two OpenAI approval_required offers and the unchanged two BFL offers. No environment change was made. The live details are recorded in preflight.json. Render PaidGenerationEnabled=false was observed by revealing only this non-secret boolean; other credential values stayed masked. No configuration was edited. Render Environment screenshot capture was unavailable; only its AX observation is claimed. Separate Working Studio screenshots below succeeded.
+The original closed-adapter deploy **dep-db2jas1srm7s73bkqgvg** was Live at source SHA **de47b5875696f93e0329ff490f70f0f301ed6232**, finished 2026-10-06T17:53:41.913554Z, and has now been superseded. Its health/catalog checks returned 200; catalog revision 2026-10-06.1 contained eight offers, including two OpenAI approval_required offers and two unchanged BFL offers. That earlier adapter pass changed no environment configuration. Render PaidGenerationEnabled=false was observed again during this metadata pass by revealing only that non-secret boolean, then masking it; credential values stayed masked. The temporary agent tab was closed. Separate earlier Working Studio screenshots below succeeded.
 
 The live protected Working Studio Preview renders both OpenAI offers as Awaiting activation. Selecting Sunburst displays 1024x1024 / medium / png, reference capability, the exact snapshot and the output-only estimate caveat through existing generic controls. Create stays disabled and current cost is blank. The existing synthetic session still shows 16 credits and eight prior creations; the selected result is the earlier BFL reference image, not an OpenAI output. No upload, quote or generation was requested. Initial Fast Image selection/details were restored and the agent's temporary tab closed. [Catalog proof](evidence/openai-gpt-image-25/catalog-approval-required.png) and [Sunburst controls proof](evidence/openai-gpt-image-25/studio-closed-offer.png).
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "reviewedAtUtc": "2026-10-06T17:57:24Z",
+  "reviewedAtUtc": "2026-10-06T21:21:37.7052142Z",
   "status": "software_mock_pass_real_homologation_blocked",
   "authorizedPaidPostMaximum": 3,
   "aggregateAbsoluteCapUsd": 0.5,
@@ -82,14 +82,15 @@
       "existingNullableWarnings": 25
     },
     "tests": {
-      "total": 280,
-      "passed": 280,
+      "total": 299,
+      "passed": 299,
       "failed": 0,
       "skipped": 0,
       "newOpenAiCases": 37,
       "realOpenAiHttp": false,
       "liveMongoTransactions": false,
-      "liveR2": false
+      "liveR2": false,
+      "readOnlyPreflightCases": 19
     },
     "frontend": {
       "browser": "existing protected Working Studio Preview / in-app browser",
@@ -113,14 +114,14 @@
       "frontendCodeChanged": false
     },
     "runtime": {
-      "sha": "de47b5875696f93e0329ff490f70f0f301ed6232",
-      "deployId": "dep-db2jas1srm7s73bkqgvg",
+      "sha": "3fd91d2f7d0862623de1565fcbb96def1f0d082b",
+      "deployId": "dep-db2mbami0phs7394esv0",
       "serviceId": "srv-db1tmv17lnhs73efdjp0",
       "branch": "codex/imagino-ai-revival-v2",
       "autoDeploy": false,
       "healthStatus": 200,
       "newClosedAdapterDeploy": "live",
-      "deploymentFinishedAtUtc": "2026-10-06T17:53:41.913554Z"
+      "deploymentFinishedAtUtc": "2026-10-06T21:19:13.431661Z"
     },
     "paidFlag": {
       "key": "GenerationV2__PaidGenerationEnabled",
@@ -242,6 +243,31 @@
       "failurePrefixCount": 0,
       "warningPrefixCount": 2,
       "existingDataProtectionWarningCount": 2
+    },
+    "closedAdapterRuntime": {
+      "sha": "de47b5875696f93e0329ff490f70f0f301ed6232",
+      "deployId": "dep-db2jas1srm7s73bkqgvg",
+      "serviceId": "srv-db1tmv17lnhs73efdjp0",
+      "branch": "codex/imagino-ai-revival-v2",
+      "autoDeploy": false,
+      "healthStatus": 200,
+      "newClosedAdapterDeploy": "live",
+      "deploymentFinishedAtUtc": "2026-10-06T17:53:41.913554Z"
+    },
+    "metadataDeploymentLogs": {
+      "sinceUtc": "2026-10-06T21:18:34Z",
+      "type": "app",
+      "count": 23,
+      "hasMore": false,
+      "secretMarkerMatches": {
+        "credentials": 0,
+        "imagePayload": 0,
+        "privateSignedUrl": 0,
+        "benchmarkPrompt": 0
+      },
+      "failurePrefixCount": 0,
+      "warningPrefixCount": 2,
+      "existingDataProtectionWarningCount": 2
     }
   },
   "officialSources": [
@@ -255,7 +281,39 @@
     "https://developers.openai.com/api/docs/guides/spend-limits",
     "https://developers.openai.com/api/docs/quickstart",
     "https://developers.openai.com/api/docs/guides/rate-limits",
-    "https://developers.openai.com/api/docs/guides/error-codes"
+    "https://developers.openai.com/api/docs/guides/error-codes",
+    "https://developers.openai.com/api/reference/resources/models/methods/retrieve"
   ],
-  "pauseAt": "financial_bound_before_human_credential_and_billing"
+  "pauseAt": "human_manual_render_credential_for_metadata_and_unverified_cost_bound",
+  "humanReportedSetup": {
+    "source": "user",
+    "dateLocal": "2026-10-06",
+    "stagingApiProjectCreated": true,
+    "apiBillingFunded": true,
+    "autoRechargeEnabled": false,
+    "stagingKeyCreated": true,
+    "keyConfiguredInRender": false,
+    "accountInspectedByAgent": false,
+    "clipboardAccessedByAgent": false
+  },
+  "modelAccessPreflight": {
+    "route": "/api/generation/openai/preflight",
+    "upstreamMethod": "GET",
+    "status": "awaiting_manual_render_credential",
+    "realMetadataGets": 0,
+    "imageEndpointAccessVerified": false,
+    "costBoundsVerified": false,
+    "paidGenerationEnabled": false,
+    "scope": "exact AIStaging runtime and known synthetic owner",
+    "credentialReturnedOrLogged": false,
+    "retry": false,
+    "remoteCheck": {
+      "observedAtUtc": "2026-10-06T21:20:28.5986776Z",
+      "healthStatus": 200,
+      "catalogStatus": 200,
+      "anonymousPreflightStatus": 401,
+      "modelCount": 8,
+      "openAiAvailability": "approval_required"
+    }
+  }
 }

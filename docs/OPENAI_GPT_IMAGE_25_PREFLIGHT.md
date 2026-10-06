@@ -2,7 +2,7 @@
 
 Status: **mock contract/software checks PASS; real provider homologation BLOCKED / NOT EXECUTED.**
 
-Reviewed on 6 October 2026. Authorization remains at most three paid POST attempts and an absolute aggregate US$0.50 usage cap. This pass has sent **0 paid OpenAI requests, US$0**. No credential was created/copied, no credit purchase or auto-recharge occurred, and no paid flag was opened.
+Reviewed on 6 October 2026. Authorization remains at most three paid POST attempts and an absolute aggregate US$0.50 usage cap. This pass has sent **0 paid OpenAI requests, US$0**. The agent has not created, copied or inspected a credential, purchased credit or opened a paid flag. The user reports creating the API staging project/key, funding API billing and disabling auto-recharge; the key is **not yet configured in Render**. These are user-reported facts, not an account inspection.
 
 ## Confirmed official contract and planned calls
 
@@ -18,7 +18,7 @@ The [generation schema](https://developers.openai.com/api/reference/resources/im
 
 The [image guide](https://developers.openai.com/api/docs/guides/image-generation) directs GPT Image 2.5 measurement through response usage. The API reference's usage description still mentions GPT Image 1; actual 2.5 usage remains to be confirmed in a real response. The adapter requires consistent nonnegative integral totals and modality counts and rejects unpriced output modalities. Missing/inconsistent usage halts the run; it never substitutes estimates for observed consumption.
 
-Public model pages list Tier 1 100,000 TPM and 5 IPM. Actual account access/limits remain unknown.
+The current public model pages list Free as unsupported and Build at 250,000 TPM / 20 IPM for both snapshots. This supersedes the earlier Tier 1 figures in this report. Actual project limits, verification and image-endpoint permissions remain unknown; public tier figures do not prove account access.
 
 ## Software implemented without spending
 
@@ -47,7 +47,7 @@ Cached discounts are not applicable to direct Images API requests, including edi
 
 `observed_USD = (5 × text_input_tokens + 8 × image_input_tokens + 30 × image_output_tokens) / 1,000,000`
 
-The official calculator's medium grid=24 projects:
+The image-generation guide's calculator has a dedicated **GPT Image 2.5 (Sunburst and Flare)** selection. Its medium grid=24 projects:
 
 `ceil(24 × 24 × (2,000,000 + 1024 × 1024) / 4,000,000) = 439 output tokens`
 
@@ -69,19 +69,34 @@ Therefore a complete bound satisfying `already_spent + next_request_maximum <= U
 
 **Do not send a paid POST or raise the authorized cap.** Before the real window, obtain authoritative complete applicable cost bounds/enforceable request controls and review the resulting fixed maxima. Then complete the human credential/billing gate. Only after both gates can the three calls proceed, with actual reconciliation between them.
 
-## Human credential/billing handoff — no key requested yet
+## Human credential handoff and metadata preflight
 
-When the financial prerequisite is resolved and the closed adapter is deployed:
+The user has already created the key and configured funded API billing with auto-recharge disabled. No new key or purchase is requested. GPT Image access **may** require API Organization Verification according to the image guide; the current account's state has not been inspected. Any further purchase remains a separate human decision.
 
-1. In the chosen OpenAI API project, the user creates a key on [API keys](https://platform.openai.com/api-keys), as described by the [official quickstart](https://developers.openai.com/api/docs/quickstart). The agent must not create/copy it; no key is sent in chat.
-2. GPT Image access **may** require API Organization Verification according to the image guide. The current account's verification state has not been inspected.
-3. Check API [billing](https://platform.openai.com/settings/organization/billing) and model access/limits manually. The [rate-limit guide](https://developers.openai.com/api/docs/guides/rate-limits) lists Tier 1 qualification as US$5 paid; this is not evidence that this account needs a new US$5 purchase. The [error guide](https://developers.openai.com/api/docs/guides/error-codes) documents prepaid-credit exhaustion. Payment method, balance and any required purchase remain account-specific and unverified.
-4. If a purchase is required, stop and report the displayed amount/options before purchase. The US$0.50 usage cap authorizes no prepaid purchase or auto-recharge.
-5. Only the user inserts GenerationV2__OpenAiApiKey in [the existing AI staging Render Environment](https://dashboard.render.com/web/srv-db1tmv17lnhs73efdjp0/env). Never insert it into the older service, production, frontend, repository or local test run. Keep PaidGenerationEnabled=false. Do not add it while the live backend still lacks the closed-adapter configuration.
+Only the user configures these fields together in [the existing AI staging Render Environment](https://dashboard.render.com/web/srv-db1tmv17lnhs73efdjp0/env), then saves and deploys:
+
+| Environment key | Value |
+| --- | --- |
+| GenerationV2__OpenAiApiKey | Manually paste the already-created staging secret; never send it in chat |
+| GenerationV2__OpenAiHomologationEnabled | true for this metadata preflight |
+| GenerationV2__PaidGenerationEnabled | false |
+
+The key and authorization flag must be configured together: the existing startup guard rejects an OpenAI key with its authorization flag false. Keeping the paid flag false leaves generation closed; complete-cost bounds remain unverified in source. Do not insert the key into another service, frontend, repository or local test environment. The agent will not access the clipboard or reveal a Render secret.
+
+An authenticated synthetic-owner-only `GET /api/generation/openai/preflight` now performs at most one metadata GET per approved snapshot through [Retrieve model](https://developers.openai.com/api/reference/resources/models/methods/retrieve):
+
+- GET https://api.openai.com/v1/models/gpt-image-2.5-flare-2026-09-08
+- GET https://api.openai.com/v1/models/gpt-image-2.5-sunburst-2026-09-08
+
+The probe requires the exact AIStaging service/branch/hostname, OpenAI authorization and a **closed paid flag**. Foreign owners and other scopes receive 404 before network access. It returns only model IDs, HTTP statuses, sanitized categories and a timestamp; keys, headers and raw provider responses are neither returned nor logged. Each GET has a 15-second deadline and no retry. It has no job, wallet or storage dependency and sends no image-generation POST. Responses are private/no-store.
+
+Successful matching model metadata confirms metadata access only. It does **not** establish Images API permission, organization verification, available quota, actual image rate limits, successful billing or a full cost maximum. `imageEndpointAccessVerified` and `costBoundsVerified` remain false. No real metadata GET has run yet because the credential is not configured.
+
+Metadata-preflight deploy **dep-db2mbami0phs7394esv0** is Live at SHA **3fd91d2f7d0862623de1565fcbb96def1f0d082b**, finished 2026-10-06T21:19:13.431661Z. Remote checks at 21:20:28.5986776Z returned health 200, catalog 200 and anonymous preflight 401. The eight-offer catalog still shows both OpenAI snapshots as approval_required. No environment variable was changed; the manual credential handoff is pending. Since this deploy began, 23 application log entries (hasMore=false) contain zero failure prefixes and two existing DataProtection warnings; no listed credential/payload/private-URL/full-brief marker matched. This is a marker check, not exhaustive secret validation.
 
 ## Validation and remaining evidence
 
-dotnet build: PASS, 0 errors, 25 existing nullable warnings. dotnet test: **280 passed, 0 failed, 0 skipped**, including 37 new OpenAI cases. [Sanitized test results](evidence/openai-gpt-image-25/tests.json) retain case names/outcomes without payloads.
+dotnet build: PASS, 0 errors (25 existing API nullable warnings on the original full compile; the latest incremental API build is clean). dotnet test: **299 passed, 0 failed, 0 skipped**, including 37 adapter cases and 19 new metadata-preflight cases. [Sanitized test results](evidence/openai-gpt-image-25/tests.json) retain case names/outcomes without payloads. Metadata coverage verifies fixed GET routes/no bodies, exact owner/runtime/closed-paid guards, missing keys without network access, HTTP errors without raw output or retry, malformed/mismatched metadata and sanitized timeouts. All HTTP tests use mock keys/handlers.
 
 Coverage: request mapping/generation/edit, exact size/quality, base64 bounds, malformed output, usage consistency/cache accounting/prices, HTTP/moderation category, timeout with one POST, unsupported snapshot/owner/reference, serialized finite slots, aggregate cap/fourth-call denial, unknown-bound closure, catalog serialization, synchronous storage-before-settlement/failure refund and restart without reposting. Existing async-provider and ownership checks continue passing.
 

@@ -1,0 +1,20 @@
+{
+  "serviceId": "srv-db1tmv17lnhs73efdjp0",
+  "deployId": "dep-db25r4rbc2fs73fbucug",
+  "startTime": "2026-10-06T02:31:47Z",
+  "endTime": "2026-10-06T05:30:00Z",
+  "entriesReviewed": 53,
+  "hasMore": false,
+  "sensitivePatternDetected": {
+    "jwt": false,
+    "mongoUri": false,
+    "password": false,
+    "bearer": false,
+    "refreshToken": false,
+    "cookieValue": false,
+    "r2Credential": false,
+    "bflKey": false,
+    "syntheticPrompt": false
+  },
+  "notes": "All 53 returned entries manually reviewed; hasMore=false. Only deployment/lifecycle messages and existing DataProtection persistence/encryption startup warnings. No listed sensitive data, full private prompt, or provider execution was present. No entries during authenticated smoke window."
+}

@@ -1,50 +1,96 @@
 # Working Studio Remote Auth Smoke
 
-Status: **PENDING — human Vercel SSO gate**. Backend/CORS preparation passed; remote authenticated frontend smoke has not started. This evidence does not declare production readiness.
+**Working Studio Remote Auth Smoke = PASS.**
 
-Prepared on 05/10/2026 at 23:32 BRT (06/10/2026 02:32 UTC).
+Authenticated remote smoke completed on 06 October 2026, 02:17–02:25 BRT (05:17–05:25 UTC). This is a staging smoke for the approved Working Studio Preview; it does not declare production readiness.
 
-## Exact scope and deployed artifacts
+## Exact artifacts and minimal change
 
-- Backend branch/PR: `codex/imagino-ai-revival-v2`, draft PR #56.
-- Tested and deployed backend SHA: `76aec87644f8a55532a0a1a36175b5792f23b565`.
-- Render service: `imagino-api-ai-staging`, `srv-db1tmv17lnhs73efdjp0`, workspace `Imagino-Staging`.
-- Manual deploy: `dep-db25r4rbc2fs73fbucug`, Live at `2026-10-06T02:32:27.251982Z`. Auto-deploy remains off.
-- Frontend branch/PR: `feat/imagino-working-studio`, draft PR #88.
-- Stable alias resolves to frontend SHA `46c64a646dd1504369ef917c8075ea80e45b432c`, deployment `dpl_H6v4cP2FZf1PZQnQ5NbQnbDFNV7e`, READY. This is the intended smoke target; browser smoke is still pending.
-- New authorized origin: `https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app`.
-- Preserved origin: `https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app`.
+- Backend tested/runtime SHA: `76aec87644f8a55532a0a1a36175b5792f23b565`, branch `codex/imagino-ai-revival-v2`, [draft PR #56](https://github.com/danitest45/imagino-api/pull/56).
+- Render: `imagino-api-ai-staging`, service `srv-db1tmv17lnhs73efdjp0`, workspace `Imagino-Staging`. Manual deploy `dep-db25r4rbc2fs73fbucug`, Live since `2026-10-06T02:32:27.251982Z`; rechecked Live after smoke. Auto-deploy remains off.
+- Frontend tested SHA: `46c64a646dd1504369ef917c8075ea80e45b432c`, branch `feat/imagino-working-studio`, [draft PR #88](https://github.com/danitest45/imagino-front/pull/88).
+- Stable alias rechecked against READY Vercel deployment `dpl_H6v4cP2FZf1PZQnQ5NbQnbDFNV7e`, URL `imagino-front-9lzm1gki5-danitest45s-projects.vercel.app`.
+- New exact authorized origin: https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app
+- Preserved exact origin: https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app
+- API: https://imagino-api-ai-staging.onrender.com
 
-The AIStaging profile requires exactly these two origins, using an ordinal, order-independent set comparison plus a count check. Missing/duplicate/additional origins, wildcards and modified base URL are rejected. All other AIStaging checks remain intact.
+Only the AIStaging CORS configuration, its startup validation and corresponding tests changed in application source. Validation requires exactly the two origins above, using an ordinal, order-independent set comparison and a count check. Missing/duplicate/additional origins, wildcards, trailing slashes and a modified base URL are rejected. Other AIStaging checks remain intact.
 
-`Frontend:BaseUrl` stays at the old AI Preview. Its uses are email verification/reset links and Google OAuth redirect; the requested password login/refresh/user/Generation V2 reads do not depend on it. No environment values or secrets were edited.
+`Frontend:BaseUrl` stays at the old AI Preview. Its email verification/reset and Google OAuth redirect uses do not prevent these password-authentication/read flows. No secrets or environment values were edited. Later commits only record documentation/evidence and were not redeployed.
 
-## Completed checks
+## Backend and real CORS verification
 
 | Check | Result |
 | --- | --- |
-| `dotnet build` | PASS, 0 errors; 33 existing nullable warnings |
-| `dotnet test` | PASS, 243 passed, 0 failed, 0 skipped |
-| `GET /health` after deploy | 200 |
-| `GET /api/generation/catalog` after deploy | 200, live catalog |
-| Both exact Preview origins | 14/14 OPTIONS: 204, exact `Access-Control-Allow-Origin`, `Access-Control-Allow-Credentials: true` |
-| Arbitrary external origin and unrelated vercel.app origin | 14/14 OPTIONS: no `Access-Control-Allow-Origin` or credentials header |
-| Paid generation configuration | Render dashboard flag observed `false`; not edited, same configuration used for manual deploy |
-| Paid model availability | `flux-fast`, `flux-studio`, `gemini-edit`: `approval_required`; Veo variants: `migration_required` |
-| New jobs/provider calls/cost in this pass | 0 / 0 / US$0 |
+| `dotnet build` | PASS: 0 errors; 33 existing nullable warnings |
+| `dotnet test` | PASS: 243 passed, 0 failed, 0 skipped |
+| `GET /health` | 200 after deploy and again after browser smoke |
+| Direct staging catalog | 200 |
+| Both exact Preview origins | 14/14 OPTIONS: 204, exact ACAO and credentials=true |
+| Random external and unrelated vercel.app origins | 14/14 OPTIONS: 204 without ACAO or credentials permission |
+| PaidGenerationEnabled | false before, during and after smoke; Render dashboard observed, not edited |
 
-Real OPTIONS covered password login, refresh, logout, users/me, catalog, owner history and the authenticated download path of an existing staging output. OPTIONS does not itself prove successful authentication or download.
+Real OPTIONS covered login, refresh, logout, users/me, catalog, owner history and the existing output's authenticated download. Negative origins were `https://external-random-remote-smoke.example` and `https://attacker.vercel.app`. No arbitrary origin reflection, wildcard, broad regex or bypass was introduced. [28 CORS results](evidence/working-studio-remote-auth/cors-postdeploy.json).
 
-Post-deploy application log review covered the new deploy from `2026-10-06T02:31:47Z` through the postflight. The returned page had 23 entries and `hasMore=false`; no password, JWT, refresh token, complete cookie, Mongo URI, R2 credentials, BFL key or private prompt was present. Existing DataProtection persistence/encryption warnings appeared during startup; no new CORS/startup error appeared. Logs must be reviewed again after authenticated smoke.
+## Authenticated remote checks A–O
 
-## Human gate and remaining remote checks
+The user manually authorized Vercel SSO in a temporary installed Chrome 154.0.8037.98 session, then explicitly authorized logout/relogin and local network observation. Deployment Protection and access settings remained intact; no bypass link or cookie copying was used. Only two existing synthetic AI staging accounts were exercised; no account was created.
 
-The Preview remains protected by Vercel SSO. Deployment Protection, access settings and bypass links were not changed. The user must manually open/authenticate the protected Preview before continuation.
+| Gate | Result |
+| --- | --- |
+| A. Email/password login | UI owner and foreign login: 200 |
+| B. users/me | Authenticated browser GET: 200; expected synthetic identity confirmed |
+| C. Refresh | 200 while authenticated |
+| D. Reload session | Remained authenticated; owner balance 16 credits |
+| E. Live catalog | UI route 200, source=live, revision 2026-10-02.2; 6 models |
+| F. Owner Library | 200; same 8 existing jobs, 7 Completed and 1 Failed |
+| G. Ownership | Foreign Library empty; owner's detail and download each 404 for foreign account |
+| H. Job detail | Owner GET 200, correct existing ID; UI detail opened in Light/Dark |
+| I. Existing output download | Browser download event and authenticated HTTP 200; valid PNG below |
+| J. Use as reference | Download 200; one existing asset prepared with Studio Image; no generation |
+| K. Blocked quote | Paid model unavailable, Create disabled; 0 quote POSTs |
+| L. No submission | 0 Generation V2 POSTs; unchanged 8 owner job IDs and 16-credit balance |
+| M. Logout | Owner, foreign and final owner logout: 200 |
+| N. Refresh after logout | 401 after each logout |
+| O. Reload after logout | Refresh 401; remained signed out; private assets cleared |
 
-Still pending with the existing synthetic AI staging owner: password login; users/me; refresh; reload session persistence; live catalog in UI; owner Library and foreign-job exclusion; job detail; authenticated output download 200; Use as reference without generation; no quote while provider/spending is blocked; zero submissions; logout 200; post-logout refresh 401; reload stays logged out.
+The existing frontend catalog route fetched the live AI staging catalog; this pass did not create a proxy. users/me and direct job-detail ownership checks supplemented UI flows using fetch inside the authorized Preview browser. Authentication tokens were used transiently inside browser memory for these requests; no tokens, credentials, cookies, headers or authentication payloads were exported or persisted in evidence.
 
-Theme/state smoke is also pending: default System without preference; manual Light/Dark and reload persistence; preference survives login/logout; theme changes preserve prompt/form; custom selects; readable Library/detail in both themes.
+Downloaded existing job `6ac4068a985c143f201d8f15`: `imagino-6ac4068a985c143f201d8f15.png`, 1,352,396 bytes, 1024×1024. SHA-256 `1180fb5b6efd81464a799a2e1fc687ab6a044b21cf0b50ea5d11f041bd36195d` matches the previously generated staging output. This incurred no new provider call or charge.
 
-Browser network host summary is pending. Only the stable Preview, AI staging API, staging R2 and required Vercel/SSO infrastructure are permitted. No production API/bucket, Stripe or provider request is authorized.
+[Structured browser results](evidence/working-studio-remote-auth/browser-results.json).
 
-No redesign, Stripe change, paid enablement, provider call, production change, merge or second-provider work is part of this pass. Stop after the requested smoke and its evidence update.
+## Theme and state smoke
+
+System was the default with no stored preference. Manual Light/Dark worked; reload and owner/foreign login/logout retained Dark. Theme changes preserved the synthetic prompt, selected 16:9 form value and subsequently the prepared reference asset. Model/aspect-ratio selects and Library model/status filters opened and worked. Library and detail remained readable in both themes. No redesign or full visual-suite rerun occurred.
+
+| Evidence | Light | Dark |
+| --- | --- | --- |
+| Prompt/form and blocked generation | [Create](evidence/working-studio-remote-auth/create-light.png) | [Create](evidence/working-studio-remote-auth/create-dark.png) |
+| Existing owner jobs | [Library](evidence/working-studio-remote-auth/library-light.png) | [Library](evidence/working-studio-remote-auth/library-dark.png) |
+| Existing job detail | [Detail](evidence/working-studio-remote-auth/detail-light.png) | [Detail](evidence/working-studio-remote-auth/detail-dark.png) |
+| Prepared reference, Create disabled | [Reference](evidence/working-studio-remote-auth/reference-prepared-light.png) | [Reference](evidence/working-studio-remote-auth/reference-prepared-dark.png) |
+
+[System default](evidence/working-studio-remote-auth/system-default.png) · [Foreign empty Library](evidence/working-studio-remote-auth/foreign-library-empty-dark.png) · [Final signed-out session](evidence/working-studio-remote-auth/final-signed-out-dark.png) · [Paid flag false](evidence/working-studio-remote-auth/paid-flag-false-final.png).
+
+## Browser network and application logs
+
+During the Imagino application smoke, every observed HTTP request used one of:
+
+- `imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app`
+- `imagino-api-ai-staging.onrender.com`
+- `vercel.live` (existing Preview infrastructure)
+
+No R2 browser request was needed; existing images used the application's approved delivery paths. No production API/bucket, Stripe, BFL, Gemini, OpenAI or other generation-provider host appeared. All API POSTs were authentication endpoints. No page error was observed. WebSocket observation during reference/logout/relogin recorded none. The initial human SSO phase was separated from app smoke and involved Vercel, Google/GitHub authentication and their assets/telemetry; it was not a generation-provider flow.
+
+[Network summary](evidence/working-studio-remote-auth/browser-network-summary.json) aggregates host/method/path/status and counts. Local observation retained metadata only, excluding query strings, headers, credentials, cookies, request/response bodies, HAR and traces.
+
+The observer retained 33 `net::ERR_ABORTED` events during navigation/reload, including requests whose response headers had already arrived. Required positive endpoint statuses and UI state assertions passed; these cancellation events remain visible in the summary rather than being discarded.
+
+AI staging application logs were manually reviewed from `2026-10-06T02:31:47Z` through `2026-10-06T05:30:00Z`: 53 entries, hasMore=false. They contained deployment/lifecycle messages and existing DataProtection persistence/encryption startup warnings. No password, JWT, refresh token, complete cookie, Mongo URI, R2 credentials, BFL key or integral private prompt appeared. The authenticated smoke window itself emitted 0 application entries, hasMore=false. No provider execution was present. [Full runtime review](evidence/working-studio-remote-auth/logs-full-runtime-review.json) · [Smoke-window review](evidence/working-studio-remote-auth/logs-authenticated-smoke-review.json).
+
+## Final state and boundary
+
+**Cost for this pass: US$0. PaidGenerationEnabled=false.** No quote, job, credit reservation, provider call or new generation occurred. The owner retained 8 jobs and 16 credits. The temporary test session was logged out and Chrome closed after evidence collection; the user's original browser session was not logged out.
+
+Both PRs remain draft and unmerged. No production, Stripe, secrets, provider configuration, public bucket policy or second-provider work was changed. Verification is limited to this live staging Preview and installed Chrome smoke; existing startup warnings remain outside this pass. Stop after recording this result.

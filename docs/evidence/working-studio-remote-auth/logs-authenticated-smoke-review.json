@@ -1,0 +1,19 @@
+{
+  "serviceId": "srv-db1tmv17lnhs73efdjp0",
+  "deployId": "dep-db25r4rbc2fs73fbucug",
+  "startTime": "2026-10-06T05:17:33.032Z",
+  "endTime": "2026-10-06T05:25:50Z",
+  "logType": "app",
+  "entriesReviewed": 0,
+  "hasMore": false,
+  "passwordObserved": false,
+  "jwtObserved": false,
+  "refreshTokenObserved": false,
+  "completeCookieObserved": false,
+  "mongoUriObserved": false,
+  "r2CredentialsObserved": false,
+  "bflKeyObserved": false,
+  "privatePromptObserved": false,
+  "notes": "No application log entries were emitted during the authenticated smoke window. Prior post-deploy review covered 23 entries with no listed sensitive data, including existing DataProtection startup warnings.",
+  "authenticatedSmoke": "PASS"
+}

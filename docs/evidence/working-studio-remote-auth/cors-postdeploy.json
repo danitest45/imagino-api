@@ -1,0 +1,296 @@
+{
+  "checkedAt": "2026-10-06T02:32:46.8981330Z",
+  "api": "https://imagino-api-ai-staging.onrender.com",
+  "healthStatus": 200,
+  "catalogStatus": 200,
+  "backendSha": "76aec87644f8a55532a0a1a36175b5792f23b565",
+  "renderDeploy": "dep-db25r4rbc2fs73fbucug",
+  "frontendSha": "46c64a646dd1504369ef917c8075ea80e45b432c",
+  "frontendDeployment": "dpl_H6v4cP2FZf1PZQnQ5NbQnbDFNV7e",
+  "paidGenerationEnabledConfigObserved": false,
+  "catalogAvailability": [
+    {
+      "id": "flux-fast-20261002",
+      "availability": "approval_required"
+    },
+    {
+      "id": "flux-studio-20261002",
+      "availability": "approval_required"
+    },
+    {
+      "id": "gemini-edit-20261002",
+      "availability": "approval_required"
+    },
+    {
+      "id": "veo-fast-20261002",
+      "availability": "migration_required"
+    },
+    {
+      "id": "veo-cinema-20261002",
+      "availability": "migration_required"
+    },
+    {
+      "id": "pipeline-demo-20261002",
+      "availability": "synthetic_demo"
+    }
+  ],
+  "cors": [
+    {
+      "origin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "path": "/api/auth/login",
+      "requestedMethod": "POST",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "path": "/api/auth/refresh",
+      "requestedMethod": "POST",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "path": "/api/auth/logout",
+      "requestedMethod": "POST",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "path": "/api/users/me",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "path": "/api/generation/catalog",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "path": "/api/generation/jobs",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "path": "/api/generation/jobs/6ac40507e10e977b2df88393/download",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "path": "/api/auth/login",
+      "requestedMethod": "POST",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "path": "/api/auth/refresh",
+      "requestedMethod": "POST",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "path": "/api/auth/logout",
+      "requestedMethod": "POST",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "path": "/api/users/me",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "path": "/api/generation/catalog",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "path": "/api/generation/jobs",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "path": "/api/generation/jobs/6ac40507e10e977b2df88393/download",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "allowCredentials": "true",
+      "pass": true
+    },
+    {
+      "origin": "https://external-random-remote-smoke.example",
+      "path": "/api/auth/login",
+      "requestedMethod": "POST",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    },
+    {
+      "origin": "https://external-random-remote-smoke.example",
+      "path": "/api/auth/refresh",
+      "requestedMethod": "POST",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    },
+    {
+      "origin": "https://external-random-remote-smoke.example",
+      "path": "/api/auth/logout",
+      "requestedMethod": "POST",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    },
+    {
+      "origin": "https://external-random-remote-smoke.example",
+      "path": "/api/users/me",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    },
+    {
+      "origin": "https://external-random-remote-smoke.example",
+      "path": "/api/generation/catalog",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    },
+    {
+      "origin": "https://external-random-remote-smoke.example",
+      "path": "/api/generation/jobs",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    },
+    {
+      "origin": "https://external-random-remote-smoke.example",
+      "path": "/api/generation/jobs/6ac40507e10e977b2df88393/download",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    },
+    {
+      "origin": "https://attacker.vercel.app",
+      "path": "/api/auth/login",
+      "requestedMethod": "POST",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    },
+    {
+      "origin": "https://attacker.vercel.app",
+      "path": "/api/auth/refresh",
+      "requestedMethod": "POST",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    },
+    {
+      "origin": "https://attacker.vercel.app",
+      "path": "/api/auth/logout",
+      "requestedMethod": "POST",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    },
+    {
+      "origin": "https://attacker.vercel.app",
+      "path": "/api/users/me",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    },
+    {
+      "origin": "https://attacker.vercel.app",
+      "path": "/api/generation/catalog",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    },
+    {
+      "origin": "https://attacker.vercel.app",
+      "path": "/api/generation/jobs",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    },
+    {
+      "origin": "https://attacker.vercel.app",
+      "path": "/api/generation/jobs/6ac40507e10e977b2df88393/download",
+      "requestedMethod": "GET",
+      "status": 204,
+      "allowOrigin": null,
+      "allowCredentials": null,
+      "pass": true
+    }
+  ],
+  "allCorsPassed": true,
+  "generatedJobs": 0,
+  "providerCalls": 0,
+  "costUsd": 0,
+  "remoteAuthenticatedSmoke": "PENDING_HUMAN_SSO_GATE"
+}

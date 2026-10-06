@@ -15,6 +15,24 @@ public sealed class GenerationController(IGenerationRepository repository, Gener
 {
     private string Owner => User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
         ?? throw new ValidationAppException("Authenticated owner missing.");
+    [HttpGet("openai/single-smoke/proof"), Authorize]
+    public async Task<IActionResult> SingleSmokeProof(CancellationToken ct)
+    {
+        Response.Headers.CacheControl = "private, no-store";
+        if (!options.Value.Enabled || !options.Value.OpenAiHomologationEnabled || Owner != BflHomologationPolicy.OwnerId) return NotFound();
+        var ledger = await repository.SingleSmokeLedgerAsync(ct);
+        if (ledger == null) return NotFound();
+        var job = await repository.FindByKeyAsync(Owner, OpenAiSingleSmokePolicy.Key, ct);
+        return Ok(new { options.Value.PaidGenerationEnabled, options.Value.OpenAiSingleSmokeEnabled,
+            hardRequestCostCap = false, ledger, job = job == null ? null : new {
+                job.Id, job.OpenAiRunId, status = job.Status.ToString(), creditState = job.CreditState.ToString(), job.ProviderHttpStatus, job.ProviderUsage,
+                job.ProviderReportedCostUsd, job.ProviderAcceptanceLatencyMs, job.ProviderDecodeLatencyMs,
+                job.SynchronousResponseAtUtc, job.OutputMetrics, job.CreatedAt, job.UpdatedAt, job.Journal,
+                reservedCredits = job.Quote.Credits,
+                experimentalCreditsFromActual = job.ProviderReportedCostUsd == null ? (int?)null :
+                    OpenAiImagePricing.ExperimentalCredits(job.ProviderReportedCostUsd.Value, job.Model.Pricing)
+            } });
+    }
     [HttpGet("openai/preflight"), Authorize]
     public async Task<IActionResult> OpenAiPreflight([FromServices] OpenAiModelAccessPreflight preflight, CancellationToken ct)
     {

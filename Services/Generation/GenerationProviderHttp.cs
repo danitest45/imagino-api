@@ -8,13 +8,14 @@ public sealed class GenerationProviderHttp(IHttpClientFactory clients)
 {
     // This client removes HttpClient URL/body logging: polling/delivery URLs may be signed.
     public async Task<JsonDocument> SendAsync(HttpMethod method, string url, string header, string key,
-        object? body, string[] allowedHosts, CancellationToken ct)
+        object? body, string[] allowedHosts, CancellationToken ct, Action<int>? observeStatus = null)
     {
         var uri = RemoteUrlPolicy.Validate(url, allowedHosts);
         using var request = new HttpRequestMessage(method, uri);
         request.Headers.Add(header, key);
         if (body != null) request.Content = JsonContent.Create(body);
         using var response = await clients.CreateClient("GenerationPrivate").SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        observeStatus?.Invoke((int)response.StatusCode);
         if (!response.IsSuccessStatusCode) throw new ProviderCallException((int)response.StatusCode);
         var bytes = await ReadBoundedAsync(response.Content, 29 * 1024 * 1024, ct);
         return JsonDocument.Parse(bytes);

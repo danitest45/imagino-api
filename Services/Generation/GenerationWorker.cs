@@ -59,11 +59,13 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
                         logger.LogInformation("Generation measured job={Job} provider={Provider} model={Model} textInputTokens={Text} imageInputTokens={Image} imageOutputTokens={Output} calculatedUsd={Cost} pricingRevision={Revision} providerLatencyMs={Latency}",
                             job.Id, job.Model.Provider, job.Model.ProviderModel, result.Usage.TextInputTokens, result.Usage.ImageInputTokens,
                             result.Usage.ImageOutputTokens, result.CostUsd, result.Usage.PricingRevision, result.AcceptanceLatencyMs);
-                    if (job.Model.Provider == "openai" && (OpenAiHomologationPolicy.VerifiedMaximumUsd(job.OpenAiHomologationCall ?? 0) is not > 0 ||
-                        result.CostUsd == null || result.Usage == null ||
-                        result.CostUsd > OpenAiHomologationPolicy.VerifiedMaximumUsd(job.OpenAiHomologationCall ?? 0)))
+                    var isSmoke = job.OpenAiRunId == OpenAiSingleSmokePolicy.RunId;
+                    if (job.Model.Provider == "openai" && (result.CostUsd == null || result.Usage == null || (isSmoke
+                        ? result.CostUsd > OpenAiSingleSmokePolicy.ObservedCeilingUsd
+                        : OpenAiHomologationPolicy.VerifiedMaximumUsd(job.OpenAiHomologationCall ?? 0) is not > 0 ||
+                            result.CostUsd > OpenAiHomologationPolicy.VerifiedMaximumUsd(job.OpenAiHomologationCall ?? 0))))
                     {
-                        await FinishAsync(job, GenerationStatus.Failed, null, "cost_bound_exceeded", stoppingToken);
+                        await FinishAsync(job, GenerationStatus.Failed, null, isSmoke ? "observed_ceiling_exceeded" : "cost_bound_exceeded", stoppingToken);
                         return;
                     }
                     if (result.ErrorCode != null) await FinishAsync(job, GenerationStatus.Failed, null, result.ErrorCode, stoppingToken);
@@ -121,9 +123,13 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
         }
         var downloadedAt = DateTime.UtcNow;
         var measuredPng = job.Model.Provider == "openai" || options.Value.BflHomologationEnabled && job.Model.Provider == "bfl";
+        var measure = System.Diagnostics.Stopwatch.StartNew();
         var dims = measuredPng ? BflHomologationPolicy.ValidateOutput(bytes) : (Width: 0, Height: 0);
+        var validationMs = measure.Elapsed.TotalMilliseconds;
+        measure.Restart();
         var url = await storage.StoreAsync(job, bytes, ct);
-        if (measuredPng) job.OutputMetrics = new(readyAt, downloadStartedAt, downloadedAt, DateTime.UtcNow, bytes.Length, "png", dims.Width, dims.Height);
+        if (measuredPng) job.OutputMetrics = new(readyAt, downloadStartedAt, downloadedAt, DateTime.UtcNow, bytes.Length, "png", dims.Width, dims.Height,
+            validationMs, measure.Elapsed.TotalMilliseconds);
         logger.LogInformation("Generation output stored job={Job} provider={Provider} bytes={Bytes} stage=output_stored", job.Id, job.Model.Provider, bytes.Length);
         await FinishAsync(job, GenerationStatus.Completed, url, null, ct);
     }

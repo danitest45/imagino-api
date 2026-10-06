@@ -69,6 +69,7 @@ public sealed class OpenAiHomologationSlot
     public string State { get; set; } = "Available";
     public string? JobId { get; set; }
     [BsonRepresentation(BsonType.Decimal128)] public decimal MaximumUsd { get; set; }
+    [BsonRepresentation(BsonType.Decimal128)] public decimal? ProjectedUsd { get; set; }
     [BsonRepresentation(BsonType.Decimal128)] public decimal? ObservedUsd { get; set; }
     public GenerationUsage? Usage { get; set; }
     public bool Reconciled { get; set; }

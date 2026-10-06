@@ -12,7 +12,13 @@ public sealed class OpenAiImageGenerationProvider(GenerationProviderHttp http, I
     public bool IsConfigured => !string.IsNullOrWhiteSpace(options.Value.OpenAiApiKey);
     public async Task<ProviderResult> StartAsync(GenerationJob job, CancellationToken ct)
     {
-        OpenAiHomologationPolicy.ValidateJob(job);
+        if (job.OpenAiRunId == OpenAiSingleSmokePolicy.RunId)
+        {
+            if (!options.Value.OpenAiSingleSmokeEnabled || !options.Value.PaidGenerationEnabled || !options.Value.OpenAiHomologationEnabled)
+                throw new Imagino.Api.Errors.ForbiddenFeatureException("Single Flare authorization is closed.");
+            OpenAiSingleSmokePolicy.ValidateJob(job);
+        }
+        else OpenAiHomologationPolicy.ValidateJob(job);
         var body = new Dictionary<string, object> {
             ["model"] = job.Model.ProviderModel, ["prompt"] = job.Prompt,
             ["size"] = "1024x1024", ["quality"] = "medium", ["n"] = 1,
@@ -21,9 +27,13 @@ public sealed class OpenAiImageGenerationProvider(GenerationProviderHttp http, I
         var endpoint = job.Inputs.Count == 0 ? "generations" : "edits";
         if (endpoint == "edits") body["images"] = job.Inputs.Select(i => new { image_url = i.Data }).ToArray();
         var timer = Stopwatch.StartNew();
+        int? observedStatus = null;
         using var response = await http.SendAsync(HttpMethod.Post, "https://api.openai.com/v1/images/" + endpoint,
-            "Authorization", "Bearer " + options.Value.OpenAiApiKey, body, new[] { "api.openai.com" }, ct);
-        return ParseResponse(response.RootElement) with { AcceptanceLatencyMs = timer.Elapsed.TotalMilliseconds };
+            "Authorization", "Bearer " + options.Value.OpenAiApiKey, body, new[] { "api.openai.com" }, ct, status => observedStatus = status);
+        var postMs = timer.Elapsed.TotalMilliseconds;
+        timer.Restart();
+        var parsed = ParseResponse(response.RootElement);
+        return parsed with { AcceptanceLatencyMs = postMs, DecodeLatencyMs = timer.Elapsed.TotalMilliseconds, HttpStatus = observedStatus };
     }
     public Task<ProviderResult> PollAsync(GenerationJob job, CancellationToken ct) =>
         throw new InvalidOperationException("The direct Images API has no polling contract.");

@@ -15,6 +15,7 @@ public sealed class GenerationSettings
     public bool PaidGenerationEnabled { get; set; }
     public bool BflHomologationEnabled { get; set; }
     public bool OpenAiHomologationEnabled { get; set; }
+    public bool OpenAiSingleSmokeEnabled { get; set; }
     public int StagingFixtureDelaySeconds { get; set; }
     public string BflApiKey { get; set; } = "";
     public string GeminiApiKey { get; set; } = "";
@@ -102,6 +103,9 @@ public sealed class GenerationJob
     public double? ProviderAcceptanceLatencyMs { get; set; }
     public int? BflHomologationCall { get; set; }
     public int? OpenAiHomologationCall { get; set; }
+    public string? OpenAiRunId { get; set; }
+    public double? ProviderDecodeLatencyMs { get; set; }
+    public int? ProviderHttpStatus { get; set; }
     public GenerationUsage? ProviderUsage { get; set; }
     public DateTime? SynchronousResponseAtUtc { get; set; }
     public GenerationOutputMetrics? OutputMetrics { get; set; }
@@ -116,10 +120,12 @@ public sealed record GenerationJobView(string Id, string ModelId, string Display
         j.Settings, j.OutputUrl, j.ErrorCode, j.CreatedAt, j.UpdatedAt);
 }
 public sealed record GenerationOutputMetrics(DateTime ProviderReadyAtUtc, DateTime DownloadStartedAtUtc,
-    DateTime DownloadFinishedAtUtc, DateTime StoredAtUtc, int Bytes, string Format, int Width, int Height);
+    DateTime DownloadFinishedAtUtc, DateTime StoredAtUtc, int Bytes, string Format, int Width, int Height,
+    double? ValidationLatencyMs = null, double? StorageLatencyMs = null);
 public sealed record ProviderResult(string? JobId, string? PollingUrl, bool Completed = false,
     byte[]? Bytes = null, string? OutputUrl = null, string? ErrorCode = null, decimal? CostUsd = null,
-    double? AcceptanceLatencyMs = null, GenerationUsage? Usage = null);
+    double? AcceptanceLatencyMs = null, GenerationUsage? Usage = null, double? DecodeLatencyMs = null,
+    int? HttpStatus = null);
 public sealed record GenerationUsage(long TextInputTokens, long ImageInputTokens, long ImageOutputTokens,
     long InputTokens, long OutputTokens, long TotalTokens, long CachedInputTokens, string PricingRevision);
 public interface IGenerationProvider
@@ -131,6 +137,7 @@ public interface IGenerationProvider
 }
 public interface IGenerationRepository
 {
+    Task<OpenAiHomologationLedger?> SingleSmokeLedgerAsync(CancellationToken ct) => Task.FromResult<OpenAiHomologationLedger?>(null);
     Task InitializeAsync(IEnumerable<GenerationModel> seed, CancellationToken ct);
     Task<List<GenerationModel>> CatalogAsync(CancellationToken ct);
     Task<GenerationJob?> FindByKeyAsync(string userId, string key, CancellationToken ct);

@@ -17,7 +17,10 @@ public static class AIStagingConfiguration
             (!settings.OpenAiHomologationEnabled && !string.IsNullOrEmpty(settings.OpenAiApiKey)) ||
             (settings.PaidGenerationEnabled && !settings.BflHomologationEnabled && !settings.OpenAiHomologationEnabled))
             throw new InvalidOperationException("AI staging permits only synthetic generation or finite BFL/OpenAI authorizations; other provider keys are forbidden.");
-        if (settings.OpenAiHomologationEnabled && settings.PaidGenerationEnabled && !OpenAiHomologationPolicy.CostBoundsVerified)
+        if (settings.OpenAiSingleSmokeEnabled && (!settings.OpenAiHomologationEnabled ||
+            OpenAiSingleSmokePolicy.ProjectionUsd >= OpenAiSingleSmokePolicy.ObservedCeilingUsd / 2))
+            throw new InvalidOperationException("Single Flare smoke requires its isolated provider and comfortable cost projection.");
+        if (settings.OpenAiHomologationEnabled && settings.PaidGenerationEnabled && !settings.OpenAiSingleSmokeEnabled && !OpenAiHomologationPolicy.CostBoundsVerified)
             throw new InvalidOperationException("OpenAI paid authorization requires verified complete cost bounds.");
         if ((settings.BflHomologationEnabled || settings.OpenAiHomologationEnabled) && (config["RENDER_SERVICE_ID"] != BflHomologationPolicy.ServiceId ||
             config["RENDER_GIT_BRANCH"] != "codex/imagino-ai-revival-v2" ||

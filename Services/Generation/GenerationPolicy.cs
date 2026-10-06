@@ -93,12 +93,20 @@ public static class GenerationPolicy
         return (dims.Item1 * scale, dims.Item2 * scale);
     }
 
-    public static GenerationQuote Quote(GenerationModel model, ValidatedGeneration input, DateTime now)
+    public static GenerationQuote Quote(GenerationModel model, ValidatedGeneration input, DateTime now, bool singleSmoke = false)
     {
         if (GenerationLifecycle.IsRetired(model, now)) throw new ValidationAppException("Model endpoint is retired. Migration required.");
         var pricing = model.Pricing;
         if (model.Provider == "openai")
         {
+            if (singleSmoke)
+            {
+                OpenAiSingleSmokePolicy.ValidateRequest(BflHomologationPolicy.OwnerId, model, input);
+                var projected = OpenAiSingleSmokePolicy.ProjectionUsd;
+                return new(Fingerprint(model, input) + ":" + now.AddMinutes(10).Ticks, model.Id, model.Version,
+                    OpenAiImagePricing.ExperimentalCredits(projected, pricing), projected,
+                    projected * pricing.RiskMultiplier + pricing.OverheadUsd, pricing.Revision, now.AddMinutes(10), input.Settings);
+            }
             var call = (model.ProviderModel, input.Prompt, input.Inputs.Count) switch {
                 (OpenAiHomologationPolicy.Flare, BflHomologationPolicy.FastPrompt, 0) => 1,
                 (OpenAiHomologationPolicy.Sunburst, BflHomologationPolicy.StudioPrompt, 0) => 2,

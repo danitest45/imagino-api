@@ -16,8 +16,9 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
         if (GenerationLifecycle.RequiresMigration(model, currentTime)) return "migration_required";
         if (!model.Enabled || model.Lifecycle != "ACTIVE" || !model.ProviderEnabled) return "disabled";
         if (model.Provider == "fixture") return options.Value.StagingFixtureEnabled ? "synthetic_demo" : "disabled";
-        if (model.Provider == "openai" && (!options.Value.OpenAiHomologationEnabled || !OpenAiHomologationPolicy.AllowsModel(model) ||
-            !OpenAiHomologationPolicy.CostBoundsVerified || currentTime >= OpenAiHomologationPolicy.ExpiresAtUtc)) return "approval_required";
+        if (options.Value.OpenAiSingleSmokeEnabled && !OpenAiSingleSmokePolicy.AllowsModel(model)) return "approval_required";
+        if (model.Provider == "openai" && (!options.Value.OpenAiHomologationEnabled || !options.Value.OpenAiSingleSmokeEnabled ||
+            !OpenAiSingleSmokePolicy.AllowsModel(model) || currentTime >= OpenAiHomologationPolicy.ExpiresAtUtc)) return "approval_required";
         if (options.Value.BflHomologationEnabled && model.Provider != "openai" && (!BflHomologationPolicy.AllowsModel(model) || currentTime >= BflHomologationPolicy.ExpiresAtUtc))
             return "approval_required";
         if (!options.Value.PaidGenerationEnabled) return "approval_required";
@@ -27,8 +28,13 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
     {
         var model = await ModelAsync(request.ModelId, ct);
         var input = GenerationPolicy.Validate(model, request);
-        if (model.Provider == "openai") OpenAiHomologationPolicy.ValidateRequest(owner ?? "", model, input);
-        var quote = GenerationPolicy.Quote(model, input, DateTime.UtcNow);
+        if (model.Provider == "openai")
+        {
+            if (!options.Value.OpenAiSingleSmokeEnabled || !options.Value.PaidGenerationEnabled)
+                throw new ForbiddenFeatureException("The one-call Flare smoke authorization is closed.");
+            OpenAiSingleSmokePolicy.ValidateRequest(owner ?? "", model, input);
+        }
+        var quote = GenerationPolicy.Quote(model, input, DateTime.UtcNow, options.Value.OpenAiSingleSmokeEnabled);
         if (options.Value.BflHomologationEnabled && model.Provider != "fixture" && model.Provider != "openai")
             BflHomologationPolicy.Validate(owner ?? "", model, input, quote, DateTime.UtcNow);
         return quote;
@@ -44,14 +50,18 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
         if (Availability(model) is not ("ready" or "synthetic_demo"))
             throw new ForbiddenFeatureException("Generation requires provider credentials and explicit spending approval.");
         GenerationPolicy.ValidateQuote(request.QuoteId, hash, DateTime.UtcNow);
-        var quote = GenerationPolicy.Quote(model, input, DateTime.UtcNow);
+        var quote = GenerationPolicy.Quote(model, input, DateTime.UtcNow, options.Value.OpenAiSingleSmokeEnabled);
         var job = new GenerationJob {
             UserId = userId, IdempotencyKey = key, RequestHash = hash, Model = model, Prompt = input.Prompt,
             Settings = input.Settings, Inputs = input.Inputs, Quote = quote,
             Journal = new() { new("QueuedReserved", DateTime.UtcNow) },
             DeadlineAt = DateTime.UtcNow.AddSeconds(model.TimeoutSeconds)
         };
-        if (model.Provider == "openai") OpenAiHomologationPolicy.ValidateJob(job);
+        if (model.Provider == "openai")
+        {
+            job.OpenAiRunId = OpenAiSingleSmokePolicy.RunId;
+            OpenAiSingleSmokePolicy.ValidateJob(job);
+        }
         else if (options.Value.BflHomologationEnabled && model.Provider != "fixture") BflHomologationPolicy.ValidateJob(job);
         return await repository.ReserveAsync(job, ct);
     }

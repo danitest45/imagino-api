@@ -35,7 +35,7 @@ The AIStaging profile requires exactly these two origins, using an ordinal, orde
 
 Real OPTIONS covered password login, refresh, logout, users/me, catalog, owner history and the authenticated download path of an existing staging output. OPTIONS does not itself prove successful authentication or download.
 
-Post-deploy application log review covered the new deploy from `2026-10-06T02:31:47Z` through the postflight. The returned page had 24 entries and `hasMore=false`; no password, JWT, refresh token, complete cookie, Mongo URI, R2 credentials, BFL key or private prompt was present. Existing DataProtection persistence/encryption warnings appeared during startup; no new CORS/startup error appeared. Logs must be reviewed again after authenticated smoke.
+Post-deploy application log review covered the new deploy from `2026-10-06T02:31:47Z` through the postflight. The returned page had 23 entries and `hasMore=false`; no password, JWT, refresh token, complete cookie, Mongo URI, R2 credentials, BFL key or private prompt was present. Existing DataProtection persistence/encryption warnings appeared during startup; no new CORS/startup error appeared. Logs must be reviewed again after authenticated smoke.
 
 ## Human gate and remaining remote checks
 

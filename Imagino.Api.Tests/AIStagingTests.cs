@@ -21,6 +21,7 @@ public class AIStagingTests
             ["ImageGeneratorSettings:MongoConnection"] = "mongodb://localhost", ["ImageGeneratorSettings:MongoDatabase"] = "imagino_staging",
             ["Jwt:Secret"] = new string('x', 32), ["Jwt:Issuer"] = "staging", ["Jwt:Audience"] = "staging",
             ["Frontend:BaseUrl"] = AIStagingConfiguration.Preview, ["Cors:AllowedOrigins:0"] = AIStagingConfiguration.Preview,
+            ["Cors:AllowedOrigins:1"] = AIStagingConfiguration.WorkingStudioPreview,
             ["R2Settings:BucketName"] = "imagino-images-staging", ["R2Settings:BucketNameVideos"] = "imagino-videos-staging",
             ["R2Settings:AccessKeyId"] = "test", ["R2Settings:SecretAccessKey"] = "test",
             ["R2Settings:ServiceUrl"] = "https://f3915d7185410d3a7d3a9599e22194af.r2.cloudflarestorage.com",
@@ -41,6 +42,29 @@ public class AIStagingTests
     [InlineData("Cors:AllowedOrigins:1", "https://other.example")]
     [InlineData("RefreshTokenCookie:Domain", "imagino-api-staging.onrender.com")]
     public void DedicatedProfileRejectsForbiddenConfiguration(string key, string value) =>
+        Assert.Throws<InvalidOperationException>(() => AIStagingConfiguration.Validate(Valid(new() { [key] = value })));
+
+    [Fact]
+    public void DedicatedProfileAcceptsOnlyBothKnownOriginsInEitherOrder()
+    {
+        AIStagingConfiguration.Validate(Valid());
+        AIStagingConfiguration.Validate(Valid(new() {
+            ["Cors:AllowedOrigins:0"] = AIStagingConfiguration.WorkingStudioPreview,
+            ["Cors:AllowedOrigins:1"] = AIStagingConfiguration.Preview
+        }));
+    }
+
+    [Theory]
+    [InlineData("Cors:AllowedOrigins:1", "")]
+    [InlineData("Cors:AllowedOrigins:1", AIStagingConfiguration.Preview)]
+    [InlineData("Cors:AllowedOrigins:1", "https://*.vercel.app")]
+    [InlineData("Cors:AllowedOrigins:1", "*")]
+    [InlineData("Cors:AllowedOrigins:1", "https://external.example")]
+    [InlineData("Cors:AllowedOrigins:1", AIStagingConfiguration.WorkingStudioPreview + "/")]
+    [InlineData("Cors:AllowedOrigins:2", "https://external.example")]
+    [InlineData("Cors:AllowedOrigins:2", AIStagingConfiguration.WorkingStudioPreview)]
+    [InlineData("Frontend:BaseUrl", AIStagingConfiguration.WorkingStudioPreview)]
+    public void DedicatedProfileRejectsMissingDuplicateOrAdditionalOriginsAndChangedBaseUrl(string key, string value) =>
         Assert.Throws<InvalidOperationException>(() => AIStagingConfiguration.Validate(Valid(new() { [key] = value })));
 
     [Fact]

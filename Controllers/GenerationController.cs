@@ -15,6 +15,13 @@ public sealed class GenerationController(IGenerationRepository repository, Gener
 {
     private string Owner => User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
         ?? throw new ValidationAppException("Authenticated owner missing.");
+    [HttpGet("openai/preflight"), Authorize]
+    public async Task<IActionResult> OpenAiPreflight([FromServices] OpenAiModelAccessPreflight preflight, CancellationToken ct)
+    {
+        Response.Headers.CacheControl = "private, no-store";
+        var result = await preflight.CheckAsync(Owner, ct);
+        return result == null ? NotFound() : Ok(result);
+    }
     [HttpGet("catalog"), AllowAnonymous]
     public async Task<IActionResult> Catalog(CancellationToken ct)
     {

@@ -13,6 +13,7 @@ public static class GenerationRegistration
         services.AddSingleton<GenerationProcessor>();
         services.AddSingleton<IGenerationOutputStore, GenerationOutputStore>();
         services.AddSingleton<GenerationProviderHttp>();
+        services.AddSingleton<OpenAiModelAccessPreflight>();
         if (!fixtureOnly)
         {
             services.AddSingleton<IGenerationProvider, BflGenerationProvider>();

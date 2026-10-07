@@ -8,12 +8,12 @@ No merges, base rewrites, paid AI calls, commercial changes or production mutati
 
 ## Evidence and limits
 Local backend: 398 passed, zero failed/skipped; Release publish passed. Tests include an isolated Mongo 8.0.16 replica set: ten simultaneous reservations admit exactly five against a synthetic USD 0.10 ceiling, reserve maximum USD 0.02 each, settle once and retain unknown submission costs. Forty simultaneous login-counter increments admit exactly ten. Synthetic backup/restore copies five critical collection classes into a new throwaway database and compares BSON; this does not prove Atlas snapshot or R2 recovery.
-Frontend: 41 unit tests; 60 existing Chromium tests plus a private-media test. Includes keyboard/mobile/theme/axe, quote invalidation, ambiguous submit/manual idempotent retry, expired session, unavailable history/download, reuse and Animate preparation. All browser external requests intercepted.
+Frontend: 41 unit tests and all 62 Chromium tests passed, including private-media/logout and noindex/baseline tests. Includes keyboard/mobile/theme/axe, quote invalidation, ambiguous submit/manual idempotent retry, expired session, unavailable history/download, reuse and Animate preparation. All browser external requests intercepted.
 Production npm dependencies and NuGet audit: no reported vulnerabilities after patches. Full npm audit still reports five high findings in the trusted development lint dependency chain (unpatched braces); runtime audit excludes them. See security review.
 Staging read smoke: 2026-10-07T20:21Z, service `srv-db1tmv17lnhs73efdjp0`, health/image download/video download 200, anonymous 401, foreign 404, refresh/logout successful, wallet unchanged, eleven historical jobs, zero creation/provider POST/email.
 Historical public image HEAD returned 200: privacy remains P0.
 Atlas read-only: owner_history IXSCAN for bounded owner-history query, no sort, dummy owner/zero rows/2ms; maximum observed job BSON 4,054 bytes. Not a load benchmark.
-Render remains on revival branch; live deploy `dep-db37rcss728c73bkoc40`, commit `1a16c3eb4cf6629f6ad4d52ee00c72ae414e08b4`. Connector cannot switch branch; UI runtime failed during Windows sandbox initialization. New backend has not passed remote final gate.
+Render remains on revival branch. Merging only launch safety flags triggered staging deploy `dep-db3aup7lot8c73f6rm0g`, commit `841248051a6ce79d1adf5d2f28c842b9782590fb`. Authenticated read smoke afterward confirmed PaidGenerationEnabled=false and RunwayRealSmokeEnabled=false; new media endpoint still 404. Connector cannot switch branch; UI runtime failed during Windows sandbox initialization. New backend has not passed remote final gate.
 
 ## Matrix
 PASS below means the documented technical contract passed the stated evidence; it does not authorize production.
@@ -43,4 +43,7 @@ PASS below means the documented technical contract passed the stated evidence; i
 | rollback | PASS | Versioned deploy/config/catalog/job-drain runbook | Deployed private-media rollback rehearsal pending | Preserve previous deployments and authorize staged rollout |
 
 Read [LAUNCH_BLOCKERS.md](LAUNCH_BLOCKERS.md) before any deployment or commercial enablement.
+
+
+Draft PRs: [backend #57](https://github.com/danitest45/imagino-api/pull/57), [frontend #90](https://github.com/danitest45/imagino-front/pull/90). Frontend Preview deployment dpl_7SCYef8dbZdyAgQPpS3C67GXPq3k is READY at [launch Preview](https://imagino-front-git-feat-imagino-laun-348f6b-danitest45s-projects.vercel.app). Protected HTTP verification: landing 200/noindex/no canonical, robots 200 disallow-all, empty sitemap 200, retired image proxy 410. This does not prove authenticated remote browser media flow.
 

@@ -16,9 +16,14 @@ try {
   $before=Invoke-RestMethod -Uri ($api+'/api/users/credits') -Headers $headers
   $history=Invoke-RestMethod -Uri ($api+'/api/generation/jobs') -Headers $headers
   $catalog=Invoke-RestMethod -Uri ($api+'/api/generation/catalog') -Headers $headers
+  $proof=Invoke-RestMethod -Uri ($api+'/api/generation/runway/e2e-video/proof') -Headers $headers
+  if($proof.paidGenerationEnabled -ne $false) {throw 'Paid submission flag is not proven disabled.'}
   $image=$history | Where-Object {$_.status -eq 'Completed' -and $_.mediaType -eq 'image'} | Select-Object -First 1
   $video=$history | Where-Object {$_.status -eq 'Completed' -and $_.mediaType -eq 'video'} | Select-Object -First 1
   $checks=@{health=(Status '/health');imageDownload=(Status ('/api/generation/jobs/'+$image.id+'/download') $headers);videoDownload=(Status ('/api/generation/jobs/'+$video.id+'/download') $headers);anonymousImage=(Status ('/api/generation/jobs/'+$image.id+'/download'))}
+  $checks.paidGenerationEnabled=$proof.paidGenerationEnabled
+  $checks.realSmokeEnabled=$proof.runwayRealSmokeEnabled
+  $checks.newMediaEndpoint=Status ('/api/generation/jobs/'+$image.id+'/media') $headers
   $other=$creds.accounts | Where-Object {$_.Email -ne $owner.Email} | Select-Object -First 1
   if($other) {
     $foreignSession=[Microsoft.PowerShell.Commands.WebRequestSession]::new()
@@ -36,7 +41,7 @@ try {
   if($checks.historicalImageStillPublicUrl) { try { $checks.historicalPublicHead=[int](Invoke-WebRequest -Uri $image.outputUrl -Method Head).StatusCode } catch { if($_.Exception.Response) {$checks.historicalPublicHead=[int]$_.Exception.Response.StatusCode} } }
   Invoke-RestMethod -Uri ($api+'/api/auth/logout') -Method Post -WebSession $session -Headers @{Origin=$origin} | Out-Null
   $checks.logout=$true
-  [ordered]@{atUtc=[DateTime]::UtcNow.ToString('o');serviceId='srv-db1tmv17lnhs73efdjp0';checks=$checks;historyCount=@($history).Length;providerPosts=0;jobCreates=0;emailsSent=0;newBranchDeployed=$false} | ConvertTo-Json -Depth 6
+  [ordered]@{atUtc=[DateTime]::UtcNow.ToString('o');serviceId='srv-db1tmv17lnhs73efdjp0';checks=$checks;historyCount=@($history).Length;providerPosts=0;jobCreates=0;emailsSent=0;newMediaEndpointAvailable=($checks.newMediaEndpoint -eq 200)} | ConvertTo-Json -Depth 6
 } catch { throw 'Read-only staging smoke failed; inspect status with credentials kept private.' }
 finally {
   if($login) { try {Invoke-RestMethod -Uri ($api+'/api/auth/logout') -Method Post -WebSession $session -Headers @{Origin=$origin}|Out-Null} catch {} }

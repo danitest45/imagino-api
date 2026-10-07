@@ -14,7 +14,8 @@ public static class GenerationPolicy
         // A displayed starting estimate is never a reservable quote. Input usage is unknown.
         if (model.Provider == "openai") return OpenAiImagePricing.ExperimentalCredits(
             OpenAiImagePricing.OutputOnlyProjectedTokens * OpenAiImagePricing.ImageOutputPerMillion / 1_000_000m, model.Pricing);
-        return Quote(model, new("preview", model.Fields.ToDictionary(f => f.Key, f => f.DefaultValue), new()), now).Credits;
+        return Quote(model, new("preview", model.Fields.ToDictionary(f => f.Key, f => f.DefaultValue),
+            model.Inputs.Where(i => i.Required).Select(i => new GenerationInput(i.Role, "catalog-estimate")).ToList()), now).Credits;
     }
     public static ValidatedGeneration Validate(GenerationModel model, GenerationRequest request)
     {
@@ -58,7 +59,13 @@ public static class GenerationPolicy
             ValidatePngInput(input.Data);
         }
         foreach (var spec in model.Inputs)
-            if (request.Inputs.Count(i => i.Role == spec.Role) > spec.MaxCount) throw new ValidationAppException($"Too many '{spec.Label}' images.");
+        {
+            var count = request.Inputs.Count(i => i.Role == spec.Role);
+            if (count > spec.MaxCount) throw new ValidationAppException($"Too many '{spec.Label}' images.");
+            if (spec.Required && count == 0) throw new ValidationAppException($"'{spec.Label}' is required.");
+            if (spec.OwnedAssetOnly && request.Inputs.Any(i => i.Role == spec.Role && i.SourceAssetId == null))
+                throw new ValidationAppException($"'{spec.Label}' must come from an owned asset.");
+        }
         if (request.Inputs.Any(i => i.Role == "lastFrame") && !request.Inputs.Any(i => i.Role == "firstFrame"))
             throw new ValidationAppException("Last frame requires a first frame.");
         if (model.MediaType == "video" && request.Inputs.Any(i => i.Role == "lastFrame") && settings.GetValueOrDefault("duration") != "8")

@@ -24,6 +24,8 @@ public static class GenerationRegistration
             services.AddSingleton<IGenerationProvider, BflGenerationProvider>();
         if (config["ASPNETCORE_ENVIRONMENT"] == "AIStaging" && config.GetValue<bool>("GenerationV2:OpenAiHomologationEnabled"))
             services.AddSingleton<IGenerationProvider, OpenAiImageGenerationProvider>();
+        if (config["ASPNETCORE_ENVIRONMENT"] == "AIStaging" && config.GetValue<bool>("GenerationV2:RunwayIntegrationEnabled"))
+            services.AddSingleton<IGenerationProvider, RunwayGenerationProvider>();
         services.AddSingleton<IGenerationProvider, StagingGenerationProvider>();
         services.AddHttpClient("GenerationPrivate", c => c.Timeout = TimeSpan.FromMinutes(2))
             .ConfigurePrimaryHttpMessageHandler(RemoteUrlPolicy.CreateHandler)
@@ -32,6 +34,9 @@ public static class GenerationRegistration
     }
     public static void ValidateStaging(IConfiguration config)
     {
+        if ((config.GetValue<bool>("GenerationV2:RunwayIntegrationEnabled") || config.GetValue<bool>("GenerationV2:RunwayRealSmokeEnabled")) &&
+            config["ASPNETCORE_ENVIRONMENT"] != "AIStaging")
+            throw new InvalidOperationException("Runway requires the isolated AIStaging profile.");
         if (config.GetValue<bool>("GenerationV2:BflHomologationEnabled") && config["ASPNETCORE_ENVIRONMENT"] != "AIStaging")
             throw new InvalidOperationException("The finite BFL authorization requires the isolated AIStaging profile.");
         if (config.GetValue<bool>("GenerationV2:OpenAiHomologationEnabled") && config["ASPNETCORE_ENVIRONMENT"] != "AIStaging")

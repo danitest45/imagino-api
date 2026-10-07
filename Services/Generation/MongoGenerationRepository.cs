@@ -8,7 +8,7 @@ using MongoDB.Driver;
 namespace Imagino.Api.Services.Generation;
 
 // Job and wallet changes share a replica-set transaction. No snapshot replacement of Users.
-public sealed class MongoGenerationRepository : IGenerationRepository
+public sealed partial class MongoGenerationRepository : IGenerationRepository
 {
     private readonly IMongoClient client;
     private readonly IMongoCollection<GenerationJob> jobs;
@@ -31,9 +31,21 @@ public sealed class MongoGenerationRepository : IGenerationRepository
         openAiLedger = db.GetCollection<OpenAiHomologationLedger>("generation_openai_homologation_v1");
         openAiHomologation = generation.Value.OpenAiHomologationEnabled;
         singleSmoke = generation.Value.OpenAiSingleSmokeEnabled && generation.Value.PaidGenerationEnabled;
+        runwayLedger = db.GetCollection<RunwaySmokeLedger>("generation_runway_single_video_v1");
+        runwayIntegration = generation.Value.RunwayIntegrationEnabled;
+        runwaySmoke = runwayIntegration && generation.Value.RunwayRealSmokeEnabled && generation.Value.PaidGenerationEnabled && !generation.Value.OpenAiSingleSmokeEnabled;
     }
     public async Task InitializeAsync(IEnumerable<GenerationModel> seed, CancellationToken ct)
     {
+        if (runwayIntegration)
+        {
+            var initial = new RunwaySmokeLedger().ToBsonDocument(); initial.Remove("_id");
+            await runwayLedger.UpdateOneAsync(l => l.Id == RunwaySmokePolicy.RunId,
+                new BsonDocument("$setOnInsert", initial), new UpdateOptions { IsUpsert = true }, ct);
+            await jobs.Indexes.CreateOneAsync(new CreateIndexModel<GenerationJob>(Builders<GenerationJob>.IndexKeys.Ascending(j => j.ProviderJobId),
+                new CreateIndexOptions<GenerationJob> { Unique = true, Name = "runway_task_unique", PartialFilterExpression =
+                    new BsonDocument { { "Model.Provider", "runway" }, { "ProviderJobId", new BsonDocument("$type", "string") } } }), cancellationToken: ct);
+        }
         if (openAiHomologation)
         {
             var initial = new OpenAiHomologationLedger().ToBsonDocument(); initial.Remove("_id");
@@ -87,6 +99,7 @@ public sealed class MongoGenerationRepository : IGenerationRepository
             {
                 var existing = await jobs.Find(s, j => j.UserId == job.UserId && j.IdempotencyKey == job.IdempotencyKey).FirstOrDefaultAsync(token);
                 if (existing != null) return Match(existing, job);
+                if (job.Model.Provider == "runway") await ReserveRunwayAsync(s, job, token);
                 if (job.Model.Provider == "openai")
                 {
                     if (job.OpenAiRunId == OpenAiSingleSmokePolicy.RunId)
@@ -291,10 +304,15 @@ public sealed class MongoGenerationRepository : IGenerationRepository
         var update = Builders<GenerationJob>.Update.Set(j => j.ProviderJobId, result.JobId).Set(j => j.PollingUrl, result.PollingUrl)
                 .Set(j => j.ProviderReportedCostUsd, result.CostUsd).Set(j => j.Status, GenerationStatus.Processing)
                 .Set(j => j.ProviderAcceptanceLatencyMs, result.AcceptanceLatencyMs)
-                .Set(j => j.NextPollAt, DateTime.UtcNow.AddSeconds(3)).Set(j => j.UpdatedAt, DateTime.UtcNow)
+                .Set(j => j.NextPollAt, DateTime.UtcNow.AddSeconds(job.Model.Provider == "runway" ? 5 : 3)).Set(j => j.UpdatedAt, DateTime.UtcNow)
                 .Push(j => j.Journal, new GenerationJournalEntry("ProviderBound", DateTime.UtcNow))
                 .Set(j => j.Lease, null).Set(j => j.LeaseUntil, null);
         var filter = Builders<GenerationJob>.Filter.Where(j => j.Id == job.Id && j.Lease == job.Lease && j.Status == GenerationStatus.Starting);
+        if (job.Model.Provider == "runway")
+        {
+            await BindRunwayAsync(job, result, filter, update, ct);
+            return;
+        }
         if (!homologation || job.Model.Provider != "bfl")
         {
             var r = await jobs.UpdateOneAsync(filter, update, cancellationToken: ct);
@@ -322,7 +340,8 @@ public sealed class MongoGenerationRepository : IGenerationRepository
     {
         var failures = failedPoll ? Math.Min(job.PollFailures + 1, 8) : 0;
         await jobs.UpdateOneAsync(j => j.Id == job.Id && j.Lease == job.Lease && j.Status == GenerationStatus.Processing,
-            Builders<GenerationJob>.Update.Set(j => j.NextPollAt, DateTime.UtcNow.AddSeconds(failedPoll ? Math.Min(120, 5 * Math.Pow(2, failures)) : 5))
+            Builders<GenerationJob>.Update.Set(j => j.NextPollAt, DateTime.UtcNow.AddSeconds(Math.Max(5,
+                Math.Max(job.PollDelaySeconds ?? 0, failedPoll ? Math.Min(120, 5 * Math.Pow(2, failures)) : 5))))
                 .Set(j => j.PollFailures, failures).Set(j => j.Lease, null).Set(j => j.LeaseUntil, null), cancellationToken: ct);
     }
     public Task<bool> SettleAsync(GenerationJob job, GenerationStatus status, string? url, string? error, CancellationToken ct) =>
@@ -356,6 +375,14 @@ public sealed class MongoGenerationRepository : IGenerationRepository
             update = update.PushEach(j => j.Journal, events);
             var changed = await jobs.UpdateOneAsync(s, filter, update, cancellationToken: token);
             if (changed.ModifiedCount != 1) return false;
+            if (job.Model.Provider == "runway")
+            {
+                var settledRunway = await runwayLedger.UpdateOneAsync(s, l => l.Id == RunwaySmokePolicy.RunId && l.JobId == job.Id && l.SettlementCount == 0,
+                    Builders<RunwaySmokeLedger>.Update.Set(l => l.State, status.ToString()).Set(l => l.Halted, true)
+                        .Set(l => l.HaltReason, charged ? "single_video_completed" : error ?? "generation_failed")
+                        .Set(l => l.SettledAtUtc, DateTime.UtcNow).Inc(l => l.SettlementCount, 1), cancellationToken: token);
+                if (settledRunway.ModifiedCount != 1) throw new InvalidOperationException("Runway settlement ledger lost.");
+            }
             if (!charged)
             {
                 var refund = await users.UpdateOneAsync(s, u => u.Id == job.UserId,

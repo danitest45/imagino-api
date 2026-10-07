@@ -16,14 +16,17 @@ public static class AIStagingConfiguration
             !string.IsNullOrEmpty(settings.GeminiApiKey) ||
             (!settings.BflHomologationEnabled && !string.IsNullOrEmpty(settings.BflApiKey)) ||
             (!settings.OpenAiHomologationEnabled && !string.IsNullOrEmpty(settings.OpenAiApiKey)) ||
-            (settings.PaidGenerationEnabled && !settings.BflHomologationEnabled && !settings.OpenAiHomologationEnabled))
-            throw new InvalidOperationException("AI staging permits only synthetic generation or finite BFL/OpenAI authorizations; other provider keys are forbidden.");
+            (!settings.RunwayIntegrationEnabled && !string.IsNullOrEmpty(settings.RunwayApiKey)) ||
+            (settings.PaidGenerationEnabled && !settings.BflHomologationEnabled && !settings.OpenAiHomologationEnabled && !settings.RunwayRealSmokeEnabled))
+            throw new InvalidOperationException("AI staging permits only synthetic generation or finite BFL/OpenAI/Runway authorizations; other provider keys are forbidden.");
         if (settings.OpenAiSingleSmokeEnabled && (!settings.OpenAiHomologationEnabled ||
             OpenAiSingleSmokePolicy.ProjectionUsd >= OpenAiSingleSmokePolicy.ObservedCeilingUsd / 2))
             throw new InvalidOperationException("Single Flare smoke requires its isolated provider and comfortable cost projection.");
-        if (settings.OpenAiHomologationEnabled && settings.PaidGenerationEnabled && !settings.OpenAiSingleSmokeEnabled && !OpenAiHomologationPolicy.CostBoundsVerified)
+        if (settings.OpenAiHomologationEnabled && settings.PaidGenerationEnabled && !settings.OpenAiSingleSmokeEnabled && !settings.RunwayRealSmokeEnabled && !OpenAiHomologationPolicy.CostBoundsVerified)
             throw new InvalidOperationException("OpenAI paid authorization requires verified complete cost bounds.");
-        if ((settings.BflHomologationEnabled || settings.OpenAiHomologationEnabled) && (config["RENDER_SERVICE_ID"] != BflHomologationPolicy.ServiceId ||
+        if (settings.RunwayRealSmokeEnabled && (!settings.RunwayIntegrationEnabled || settings.OpenAiSingleSmokeEnabled || DateTime.UtcNow >= RunwaySmokePolicy.ExpiresAtUtc))
+            throw new InvalidOperationException("Runway real smoke requires its isolated, unexpired one-video authorization.");
+        if ((settings.BflHomologationEnabled || settings.OpenAiHomologationEnabled || settings.RunwayIntegrationEnabled) && (config["RENDER_SERVICE_ID"] != BflHomologationPolicy.ServiceId ||
             config["RENDER_GIT_BRANCH"] != "codex/imagino-ai-revival-v2" ||
             config["RENDER_EXTERNAL_HOSTNAME"] != "imagino-api-ai-staging.onrender.com"))
             throw new InvalidOperationException("Paid homologation is restricted to its exact AI staging service and branch.");

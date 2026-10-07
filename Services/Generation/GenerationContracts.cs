@@ -16,13 +16,16 @@ public sealed class GenerationSettings
     public bool BflHomologationEnabled { get; set; }
     public bool OpenAiHomologationEnabled { get; set; }
     public bool OpenAiSingleSmokeEnabled { get; set; }
+    public bool RunwayIntegrationEnabled { get; set; }
+    public bool RunwayRealSmokeEnabled { get; set; }
     public int StagingFixtureDelaySeconds { get; set; }
     public string BflApiKey { get; set; } = "";
     public string GeminiApiKey { get; set; } = "";
     public string OpenAiApiKey { get; set; } = "";
+    public string RunwayApiKey { get; set; } = "";
 }
 public sealed record GenerationField(string Key, string Label, string Type, string DefaultValue, string[] Options);
-public sealed record GenerationInputSchema(string Role, string Label, int MaxCount);
+public sealed record GenerationInputSchema(string Role, string Label, int MaxCount, bool Required = false, bool OwnedAssetOnly = false);
 public sealed record GenerationRule(string WhenKey, string WhenValue, string RequireKey, string[] AllowedValues);
 public sealed class GenerationPricing
 {
@@ -60,7 +63,7 @@ public sealed class GenerationModel
     public int TimeoutSeconds { get; set; } = 600;
     public int SortOrder { get; set; }
 }
-public sealed record GenerationInput(string Role, string Data);
+public sealed record GenerationInput(string Role, string Data, string? SourceAssetId = null);
 public sealed record GenerationJournalEntry(string Stage, DateTime AtUtc);
 public sealed class GenerationRequest
 {
@@ -104,6 +107,13 @@ public sealed class GenerationJob
     public int? BflHomologationCall { get; set; }
     public int? OpenAiHomologationCall { get; set; }
     public string? OpenAiRunId { get; set; }
+    public string? RunwayRunId { get; set; }
+    public string? SourceAssetId { get; set; }
+    public string? ProviderStatus { get; set; }
+    public DateTime? ProviderRunningAtUtc { get; set; }
+    public DateTime? ProviderReadyAtUtc { get; set; }
+    public int ProviderPollCount { get; set; }
+    public double? PollDelaySeconds { get; set; }
     public double? ProviderDecodeLatencyMs { get; set; }
     public int? ProviderHttpStatus { get; set; }
     public GenerationUsage? ProviderUsage { get; set; }
@@ -121,11 +131,11 @@ public sealed record GenerationJobView(string Id, string ModelId, string Display
 }
 public sealed record GenerationOutputMetrics(DateTime ProviderReadyAtUtc, DateTime DownloadStartedAtUtc,
     DateTime DownloadFinishedAtUtc, DateTime StoredAtUtc, int Bytes, string Format, int Width, int Height,
-    double? ValidationLatencyMs = null, double? StorageLatencyMs = null);
+    double? ValidationLatencyMs = null, double? StorageLatencyMs = null, double? DurationSeconds = null, string? Sha256 = null);
 public sealed record ProviderResult(string? JobId, string? PollingUrl, bool Completed = false,
     byte[]? Bytes = null, string? OutputUrl = null, string? ErrorCode = null, decimal? CostUsd = null,
     double? AcceptanceLatencyMs = null, GenerationUsage? Usage = null, double? DecodeLatencyMs = null,
-    int? HttpStatus = null);
+    int? HttpStatus = null, string? ProviderStatus = null, decimal? EstimatedCostUsd = null);
 public sealed record GenerationUsage(long TextInputTokens, long ImageInputTokens, long ImageOutputTokens,
     long InputTokens, long OutputTokens, long TotalTokens, long CachedInputTokens, string PricingRevision);
 public interface IGenerationProvider
@@ -137,6 +147,9 @@ public interface IGenerationProvider
 }
 public interface IGenerationRepository
 {
+    Task<RunwaySmokeLedger?> RunwayLedgerAsync(CancellationToken ct) => Task.FromResult<RunwaySmokeLedger?>(null);
+    Task<bool> BeginRunwaySubmissionAsync(GenerationJob job, CancellationToken ct) => Task.FromResult(false);
+    Task RecordRunwayPollAsync(GenerationJob job, ProviderResult result, CancellationToken ct) => Task.CompletedTask;
     Task<OpenAiHomologationLedger?> SingleSmokeLedgerAsync(CancellationToken ct) => Task.FromResult<OpenAiHomologationLedger?>(null);
     Task InitializeAsync(IEnumerable<GenerationModel> seed, CancellationToken ct);
     Task<List<GenerationModel>> CatalogAsync(CancellationToken ct);

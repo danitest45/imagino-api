@@ -20,6 +20,7 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
         deadline.CancelAfter(remaining < TimeSpan.FromMinutes(2) ? remaining : TimeSpan.FromMinutes(2));
         var ct = deadline.Token;
         var synchronousResponseReceived = false;
+        var providerOutputReady = false;
         var provider = providers.FirstOrDefault(p => p.Name == job.Model.Provider);
         if (provider == null || !provider.IsConfigured)
         {
@@ -49,6 +50,11 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
                     await FinishAsync(job, GenerationStatus.Failed, null, "openai_submission_blocked", stoppingToken);
                     return;
                 }
+                if (job.Model.Provider == "runway" && !await repository.BeginRunwaySubmissionAsync(job, ct))
+                {
+                    await FinishAsync(job, GenerationStatus.Failed, null, "runway_submission_blocked", stoppingToken);
+                    return;
+                }
                 // Exactly one application-level POST attempt. No retry for ambiguous submissions.
                 var result = await provider.StartAsync(job, ct);
                 if (result.Completed)
@@ -74,15 +80,25 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
                 else if (result.ErrorCode != null) await FinishAsync(job, GenerationStatus.Failed, null, result.ErrorCode, stoppingToken);
                 else
                 {
-                    await repository.BindAsync(job, result, ct);
+                    await BindReceivedTaskAsync(job, result, ct);
                     logger.LogInformation("Generation provider bound job={Job} provider={Provider} stage=provider_bound", job.Id, job.Model.Provider);
                 }
                 return;
             }
             var polled = await provider.PollAsync(job, ct);
+            if (job.Model.Provider == "runway")
+            {
+                await repository.RecordRunwayPollAsync(job, polled, ct);
+                if (polled.EstimatedCostUsd > RunwaySmokePolicy.CeilingUsd || polled.CostUsd > RunwaySmokePolicy.CeilingUsd ||
+                    (polled.Completed || polled.ErrorCode != null) && polled.CostUsd == null)
+                {
+                    await FinishAsync(job, GenerationStatus.Failed, null, "provider_cost_unverified_or_exceeded", stoppingToken);
+                    return;
+                }
+            }
             if (polled.ErrorCode != null)
             {
-                await FinishAsync(job, GenerationStatus.Failed, null, polled.ErrorCode, stoppingToken);
+                await FinishAsync(job, polled.ErrorCode == "provider_cancelled" ? GenerationStatus.Cancelled : GenerationStatus.Failed, null, polled.ErrorCode, stoppingToken);
                 return;
             }
             if (!polled.Completed)
@@ -90,6 +106,7 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
                 await repository.DeferAsync(job, false, ct);
                 return;
             }
+            providerOutputReady = true;
             await StoreAndFinishAsync(job, polled, ct);
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -103,33 +120,58 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
             if (job.Status == GenerationStatus.Starting)
                 await FinishAsync(job, GenerationStatus.Failed, null, synchronousResponseReceived
                     ? ex is ArgumentException or InvalidDataException or FormatException ? "invalid_provider_output" : "output_storage_failed"
-                    : ex is ProviderCallException p && p.Status is >= 400 and < 500 ? "provider_rejected" : "submission_unknown", stoppingToken);
+                    : ex is ProviderCallException p && p.Status is >= 400 and < 500 ? p.Code?.Contains("SAFETY") == true ? "provider_moderated" : "provider_rejected" : "submission_unknown", stoppingToken);
             else if (ex is ArgumentException or InvalidDataException or FormatException)
                 await FinishAsync(job, GenerationStatus.Failed, null, "invalid_provider_output", stoppingToken);
-            else await repository.DeferAsync(job, true, stoppingToken);
+            else if (job.Model.Provider == "runway" && providerOutputReady)
+                await FinishAsync(job, GenerationStatus.Failed, null, "output_storage_failed", stoppingToken);
+            else
+            {
+                if (ex is ProviderCallException limited && limited.RetryAfterSeconds is > 0)
+                    job.PollDelaySeconds = Math.Clamp(limited.RetryAfterSeconds.Value, 5, 3600);
+                await repository.DeferAsync(job, true, stoppingToken);
+            }
+        }
+    }
+    private async Task BindReceivedTaskAsync(GenerationJob job, ProviderResult result, CancellationToken ct)
+    {
+        // Retry only persistence of this already received ID, never provider creation.
+        for (var attempt = 0; ; attempt++)
+        {
+            try { await repository.BindAsync(job, result, ct); return; }
+            catch (Exception ex) when (job.Model.Provider == "runway" && attempt < 2 &&
+                ex is MongoDB.Driver.MongoException or TimeoutException)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(250 * (attempt + 1)), ct);
+            }
         }
     }
     private async Task StoreAndFinishAsync(GenerationJob job, ProviderResult result, CancellationToken ct)
     {
-        var readyAt = DateTime.UtcNow;
+        var readyAt = job.ProviderReadyAtUtc ?? DateTime.UtcNow;
         var downloadStartedAt = DateTime.UtcNow;
         var bytes = result.Bytes;
         if (bytes == null)
         {
             if (result.OutputUrl == null) throw new InvalidDataException("Missing provider output.");
-            var hosts = job.Model.Provider == "bfl" ? new[] { "*.bfl.ai" } : new[] { "generativelanguage.googleapis.com", "storage.googleapis.com" };
+            var hosts = job.Model.Provider == "runway" ? RunwayGenerationProvider.OutputHosts : job.Model.Provider == "bfl" ? new[] { "*.bfl.ai" } : new[] { "generativelanguage.googleapis.com", "storage.googleapis.com" };
             bytes = await http.DownloadAsync(result.OutputUrl, hosts, job.Model.Provider == "google-veo" ? options.Value.GeminiApiKey : null,
-                job.Model.MediaType == "video" ? 100 * 1024 * 1024 : GeneratedImageValidator.MaxBytes, ct);
+                job.Model.MediaType == "video" ? 100 * 1024 * 1024 : GeneratedImageValidator.MaxBytes, ct,
+                job.Model.Provider == "runway" ? "video/mp4" : null);
         }
         var downloadedAt = DateTime.UtcNow;
         var measuredPng = job.Model.Provider == "openai" || options.Value.BflHomologationEnabled && job.Model.Provider == "bfl";
         var measure = System.Diagnostics.Stopwatch.StartNew();
         var dims = measuredPng ? BflHomologationPolicy.ValidateOutput(bytes) : (Width: 0, Height: 0);
+        var video = job.Model.Provider == "runway" ? GeneratedVideoValidator.Validate(bytes) : null;
         var validationMs = measure.Elapsed.TotalMilliseconds;
         measure.Restart();
         var url = await storage.StoreAsync(job, bytes, ct);
         if (measuredPng) job.OutputMetrics = new(readyAt, downloadStartedAt, downloadedAt, DateTime.UtcNow, bytes.Length, "png", dims.Width, dims.Height,
             validationMs, measure.Elapsed.TotalMilliseconds);
+        if (video != null) job.OutputMetrics = new(readyAt, downloadStartedAt, downloadedAt, DateTime.UtcNow, bytes.Length, "mp4", video.Width, video.Height,
+            validationMs, measure.Elapsed.TotalMilliseconds, video.DurationSeconds,
+            Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant());
         logger.LogInformation("Generation output stored job={Job} provider={Provider} bytes={Bytes} stage=output_stored", job.Id, job.Model.Provider, bytes.Length);
         await FinishAsync(job, GenerationStatus.Completed, url, null, ct);
     }

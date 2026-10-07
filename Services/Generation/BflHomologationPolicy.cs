@@ -39,10 +39,10 @@ public static class BflHomologationPolicy
         if (quote.ProviderCostEstimateUsd != Cost(call) || quote.Credits != Credits(call)) throw Denied();
         return call;
     }
-    public static int ValidateJob(GenerationJob job)
+    public static int ValidateJob(GenerationJob job, DateTime? now = null)
     {
         var input = new ValidatedGeneration(job.Prompt, job.Settings, job.Inputs);
-        var call = Validate(job.UserId, job.Model, input, job.Quote, DateTime.UtcNow);
+        var call = Validate(job.UserId, job.Model, input, job.Quote, now ?? DateTime.UtcNow);
         if (job.IdempotencyKey != $"bfl-homologation-20261005-call-{call}" ||
             job.RequestHash != GenerationPolicy.Fingerprint(job.Model, input)) throw Denied();
         return call;

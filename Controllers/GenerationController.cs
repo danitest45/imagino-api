@@ -15,6 +15,21 @@ public sealed class GenerationController(IGenerationRepository repository, Gener
 {
     private string Owner => User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
         ?? throw new ValidationAppException("Authenticated owner missing.");
+    [HttpGet("runway/single-video/proof"), Authorize]
+    public async Task<IActionResult> RunwayProof(CancellationToken ct)
+    {
+        Response.Headers.CacheControl = "private, no-store";
+        if (!options.Value.Enabled || !options.Value.RunwayIntegrationEnabled || Owner != BflHomologationPolicy.OwnerId) return NotFound();
+        var ledger = await repository.RunwayLedgerAsync(ct);
+        var job = ledger?.JobId == null ? null : await repository.GetAsync(ledger.JobId, Owner, ct);
+        return Ok(new { options.Value.PaidGenerationEnabled, options.Value.RunwayRealSmokeEnabled,
+            credentialsConfigured = !string.IsNullOrWhiteSpace(options.Value.RunwayApiKey), ledger,
+            job = job == null ? null : new { job.Id, job.RunwayRunId, job.SourceAssetId, job.ProviderJobId,
+                status = job.Status.ToString(), creditState = job.CreditState.ToString(), job.ProviderStatus, job.ProviderReportedCostUsd,
+                job.ProviderAcceptanceLatencyMs, job.ProviderRunningAtUtc, job.ProviderReadyAtUtc, job.ProviderPollCount,
+                job.OutputMetrics, job.Journal, job.CreatedAt, job.UpdatedAt, job.Quote }
+        });
+    }
     [HttpGet("openai/single-smoke/proof"), Authorize]
     public async Task<IActionResult> SingleSmokeProof(CancellationToken ct)
     {

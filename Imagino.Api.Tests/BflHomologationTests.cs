@@ -22,6 +22,11 @@ namespace Imagino.Api.Tests;
 
 public class BflHomologationTests
 {
+    private static readonly DateTime AuthorizationTime = new(2026, 10, 5, 20, 0, 0, DateTimeKind.Utc);
+    private sealed class AuthorizationClock : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => new(AuthorizationTime);
+    }
     private static byte[] Reference() => File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Fixtures", "bfl-reference-20261005.png"));
     private static GenerationJob Job(int call)
     {
@@ -47,7 +52,7 @@ public class BflHomologationTests
     public void OnlyTheThreeApprovedRequestsMatchTheirExactCosts(int call, int credits, double cost)
     {
         var job = Job(call);
-        Assert.Equal(call, BflHomologationPolicy.ValidateJob(job));
+        Assert.Equal(call, BflHomologationPolicy.ValidateJob(job, AuthorizationTime));
         Assert.Equal(credits, job.Quote.Credits); Assert.Equal((decimal)cost, job.Quote.ProviderCostEstimateUsd);
         Assert.Equal((1024,1024), GenerationPolicy.Dimensions(job.Settings));
     }
@@ -61,17 +66,17 @@ public class BflHomologationTests
             j => j.Quote = j.Quote with { ProviderCostEstimateUsd = 0.16m }, j => j.RequestHash = "tampered" })
         {
             var job = Job(1); alter(job);
-            Assert.Throws<ForbiddenFeatureException>(() => BflHomologationPolicy.ValidateJob(job));
+            Assert.Throws<ForbiddenFeatureException>(() => BflHomologationPolicy.ValidateJob(job, AuthorizationTime));
         }
     }
     [Fact]
     public void OnlyTheControlledReferenceAndExactlyOneInputAreAllowed()
     {
         var job = Job(3); job.Inputs.Add(job.Inputs[0]);
-        Assert.Throws<ForbiddenFeatureException>(() => BflHomologationPolicy.ValidateJob(job));
+        Assert.Throws<ForbiddenFeatureException>(() => BflHomologationPolicy.ValidateJob(job, AuthorizationTime));
         job = Job(3); var bytes = Reference(); bytes[^1] ^= 1;
         job.Inputs[0] = new("reference", "data:image/png;base64," + Convert.ToBase64String(bytes));
-        Assert.Throws<ForbiddenFeatureException>(() => BflHomologationPolicy.ValidateJob(job));
+        Assert.Throws<ForbiddenFeatureException>(() => BflHomologationPolicy.ValidateJob(job, AuthorizationTime));
     }
     [Fact]
     public void AuthorizationExpiresAndOtherProvidersRemainUnavailable()
@@ -126,7 +131,7 @@ public class BflHomologationTests
         repo.SetupSequence(r=>r.BeginBflSubmissionAsync(job,It.IsAny<CancellationToken>())).ReturnsAsync(true).ReturnsAsync(false);
         var provider=new Mock<IGenerationProvider>();provider.SetupGet(p=>p.Name).Returns("bfl");provider.SetupGet(p=>p.IsConfigured).Returns(true);
         provider.Setup(p=>p.StartAsync(job,It.IsAny<CancellationToken>())).ThrowsAsync(new HttpRequestException());
-        var opts=OptionsForTest(); var service=new GenerationService(repo.Object,new[]{provider.Object},opts);
+        var opts=OptionsForTest(); var service=new GenerationService(repo.Object,new[]{provider.Object},opts, clock: new AuthorizationClock());
         var processor=new GenerationProcessor(repo.Object,new[]{provider.Object},service,new(Mock.Of<IHttpClientFactory>()),Mock.Of<IGenerationOutputStore>(),opts,NullLogger<GenerationProcessor>.Instance);
         await processor.ProcessAsync(job,default); await processor.ProcessAsync(job,default);
         provider.Verify(p=>p.StartAsync(job,It.IsAny<CancellationToken>()),Times.Once);

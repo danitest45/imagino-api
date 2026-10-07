@@ -2,7 +2,7 @@ namespace Imagino.Api.Services.Generation;
 
 public static class GenerationCatalog
 {
-    public const string Revision = "2026-10-06.1";
+    public const string Revision = "2026-10-07.1";
     public static List<GenerationModel> Seed(bool fixture)
     {
         var aspect = new GenerationField("aspectRatio", "Aspect ratio", "enum", "1:1", new[] { "1:1", "16:9", "9:16" });
@@ -26,6 +26,17 @@ public static class GenerationCatalog
             Video("veo-fast-20261002", "Fast Video", "Short clips with native audio. Veo 3.1 Lite.", "veo-3.1-lite-generate-preview", 0.05m, 0.08m, 40),
             Video("veo-cinema-20261002", "Cinema Video", "Cinematic clips with native audio. Veo 3.1.", "veo-3.1-generate-preview", 0.40m, 0.40m, 50)
         };
+        list.Add(new() {
+            Id = RunwaySmokePolicy.ModelId, Version = RunwaySmokePolicy.Version, DisplayName = "Fast Video (experimental)",
+            Category = "Motion", MediaType = "video", Provider = "runway", ProviderModel = RunwaySmokePolicy.NativeModel,
+            Description = "Animate an owned image with subtle motion. Runway Dev · Grok Imagine Video 1.5 Lite. Experimental staging authorization required.",
+            SortOrder = 35, TimeoutSeconds = 1200, Capabilities = new[] { "imageToVideo", "firstFrame" },
+            Fields = new() { new("duration", "Duration (seconds)", "integer", "5", new[] { "5" }),
+                new("resolution", "Resolution", "enum", "720p", new[] { "720p" }) },
+            Inputs = new() { new("firstFrame", "First frame", 1, Required: true, OwnedAssetOnly: true) },
+            Pricing = new() { Revision = RunwaySmokePolicy.Version, Unit = "second", Source = "https://docs.dev.runwayml.com/guides/pricing/",
+                RatesUsd = new() { ["720p"] = 0.03m }, ReferenceUsd = 0.01m, OverheadUsd = 0.01m }
+        });
         list.AddRange(new[] {
             OpenAi("openai-fast-20261006", "OpenAI Fast (experimental)", OpenAiHomologationPolicy.Flare, false, 15),
             OpenAi("openai-studio-20261006", "OpenAI Studio & Edit (experimental)", OpenAiHomologationPolicy.Sunburst, true, 25)

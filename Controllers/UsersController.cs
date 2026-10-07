@@ -89,11 +89,12 @@ namespace Imagino.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public IActionResult Delete(string id)
         {
             if (!IsSelf(id)) return NotFound();
-            await _service.DeleteAsync(id);
-            return NoContent();
+            // A user-row delete leaves active jobs, media, sessions and billing records behind.
+            // Keep data intact until the approved drain/revocation/retention workflow exists.
+            return Conflict(new { code = "DELETION_REQUIRES_REVIEW", message = "Account deletion requires the retention and session-revocation workflow. Please contact support." });
         }
 
         [HttpPost("{id}/profile-image")]

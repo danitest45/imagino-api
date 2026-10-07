@@ -314,6 +314,8 @@ internal sealed class SecurityApiFactory : WebApplicationFactory<Program>
     public Mock<Imagino.Api.Services.Billing.IStripeBillingGateway> Stripe { get; } = new();
     public Mock<Imagino.Api.Repository.IStripeEventRepository> StripeEvents { get; } = new();
     public Dictionary<string, string> ExtraSettings { get; } = new();
+    public Mock<Imagino.Api.Services.Generation.IGenerationRepository> GenerationJobs { get; } = new();
+    public Mock<Imagino.Api.Services.Generation.IGenerationOutputStore> GenerationStorage { get; } = new();
     public Mock<Imagino.Api.Services.WebhookImage.IWebhookImageService> Webhooks { get; } = new();
 
     public SecurityApiFactory()
@@ -334,6 +336,7 @@ internal sealed class SecurityApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Jwt:Audience", Audience);
         builder.UseSetting("ImageGeneratorSettings:MongoConnection", "mongodb://127.0.0.1:27017");
         builder.UseSetting("Admin:UserIds:0", "admin-user");
+        builder.UseSetting("Cors:AllowedOrigins:0", "https://app.example.test");
         builder.UseSetting("Google:ClientId", "test-client");
         builder.UseSetting("Google:ClientSecret", "test-secret");
         builder.UseSetting("Google:RedirectUri", "https://api.example.test/api/auth/google/callback");
@@ -342,6 +345,12 @@ internal sealed class SecurityApiFactory : WebApplicationFactory<Program>
         builder.ConfigureLogging(logging => logging.ClearProviders());
         builder.ConfigureTestServices(services =>
         {
+            services.RemoveAll<IRequestLimiter>();
+            services.RemoveAll<Imagino.Api.Services.Generation.IGenerationRepository>();
+            services.RemoveAll<Imagino.Api.Services.Generation.IGenerationOutputStore>();
+            services.AddSingleton(GenerationJobs.Object);
+            services.AddSingleton(GenerationStorage.Object);
+            services.AddSingleton<IRequestLimiter, InMemoryRequestLimiter>();
             services.RemoveAll<IUserService>();
             services.RemoveAll<IUserRepository>();
             services.RemoveAll<IRefreshTokenRepository>();

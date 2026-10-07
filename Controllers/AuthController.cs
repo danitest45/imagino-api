@@ -59,10 +59,13 @@ namespace Imagino.Api.Controllers
         {
             var now = DateTime.UtcNow;
             var list = _cache.GetOrCreate(key, _ => new List<DateTime>());
-            list.RemoveAll(t => t < now - window);
-            if (list.Count >= limit) return false;
-            list.Add(now);
-            _cache.Set(key, list, now + window);
+            lock (list!)
+            {
+                list.RemoveAll(t => t < now - window);
+                if (list.Count >= limit) return false;
+                list.Add(now);
+                _cache.Set(key, list, now + window);
+            }
             return true;
         }
 
@@ -79,7 +82,7 @@ namespace Imagino.Api.Controllers
         {
             var existingEmail = await _users.GetByEmailAsync(request.Email);
             if (existingEmail != null)
-                return BadRequest(new { message = "Email already in use" });
+                return StatusCode(201, new { message = "User created. Please verify your email." });
 
             try
             {
@@ -153,6 +156,8 @@ namespace Imagino.Api.Controllers
             if (user == null)
                 return BadRequest(new { title = "Invalid token", code = "TOKEN_INVALID" });
 
+            if (!await _emailTokens.TryConsumeAsync(token.Id!))
+                return BadRequest(new { title = "Token consumed", code = "TOKEN_CONSUMED" });
             user.EmailVerified = true;
             user.VerifiedAt = DateTime.UtcNow;
             await _users.MarkEmailVerifiedAsync(user.Id!, user.VerifiedAt!.Value);
@@ -204,6 +209,8 @@ namespace Imagino.Api.Controllers
             if (user == null)
                 return BadRequest(new { title = "Invalid token", code = "TOKEN_INVALID" });
 
+            if (!await _emailTokens.TryConsumeAsync(token.Id!))
+                return BadRequest(new { title = "Token consumed", code = "TOKEN_CONSUMED" });
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             await _users.SetPasswordHashAsync(user.Id!, user.PasswordHash);
             await _emailTokens.InvalidateByUserAsync(user.Id!, "reset_password");

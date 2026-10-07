@@ -1,0 +1,19 @@
+{
+  "releasePublish": "PASS",
+  "stagingBranchDeployed": false,
+  "date": "2026-10-07",
+  "productionMutations": 0,
+  "readiness": "BLOCKED",
+  "backendTests": {
+    "skipped": 0,
+    "durableLimiterAttempts": 40,
+    "passed": 398,
+    "failed": 0,
+    "budgetWorkers": 10,
+    "durableLimiterAllowed": 10,
+    "localMongoReplicaSet": "8.0.16",
+    "budgetAccepted": 5
+  },
+  "paidProviderPosts": 0,
+  "nugetReportedVulnerabilities": 0
+}

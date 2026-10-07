@@ -1,0 +1,12 @@
+# Auth production checklist
+Local suite covers JWT authorization, owner/foreign/anonymous, refresh hashing/atomic consume, logout, email-token consume, OAuth state/nonce/PKCE and exact redirects. AI staging read gate passed login/refresh/logout; Google/register/email routes are excluded in AI staging.
+
+- Approve JWT issuer/audience/signing secret, token lifetime and session revocation expectations. Refresh token is hashed in Mongo; legacy plaintext compatibility remains until an approved invalidation/migration. Access JWT remains valid until expiry after logout; immediate account revocation needs a reviewed session-version/revocation design before offering that promise.
+- Use secure HttpOnly host-only refresh cookie, approved SameSite (current cross-site staging None), Path and exact Origin allowlist. Cookie refresh/logout rejects missing/untrusted Origin. Do not use wildcard credentials CORS. Test Safari/Firefox cross-site cookie behavior or prefer app/API under the approved same-site domain.
+- Atomic reset/verification consume rejects replay. A crash after consume and before mutation needs a newly requested token; no trial credit is granted by this path. Bound reset/resend/login/IP/email/account attempts; retain generic responses and review residual timing enumeration.
+- Google production app: verify controlled domain; public homepage/privacy/terms; correct consent identity/scopes/audience/test-vs-production status; exact HTTPS authorized origin and `/api/auth/google/callback` URI on the approved API; exact frontend redirect allowlist; separate production client ID/secret. Never register temporary Preview canonical as production.
+- Existing OAuth state is atomic in one process but memory-backed. Single-instance restarts invalidate in-flight login; multiple instances need a durable shared single-use transaction store before scaling. PKCE verifier/nonce and browser-binding cookie must remain server-controlled and short-lived.
+- Configure trusted proxy networks before treating RemoteIpAddress as user IP. Never trust arbitrary X-Forwarded-For. Exercise distributed limits under actual hosting topology.
+- Run two-user, anonymous, expired JWT, concurrent refresh replay, reset/verify replay and Google callback negative smokes in isolated production preparation with explicit authorization.
+
+[Google OAuth production policy](https://developers.google.com/identity/protocols/oauth2/production-readiness/policy-compliance), [OAuth policies](https://developers.google.com/identity/protocols/oauth2/policies).

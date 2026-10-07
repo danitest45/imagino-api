@@ -15,6 +15,24 @@ public sealed class GenerationController(IGenerationRepository repository, Gener
 {
     private string Owner => User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
         ?? throw new ValidationAppException("Authenticated owner missing.");
+    [HttpGet("operations/stuck"), Authorize(Policy = Imagino.Api.Security.AdminAuthorization.Policy)]
+    public async Task<IActionResult> Stuck([FromServices] GenerationOperations operations, CancellationToken ct)
+    {
+        Response.Headers.CacheControl = "private, no-store";
+        return Ok(await operations.InspectAsync(ct));
+    }
+    [HttpGet("operations/media-gc"), Authorize(Policy = Imagino.Api.Security.AdminAuthorization.Policy)]
+    public async Task<IActionResult> GarbageCollection([FromServices] GenerationGarbageCollector gc, CancellationToken ct)
+    {
+        Response.Headers.CacheControl = "private, no-store";
+        return Ok(await gc.DryRunAsync(ct));
+    }
+    [HttpPost("operations/jobs/{id}/reconcile"), Authorize(Policy = Imagino.Api.Security.AdminAuthorization.Policy)]
+    public async Task<IActionResult> Reconcile(string id, [FromServices] GenerationOperations operations, CancellationToken ct)
+        => await operations.ReconcileAsync(id, ct) ? Ok(new { reconciled = true }) : NotFound();
+    [HttpPost("operations/jobs/{id}/private-image"), Authorize(Policy = Imagino.Api.Security.AdminAuthorization.Policy)]
+    public async Task<IActionResult> PrivateImage(string id, [FromServices] GenerationOperations operations, CancellationToken ct)
+        => await operations.MigrateImageAsync(id, ct) ? Ok(new { migrated = true }) : NotFound();
     [HttpGet("runway/single-video/output-inspection"), Authorize]
     public async Task<IActionResult> RunwayOutputInspection([FromServices] RunwayOutputInspection inspection, CancellationToken ct)
     {
@@ -113,12 +131,20 @@ public sealed class GenerationController(IGenerationRepository repository, Gener
     }
     [HttpGet("jobs/{id}/download"), Authorize]
     public async Task<IActionResult> Download(string id, CancellationToken ct)
+        => await MediaResult(id, true, ct);
+    [HttpGet("jobs/{id}/media"), Authorize]
+    public async Task<IActionResult> Media(string id, CancellationToken ct)
+        => await MediaResult(id, false, ct);
+    private async Task<IActionResult> MediaResult(string id, bool attachment, CancellationToken ct)
     {
         if (!options.Value.Enabled) return NotFound();
         var job = await repository.GetAsync(id, Owner, ct);
         if (job?.Status != GenerationStatus.Completed) return NotFound();
         Response.Headers.CacheControl = "private, no-store";
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+        Response.Headers["Referrer-Policy"] = "no-referrer";
         var output = await storage.DownloadAsync(job, ct);
-        return File(output.Bytes, output.ContentType);
+        var extension = output.ContentType switch { "video/mp4" => "mp4", "image/jpeg" => "jpg", "image/webp" => "webp", _ => "png" };
+        return File(output.Bytes, output.ContentType, attachment ? $"imagino-{job.Id}.{extension}" : null, enableRangeProcessing: true);
     }
 }

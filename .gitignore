@@ -370,3 +370,6 @@ swagger-output/
 # Local runner output; sanitized smoke evidence is committed separately.
 /docs/evidence/openai-flare-single-smoke/test-results/
 /docs/evidence/openai-flare-single-smoke/job-post-attempt.once
+
+# Launch runner output; sanitized summaries live in docs/evidence.
+/launch-*.json

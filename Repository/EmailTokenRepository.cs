@@ -57,6 +57,13 @@ namespace Imagino.Api.Repository
             var update = Builders<EmailToken>.Update.Set(x => x.ConsumedAt, DateTime.UtcNow);
             await _collection.UpdateOneAsync(x => x.Id == id, update);
         }
+        public async Task<bool> TryConsumeAsync(string id)
+        {
+            var now = DateTime.UtcNow;
+            var result = await _collection.UpdateOneAsync(t => t.Id == id && t.ConsumedAt == null && t.ExpiresAt > now,
+                Builders<EmailToken>.Update.Set(t => t.ConsumedAt, now));
+            return result.ModifiedCount == 1;
+        }
 
         public async Task<int> CountByUserInWindowAsync(string userId, string purpose, TimeSpan window)
         {

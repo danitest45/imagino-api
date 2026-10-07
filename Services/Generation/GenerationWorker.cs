@@ -5,10 +5,20 @@ namespace Imagino.Api.Services.Generation;
 
 public sealed class GenerationProcessor(IGenerationRepository repository, IEnumerable<IGenerationProvider> providers,
     GenerationService service, GenerationProviderHttp http, IGenerationOutputStore storage,
-    IOptions<GenerationSettings> options, ILogger<GenerationProcessor> logger)
+    IOptions<GenerationSettings> options, ILogger<GenerationProcessor> logger, GenerationCostGuard? costGuard = null,
+    IGenerationInputStore? inputStore = null)
 {
     public async Task ProcessAsync(GenerationJob job, CancellationToken stoppingToken)
     {
+        if (job.StoredOutput == null && job.DeadlineAt <= DateTime.UtcNow && await storage.TryRecoverAsync(job, stoppingToken))
+            await repository.RecordOutputAsync(job, stoppingToken);
+        if (job.StoredOutput != null)
+        {
+            // Recovery verifies the stored object before settlement and never POSTs.
+            await storage.DownloadAsync(job, stoppingToken);
+            await FinishAsync(job, GenerationStatus.Completed, $"/api/generation/jobs/{job.Id}/media", null, stoppingToken);
+            return;
+        }
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
         var remaining = job.DeadlineAt - DateTime.UtcNow;
         if (remaining <= TimeSpan.Zero)
@@ -38,6 +48,7 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
                     await FinishAsync(job, GenerationStatus.Failed, null, "generation_disabled", stoppingToken);
                     return;
                 }
+                if (inputStore != null) await inputStore.LoadAsync(job, ct);
                 if (options.Value.BflHomologationEnabled && job.Model.Provider == "bfl" &&
                     !await repository.BeginBflSubmissionAsync(job, ct))
                 {
@@ -55,7 +66,19 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
                     await FinishAsync(job, GenerationStatus.Failed, null, "runway_submission_blocked", stoppingToken);
                     return;
                 }
+                if (costGuard != null && job.Model.Provider != "fixture")
+                {
+                    costGuard.Validate(current, job.Quote, DateTime.UtcNow);
+                    if (!await repository.BeginCostSubmissionAsync(job, ct))
+                    {
+                        await FinishAsync(job, GenerationStatus.Failed, null, "cost_submission_blocked", stoppingToken);
+                        return;
+                    }
+                }
                 // Exactly one application-level POST attempt. No retry for ambiguous submissions.
+                GenerationTelemetry.Attempts.Add(1, GenerationTelemetry.Labels(job));
+                GenerationTelemetry.QueueSeconds.Record((DateTime.UtcNow - job.CreatedAt).TotalSeconds, GenerationTelemetry.Labels(job));
+                GenerationTelemetry.EstimatedUsd.Add((double)job.Quote.ProviderCostEstimateUsd, GenerationTelemetry.Labels(job));
                 var result = await provider.StartAsync(job, ct);
                 if (result.Completed)
                 {
@@ -117,6 +140,9 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
         {
             logger.LogWarning("Generation attempt error job={Job} provider={Provider} model={Model} type={ErrorType}",
                 job.Id, job.Model.Provider, job.Model.ProviderModel, ex.GetType().Name);
+            // A stored object/checkpoint must not be converted into a refunded failure
+            // merely because DB settlement is temporarily unavailable. Lease recovery retries.
+            if (job.StoredOutput != null) return;
             if (job.Status == GenerationStatus.Starting)
                 await FinishAsync(job, GenerationStatus.Failed, null, synchronousResponseReceived
                     ? ex is ArgumentException or InvalidDataException or FormatException ? "invalid_provider_output" : "output_storage_failed"
@@ -172,31 +198,46 @@ public sealed class GenerationProcessor(IGenerationRepository repository, IEnume
         if (video != null) job.OutputMetrics = new(readyAt, downloadStartedAt, downloadedAt, DateTime.UtcNow, bytes.Length, "mp4", video.Width, video.Height,
             validationMs, measure.Elapsed.TotalMilliseconds, video.DurationSeconds,
             Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant());
+        await repository.RecordOutputAsync(job, ct);
+        GenerationTelemetry.StorageSeconds.Record(measure.Elapsed.TotalSeconds, GenerationTelemetry.Labels(job));
         logger.LogInformation("Generation output stored job={Job} provider={Provider} bytes={Bytes} stage=output_stored", job.Id, job.Model.Provider, bytes.Length);
         await FinishAsync(job, GenerationStatus.Completed, url, null, ct);
     }
     private async Task FinishAsync(GenerationJob job, GenerationStatus status, string? url, string? error, CancellationToken ct)
     {
         if (await repository.SettleAsync(job, status, url, error, ct))
+        {
+            GenerationTelemetry.Settlements.Add(1, GenerationTelemetry.Labels(job).Append(new("status", status.ToString())).ToArray());
+            GenerationTelemetry.DurationSeconds.Record((DateTime.UtcNow - job.CreatedAt).TotalSeconds, GenerationTelemetry.Labels(job));
+            if (status == GenerationStatus.Completed) GenerationTelemetry.Credits.Add(job.Quote.Credits, GenerationTelemetry.Labels(job));
+            if (error == "submission_unknown") GenerationTelemetry.Unknown.Add(1, GenerationTelemetry.Labels(job));
             logger.LogInformation("Generation settled job={Job} provider={Provider} model={Model} version={Version} status={Status} elapsedMs={Elapsed} estimatedUsd={Cost} credits={Credits}",
                 job.Id, job.Model.Provider, job.Model.ProviderModel, job.Model.Version, status,
                 (DateTime.UtcNow - job.CreatedAt).TotalMilliseconds, job.Quote.ProviderCostEstimateUsd, job.Quote.Credits);
+        }
     }
 }
 public sealed class GenerationWorker(IServiceProvider services, IOptions<GenerationSettings> options,
-    ILogger<GenerationWorker> logger) : BackgroundService
+    ILogger<GenerationWorker> logger, GenerationWorkerState? state = null) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!options.Value.Enabled) return;
         using var scope = services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IGenerationRepository>();
-        await repository.InitializeAsync(options.Value.SeedStagingCatalog ? GenerationCatalog.Seed(options.Value.StagingFixtureEnabled) : Array.Empty<GenerationModel>(), stoppingToken);
         var processor = scope.ServiceProvider.GetRequiredService<GenerationProcessor>();
+        var initialized = false;
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
+                if (!initialized)
+                {
+                    await repository.InitializeAsync(options.Value.SeedStagingCatalog ? GenerationCatalog.Seed(options.Value.StagingFixtureEnabled) : Array.Empty<GenerationModel>(), stoppingToken);
+                    initialized = true;
+                    if (state != null) state.Initialized = true;
+                }
+                state?.Tick();
                 var job = await repository.ClaimAsync(stoppingToken);
                 if (job != null)
                 {

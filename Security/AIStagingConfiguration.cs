@@ -9,9 +9,13 @@ public static class AIStagingConfiguration
     public const string CreativeHubPreview = "https://imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app";
     public static void Validate(IConfiguration config)
     {
+        var launch = config.GetValue<bool>("GenerationV2:LaunchReadinessEnabled");
         foreach (var section in new[] { "Stripe", "Google", "Resend", "ReplicateSettings", "GeminiSettings", "VeoSettings" })
             if (config.GetSection(section).GetChildren().Any()) throw new InvalidOperationException("AI staging forbids configuration for optional external integrations.");
         var settings = config.GetSection("GenerationV2").Get<GenerationSettings>() ?? new();
+        if (launch && (settings.PaidGenerationEnabled || settings.OpenAiSingleSmokeEnabled || settings.RunwayRealSmokeEnabled ||
+            !config.GetValue<bool>("GenerationCostControls:EmergencyStop", true)))
+            throw new InvalidOperationException("Launch-readiness staging forbids paid submission and requires the emergency stop.");
         if (!settings.Enabled || !settings.SeedStagingCatalog || !settings.StagingFixtureEnabled ||
             !string.IsNullOrEmpty(settings.GeminiApiKey) ||
             (!settings.BflHomologationEnabled && !string.IsNullOrEmpty(settings.BflApiKey)) ||
@@ -27,7 +31,7 @@ public static class AIStagingConfiguration
         if (settings.RunwayRealSmokeEnabled && (!settings.RunwayIntegrationEnabled || settings.OpenAiSingleSmokeEnabled || DateTime.UtcNow >= RunwaySmokePolicy.ExpiresAtUtc))
             throw new InvalidOperationException("Runway real smoke requires its isolated, unexpired one-video authorization.");
         if ((settings.BflHomologationEnabled || settings.OpenAiHomologationEnabled || settings.RunwayIntegrationEnabled) && (config["RENDER_SERVICE_ID"] != BflHomologationPolicy.ServiceId ||
-            config["RENDER_GIT_BRANCH"] != "codex/imagino-ai-revival-v2" ||
+            config["RENDER_GIT_BRANCH"] != (launch ? "feat/imagino-launch-readiness" : "codex/imagino-ai-revival-v2") ||
             config["RENDER_EXTERNAL_HOSTNAME"] != "imagino-api-ai-staging.onrender.com"))
             throw new InvalidOperationException("Paid homologation is restricted to its exact AI staging service and branch.");
         GenerationRegistration.ValidateStaging(config);
@@ -38,8 +42,18 @@ public static class AIStagingConfiguration
         if (System.Text.Encoding.UTF8.GetByteCount(config["Jwt:Secret"] ?? "") < 32)
             throw new InvalidOperationException("AI staging JWT secret must have at least 32 bytes.");
         var allowedOrigins = config.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-        if (config["Frontend:BaseUrl"] != Preview || allowedOrigins.Length != 3 ||
-            !new HashSet<string>(allowedOrigins, StringComparer.Ordinal).SetEquals(new[] { Preview, WorkingStudioPreview, CreativeHubPreview }))
+        var expectedOrigins = new List<string> { Preview, WorkingStudioPreview, CreativeHubPreview };
+        var launchPreview = config["LaunchReadiness:PreviewOrigin"];
+        if (launch && !string.IsNullOrWhiteSpace(launchPreview))
+        {
+            if (!Uri.TryCreate(launchPreview, UriKind.Absolute, out var uri) || uri.Scheme != "https" || uri.Authority != uri.Host ||
+                launchPreview != "https://" + uri.Host ||
+                !System.Text.RegularExpressions.Regex.IsMatch(uri.Host, "^imagino-front-git-feat-imagino-la[a-z0-9-]*-danitest45s-projects\\.vercel\\.app$"))
+                throw new InvalidOperationException("Launch Preview must be the exact verified launch branch URL in the Imagino Vercel project.");
+            expectedOrigins.Add(launchPreview);
+        }
+        if (config["Frontend:BaseUrl"] != Preview || allowedOrigins.Length != expectedOrigins.Count ||
+            !new HashSet<string>(allowedOrigins, StringComparer.Ordinal).SetEquals(expectedOrigins))
             throw new InvalidOperationException("AI staging requires exactly its three authorized Preview origins and the existing frontend base URL.");
         if (config["R2Settings:PublicUrl"] != "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev" ||
             config["R2Settings:ServiceUrl"] != "https://f3915d7185410d3a7d3a9599e22194af.r2.cloudflarestorage.com")

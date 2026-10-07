@@ -148,6 +148,13 @@ public static class GenerationPolicy
             Settings = input.Settings.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToDictionary(kv => kv.Key, kv => kv.Value), input.Inputs });
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical))).ToLowerInvariant();
     }
+    public static string PayloadFingerprint(GenerationRequest request)
+    {
+        if (request.Settings == null || request.Inputs == null) throw new ValidationAppException("Settings and inputs cannot be null.");
+        var canonical = JsonSerializer.Serialize(new { request.ModelId, Prompt = request.Prompt?.Trim(),
+            Settings = request.Settings.OrderBy(k => k.Key, StringComparer.Ordinal).ToArray(), request.Inputs });
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical))).ToLowerInvariant();
+    }
     public static void ValidateQuote(string? quoteId, string fingerprint, DateTime now)
     {
         var parts = quoteId?.Split(':');

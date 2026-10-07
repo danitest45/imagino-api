@@ -75,6 +75,7 @@ public class AuthEmailFlowTests
         factory.UserRepository.Setup(r => r.GetByEmailAsync(user.Email)).ReturnsAsync(user);
         factory.UserRepository.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
         factory.EmailTokens.Setup(r => r.GetActiveByRawTokenAsync("verify_email", "mock-token")).ReturnsAsync(() => token);
+        factory.EmailTokens.Setup(r => r.TryConsumeAsync(It.IsAny<string>())).ReturnsAsync(true);
         factory.EmailTokens.Setup(r => r.InvalidateByUserAsync(user.Id, "verify_email")).Callback(() => token = null).Returns(Task.CompletedTask);
         using var client = factory.CreateClient();
         var login = new { email = user.Email, password = "mock-password" };
@@ -113,6 +114,7 @@ public class AuthEmailFlowTests
         factory.UserRepository.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
         factory.UserRepository.Setup(r => r.GetByEmailAsync(user.Email)).ReturnsAsync(user);
         factory.EmailTokens.Setup(r => r.GetActiveByRawTokenAsync("reset_password", "mock-reset")).ReturnsAsync(() => token);
+        factory.EmailTokens.Setup(r => r.TryConsumeAsync(It.IsAny<string>())).ReturnsAsync(true);
         factory.EmailTokens.Setup(r => r.InvalidateByUserAsync(user.Id, "reset_password")).Callback(() => token = null).Returns(Task.CompletedTask);
         using var client = factory.CreateClient();
         var reset = new { token = "mock-reset", newPassword = "mock-new-password" };

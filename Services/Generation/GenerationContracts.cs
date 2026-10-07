@@ -88,6 +88,7 @@ public sealed class GenerationJob
     public string Prompt { get; set; } = "";
     public Dictionary<string, string> Settings { get; set; } = new();
     [JsonIgnore] public List<GenerationInput> Inputs { get; set; } = new();
+    [JsonIgnore] public List<StoredGenerationInput> StoredInputs { get; set; } = new();
     public GenerationQuote Quote { get; set; } = default!;
     [BsonRepresentation(BsonType.String)] public GenerationStatus Status { get; set; } = GenerationStatus.Queued;
     [BsonRepresentation(BsonType.String)] public CreditState CreditState { get; set; } = CreditState.Reserved;
@@ -101,6 +102,13 @@ public sealed class GenerationJob
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public DateTime DeadlineAt { get; set; }
     public string? OutputUrl { get; set; }
+    [JsonIgnore] public StoredGenerationOutput? StoredOutput { get; set; }
+    public DateTime? OutputStoredAtUtc { get; set; }
+    public DateTime? AcceptedAtUtc { get; set; }
+    public string? AcceptedQuoteId { get; set; }
+    public string? PayloadHash { get; set; }
+    public string? BudgetReservationId { get; set; }
+    public DateTime? SubmissionAttemptedAtUtc { get; set; }
     public string? ErrorCode { get; set; }
     public decimal? ProviderReportedCostUsd { get; set; }
     public double? ProviderAcceptanceLatencyMs { get; set; }
@@ -127,8 +135,11 @@ public sealed record GenerationJobView(string Id, string ModelId, string Display
 {
     public static GenerationJobView From(GenerationJob j) => new(j.Id, j.Model.Id, j.Model.DisplayName,
         j.Model.MediaType, j.Status.ToString(), j.CreditState.ToString(), j.Quote.Credits, j.Prompt,
-        j.Settings, j.OutputUrl, j.ErrorCode, j.CreatedAt, j.UpdatedAt);
+        j.Settings, j.Status == GenerationStatus.Completed ? $"/api/generation/jobs/{j.Id}/media" : null,
+        j.ErrorCode, j.CreatedAt, j.UpdatedAt);
 }
+public sealed record StoredGenerationOutput(string Key, string ContentType, int Bytes, string Sha256);
+public sealed record StoredGenerationInput(string Role, string Key, int Bytes, string Sha256, string? SourceAssetId);
 public sealed record GenerationOutputMetrics(DateTime ProviderReadyAtUtc, DateTime DownloadStartedAtUtc,
     DateTime DownloadFinishedAtUtc, DateTime StoredAtUtc, int Bytes, string Format, int Width, int Height,
     double? ValidationLatencyMs = null, double? StorageLatencyMs = null, double? DurationSeconds = null, string? Sha256 = null);
@@ -147,6 +158,8 @@ public interface IGenerationProvider
 }
 public interface IGenerationRepository
 {
+    Task<bool> BeginCostSubmissionAsync(GenerationJob job, CancellationToken ct) => Task.FromResult(false);
+    Task RecordOutputAsync(GenerationJob job, CancellationToken ct) => Task.CompletedTask;
     Task<RunwaySmokeLedger?> RunwayLedgerAsync(CancellationToken ct) => Task.FromResult<RunwaySmokeLedger?>(null);
     Task<RunwaySmokeLedger?> RunwayE2eLedgerAsync(CancellationToken ct) => Task.FromResult<RunwaySmokeLedger?>(null);
     Task<bool> BeginRunwaySubmissionAsync(GenerationJob job, CancellationToken ct) => Task.FromResult(false);

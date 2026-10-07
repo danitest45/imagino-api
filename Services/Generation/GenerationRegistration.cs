@@ -8,6 +8,13 @@ public static class GenerationRegistration
     {
         ValidateStaging(config);
         services.Configure<GenerationSettings>(config.GetSection("GenerationV2"));
+        services.Configure<GenerationCostSettings>(config.GetSection("GenerationCostControls"));
+        services.AddSingleton<GenerationCostGuard>();
+        services.AddSingleton<GenerationQuoteAuthorization>();
+        services.AddSingleton<IGenerationInputStore, GenerationInputStore>();
+        services.AddSingleton<GenerationWorkerState>();
+        services.AddSingleton<GenerationOperations>();
+        services.AddSingleton<GenerationGarbageCollector>();
         services.AddSingleton<IGenerationRepository, MongoGenerationRepository>();
         services.AddSingleton<GenerationService>();
         services.AddSingleton<GenerationProcessor>();

@@ -16,6 +16,10 @@ using Imagino.Api.Security;
 using Imagino.Api.Services.Generation;
 
 var builder = WebApplication.CreateBuilder(args);
+// Framework URL/exception logging can expose OAuth query strings and upstream bodies.
+builder.Logging.AddFilter("Microsoft.AspNetCore.Hosting.Diagnostics", LogLevel.Warning);
+builder.Logging.AddFilter("Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware", LogLevel.None);
+builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
 
 // Carregar user-secrets em desenvolvimento
 if (builder.Environment.IsDevelopment())
@@ -86,6 +90,7 @@ if (aiStaging) builder.Services.AddAIStagingServices(builder.Configuration);
 else builder.Services.AddAppServices(builder.Configuration);
 builder.Services.AddGenerationV2(builder.Configuration, fixtureOnly: aiStaging);
 builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IRequestLimiter, DurableRequestLimiter>();
 
 // Controllers, Swagger, Endpoints
 builder.Services.AddControllers(options =>
@@ -161,6 +166,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseCors(corsPolicyName);
 app.UseAuthentication();
+app.UseMiddleware<LaunchRequestMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 
@@ -169,6 +175,8 @@ app.Map("/error", (HttpContext httpContext) =>
     var exception = httpContext.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error
                     ?? new Exception("Unknown error");
     var (status, code, title, detail, meta) = ErrorMapper.Map(exception);
+    httpContext.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("LaunchOperations")
+        .LogWarning("Request failed code={Code} status={Status} type={ErrorType} trace={Trace}", code, status, exception.GetType().Name, httpContext.TraceIdentifier);
     var problem = new ProblemDetails
     {
         Status = status,

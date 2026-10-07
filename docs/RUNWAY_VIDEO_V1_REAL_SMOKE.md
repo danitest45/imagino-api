@@ -56,3 +56,6 @@ Evidências em `docs/evidence/runway-video/`: preflight, quote antes do clique, 
 A correção foi confirmada no mesmo output por inspeção remota: validation=valid_mp4, hash e tamanho idênticos, 960×960 / 5,042 s; flags false, health 200, ledger 1 tentativa / 1 settlement e saldo 54 preservados. Deploy de código: dep-db37a03bc2fs73crm76g; commit 61489757d52112ceca873d774720bc62bc4177ed. O storage e o job histórico não foram alterados.
 
 
+
+![Detalhes do asset: prompt, settings e 54 créditos devolvidos](evidence/runway-video/failed-assets-refund.jpg)
+

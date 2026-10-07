@@ -70,7 +70,9 @@ public static class GeneratedVideoValidator
     public static Metadata Validate(byte[] bytes)
     {
         var video = ReadMetadata(bytes);
-        if (Math.Min(video.Width, video.Height) != 720 || video.DurationSeconds is < 4.5 or > 5.5)
+        // The one authorized PNG is square. The real Grok Lite auto_720p task returned
+        // 960x960 (720p quality tier), not a literal 720px shorter edge. Keep exact bounds.
+        if (video.Width != 960 || video.Height != 960 || video.DurationSeconds is < 4.5 or > 5.5)
             throw new InvalidDataException("MP4 video dimensions or duration differ from the smoke configuration.");
         return video;
     }

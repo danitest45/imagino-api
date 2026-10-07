@@ -291,7 +291,7 @@ public class RunwayVideoTests
         static byte[] Box(string type, params byte[][] parts) { var body = parts.SelectMany(p => p).ToArray(); var b = new byte[8 + body.Length];
             BinaryPrimitives.WriteUInt32BigEndian(b.AsSpan(0,4), (uint)b.Length); Encoding.ASCII.GetBytes(type).CopyTo(b,4); body.CopyTo(b,8); return b; }
         var mvhd = new byte[100]; BinaryPrimitives.WriteUInt32BigEndian(mvhd.AsSpan(12,4),1000); BinaryPrimitives.WriteUInt32BigEndian(mvhd.AsSpan(16,4),5000);
-        var tkhd = new byte[84]; BinaryPrimitives.WriteUInt32BigEndian(tkhd.AsSpan(76,4),720u << 16); BinaryPrimitives.WriteUInt32BigEndian(tkhd.AsSpan(80,4),720u << 16);
+        var tkhd = new byte[84]; BinaryPrimitives.WriteUInt32BigEndian(tkhd.AsSpan(76,4),960u << 16); BinaryPrimitives.WriteUInt32BigEndian(tkhd.AsSpan(80,4),960u << 16);
         var hdlr = new byte[24]; Encoding.ASCII.GetBytes("vide").CopyTo(hdlr,8);
         return Box("ftyp", Encoding.ASCII.GetBytes("isom"), new byte[4]).Concat(Box("moov", Box("mvhd",mvhd),Box("trak",Box("tkhd",tkhd),Box("mdia",Box("hdlr",hdlr)))))
             .Concat(Box("mdat", new byte[] {1,2,3,4})).ToArray();
@@ -299,7 +299,7 @@ public class RunwayVideoTests
     [Fact]
     public void Mp4ValidationRejectsEmptyTruncatedWrongContainerAndMissingMovie()
     {
-        var m = GeneratedVideoValidator.Validate(Mp4()); Assert.Equal(5, m.DurationSeconds); Assert.Equal(720,m.Width);
+        var m = GeneratedVideoValidator.Validate(Mp4()); Assert.Equal(5, m.DurationSeconds); Assert.Equal(960,m.Width);
         foreach (var invalid in new[] { Array.Empty<byte>(), new byte[40], Mp4()[..24], Mp4()[..^1] }) Assert.Throws<InvalidDataException>(() => GeneratedVideoValidator.Validate(invalid));
         var wrongResolution = Mp4();
         var track = Encoding.ASCII.GetString(wrongResolution).IndexOf("tkhd", StringComparison.Ordinal) + 4;
@@ -307,6 +307,16 @@ public class RunwayVideoTests
         BinaryPrimitives.WriteUInt32BigEndian(wrongResolution.AsSpan(track + 80, 4), 1080u << 16);
         Assert.Equal(1080, GeneratedVideoValidator.ReadMetadata(wrongResolution).Width);
         Assert.Throws<InvalidDataException>(() => GeneratedVideoValidator.Validate(wrongResolution));
+    }
+    [Theory]
+    [InlineData(720,720)][InlineData(1280,720)][InlineData(960,720)][InlineData(1920,1080)]
+    public void SquareAuto720pSmokeRejectsOtherGeometries(int width, int height)
+    {
+        var bytes = Mp4(); var track = Encoding.ASCII.GetString(bytes).IndexOf("tkhd", StringComparison.Ordinal) + 4;
+        BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(track + 76, 4), (uint)width << 16);
+        BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(track + 80, 4), (uint)height << 16);
+        Assert.Equal(width, GeneratedVideoValidator.ReadMetadata(bytes).Width);
+        Assert.Throws<InvalidDataException>(() => GeneratedVideoValidator.Validate(bytes));
     }
     [Fact]
     public async Task StoredMp4PrecedesCompletedChargedAndStorageFailureRefunds()

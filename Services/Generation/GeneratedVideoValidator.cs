@@ -29,7 +29,7 @@ public static class GeneratedVideoValidator
         }
         return boxes;
     }
-    public static Metadata Validate(byte[] bytes)
+    public static Metadata ReadMetadata(byte[] bytes)
     {
         if (bytes.Length < 32 || bytes.Length > MaxBytes) throw new InvalidDataException("Invalid MP4 output size.");
         var top = Boxes(bytes, 0, bytes.Length);
@@ -61,10 +61,17 @@ public static class GeneratedVideoValidator
             if (version > 1 || tkhd.End - tkhd.Start < offset + 8) throw new InvalidDataException("Invalid MP4 video track.");
             var width = (int)(BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(tkhd.Start + offset, 4)) >> 16);
             var height = (int)(BinaryPrimitives.ReadUInt32BigEndian(bytes.AsSpan(tkhd.Start + offset + 4, 4)) >> 16);
-            if (width is < 1 or > 4096 || height is < 1 or > 4096 || Math.Min(width, height) != 720 || seconds is < 4.5 or > 5.5)
-                throw new InvalidDataException("MP4 video dimensions or duration differ from the smoke configuration.");
+            if (width is < 1 or > 4096 || height is < 1 or > 4096 || seconds <= 0)
+                throw new InvalidDataException("Invalid MP4 video dimensions or duration.");
             return new(width, height, seconds);
         }
         throw new InvalidDataException("MP4 video track missing.");
+    }
+    public static Metadata Validate(byte[] bytes)
+    {
+        var video = ReadMetadata(bytes);
+        if (Math.Min(video.Width, video.Height) != 720 || video.DurationSeconds is < 4.5 or > 5.5)
+            throw new InvalidDataException("MP4 video dimensions or duration differ from the smoke configuration.");
+        return video;
     }
 }

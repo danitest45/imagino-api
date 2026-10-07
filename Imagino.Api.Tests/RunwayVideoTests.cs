@@ -305,6 +305,7 @@ public class RunwayVideoTests
         var track = Encoding.ASCII.GetString(wrongResolution).IndexOf("tkhd", StringComparison.Ordinal) + 4;
         BinaryPrimitives.WriteUInt32BigEndian(wrongResolution.AsSpan(track + 76, 4), 1080u << 16);
         BinaryPrimitives.WriteUInt32BigEndian(wrongResolution.AsSpan(track + 80, 4), 1080u << 16);
+        Assert.Equal(1080, GeneratedVideoValidator.ReadMetadata(wrongResolution).Width);
         Assert.Throws<InvalidDataException>(() => GeneratedVideoValidator.Validate(wrongResolution));
     }
     [Fact]

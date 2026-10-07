@@ -8,7 +8,7 @@ public sealed class RunwayOutputInspection(IGenerationRepository repository, Gen
 {
     public sealed record Result(string JobId, string TaskId, string ProviderStatus, decimal? CostUsd,
         string? ContentType, string Validation, int? Bytes = null, string? Sha256 = null,
-        GeneratedVideoValidator.Metadata? Video = null);
+        GeneratedVideoValidator.Metadata? Video = null, string? ValidationDetail = null);
 
     public async Task<Result?> InspectAsync(string owner, CancellationToken ct)
     {
@@ -28,11 +28,13 @@ public sealed class RunwayOutputInspection(IGenerationRepository repository, Gen
         if (!result.Completed || result.OutputUrl == null || result.CostUsd != RunwaySmokePolicy.CostUsd) return null;
         string? mime = null;
         byte[]? bytes = null;
+        GeneratedVideoValidator.Metadata? video = null;
         try
         {
             bytes = await http.DownloadAsync(result.OutputUrl, RunwayGenerationProvider.OutputHosts, null,
                 GeneratedVideoValidator.MaxBytes, ct, "video/mp4", value => mime = value);
-            var video = GeneratedVideoValidator.Validate(bytes);
+            video = GeneratedVideoValidator.ReadMetadata(bytes);
+            GeneratedVideoValidator.Validate(bytes);
             return new(job.Id, ledger.TaskId, result.ProviderStatus!, result.CostUsd, mime, "valid_mp4", bytes.Length,
                 Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant(), video);
         }
@@ -42,7 +44,7 @@ public sealed class RunwayOutputInspection(IGenerationRepository repository, Gen
             var validation = ex.Message == "Provider output Content-Type differs from the expected container."
                 ? "content_type_mismatch" : bytes == null ? "download_size_or_container_rejected" : "mp4_structure_or_configuration_rejected";
             return new(job.Id, ledger.TaskId, result.ProviderStatus!, result.CostUsd, mime, validation, bytes?.Length,
-                bytes == null ? null : Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant());
+                bytes == null ? null : Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant(), video, ex.Message);
         }
     }
 }

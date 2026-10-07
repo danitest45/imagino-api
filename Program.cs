@@ -73,7 +73,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(corsPolicyName, policy =>
     {
         policy
-            .SetIsOriginAllowed(origin => CorsOrigins.Matches(origin, allowedPatterns))
+            .SetIsOriginAllowed(origin => CorsOrigins.Matches(origin, allowedPatterns, exact: aiStaging))
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();

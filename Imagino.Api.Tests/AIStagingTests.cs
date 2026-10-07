@@ -6,9 +6,13 @@ using Imagino.Api.Controllers;
 using Imagino.Api.DependencyInjection;
 using Imagino.Api.Security;
 using Imagino.Api.Services.Generation;
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace Imagino.Api.Tests;
@@ -76,6 +80,39 @@ public class AIStagingTests
     [InlineData("Frontend:BaseUrl", AIStagingConfiguration.WorkingStudioPreview)]
     public void DedicatedProfileRejectsMissingDuplicateOrAdditionalOriginsAndChangedBaseUrl(string key, string value) =>
         Assert.Throws<InvalidOperationException>(() => AIStagingConfiguration.Validate(Valid(new() { [key] = value })));
+
+    [Theory]
+    [InlineData(AIStagingConfiguration.Preview, true)]
+    [InlineData(AIStagingConfiguration.WorkingStudioPreview, true)]
+    [InlineData(AIStagingConfiguration.CreativeHubPreview, true)]
+    [InlineData(AIStagingConfiguration.Preview + "/", false)]
+    [InlineData(AIStagingConfiguration.WorkingStudioPreview + "/", false)]
+    [InlineData(AIStagingConfiguration.CreativeHubPreview + "/", false)]
+    [InlineData(AIStagingConfiguration.CreativeHubPreview + "/assets", false)]
+    [InlineData(AIStagingConfiguration.CreativeHubPreview + "?preview=1", false)]
+    [InlineData(AIStagingConfiguration.CreativeHubPreview + "#fragment", false)]
+    [InlineData(AIStagingConfiguration.CreativeHubPreview + ":443", false)]
+    [InlineData("https://IMAGINO-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app", false)]
+    [InlineData("https://imagino-front-4mac3lml7-danitest45s-projects.vercel.app", false)]
+    [InlineData("https://unrelated-preview.vercel.app", false)]
+    [InlineData("https://external.example", false)]
+    public void DedicatedCorsPreflightEmitsCredentialsOnlyForLiteralAuthorizedOrigins(string origin, bool accepted)
+    {
+        var origins = Valid().GetSection("Cors:AllowedOrigins").Get<string[]>();
+        var policy = new CorsPolicyBuilder()
+            .SetIsOriginAllowed(value => CorsOrigins.Matches(value, origins, exact: true))
+            .AllowAnyHeader().AllowAnyMethod().AllowCredentials().Build();
+        var context = new DefaultHttpContext();
+        context.Request.Method = "OPTIONS";
+        context.Request.Headers.Origin = origin;
+        context.Request.Headers.AccessControlRequestMethod = "POST";
+        var cors = new CorsService(Options.Create(new CorsOptions()), NullLoggerFactory.Instance);
+        var result = cors.EvaluatePolicy(context, policy);
+        cors.ApplyResult(result, context.Response);
+        Assert.Equal(accepted, result.IsOriginAllowed);
+        Assert.Equal(accepted ? origin : "", context.Response.Headers.AccessControlAllowOrigin.ToString());
+        Assert.Equal(accepted ? "true" : "", context.Response.Headers.AccessControlAllowCredentials.ToString());
+    }
 
     [Fact]
     public void DedicatedProfileRegistersOnlySyntheticGenerationAndNoBilling()

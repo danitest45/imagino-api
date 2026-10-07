@@ -35,13 +35,15 @@ public sealed class GenerationProviderHttp(IHttpClientFactory clients)
         var bytes = await ReadBoundedAsync(response.Content, 29 * 1024 * 1024, ct);
         return JsonDocument.Parse(bytes);
     }
-    public async Task<byte[]> DownloadAsync(string url, string[] allowedHosts, string? googleKey, int maxBytes, CancellationToken ct, string? expectedContentType = null)
+    public async Task<byte[]> DownloadAsync(string url, string[] allowedHosts, string? googleKey, int maxBytes, CancellationToken ct, string? expectedContentType = null,
+        Action<string?>? observeContentType = null)
     {
         var uri = RemoteUrlPolicy.Validate(url, allowedHosts);
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         if (uri.IdnHost == "generativelanguage.googleapis.com" && googleKey != null) request.Headers.Add("x-goog-api-key", googleKey);
         using var response = await clients.CreateClient("GenerationPrivate").SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
         if (!response.IsSuccessStatusCode) throw new ProviderCallException((int)response.StatusCode);
+        observeContentType?.Invoke(response.Content.Headers.ContentType?.MediaType);
         if (expectedContentType != null && response.Content.Headers.ContentType?.MediaType != expectedContentType)
             throw new InvalidDataException("Provider output Content-Type differs from the expected container.");
         return await ReadBoundedAsync(response.Content, maxBytes, ct);

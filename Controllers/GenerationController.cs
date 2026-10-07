@@ -15,6 +15,13 @@ public sealed class GenerationController(IGenerationRepository repository, Gener
 {
     private string Owner => User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
         ?? throw new ValidationAppException("Authenticated owner missing.");
+    [HttpGet("runway/single-video/output-inspection"), Authorize]
+    public async Task<IActionResult> RunwayOutputInspection([FromServices] RunwayOutputInspection inspection, CancellationToken ct)
+    {
+        Response.Headers.CacheControl = "private, no-store";
+        var result = await inspection.InspectAsync(Owner, ct);
+        return result == null ? NotFound() : Ok(result);
+    }
     [HttpGet("runway/single-video/proof"), Authorize]
     public async Task<IActionResult> RunwayProof(CancellationToken ct)
     {

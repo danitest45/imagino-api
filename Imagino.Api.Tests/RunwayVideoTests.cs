@@ -234,6 +234,42 @@ public class RunwayVideoTests
         t.Repo.Verify(r => r.SettleAsync(job, GenerationStatus.Failed, null, "submission_unknown", It.IsAny<CancellationToken>()), Times.Once);
     }
     [Fact]
+    public async Task OutputInspectionRejectsForeignOpenGateAndUnusedSlotWithoutHttp()
+    {
+        var opts = Settings(); var wire = new Wire(); var repo = new Mock<IGenerationRepository>();
+        var inspection = new RunwayOutputInspection(repo.Object, new(wire), opts);
+        Assert.Null(await inspection.InspectAsync("foreign", default));
+        Assert.Null(await inspection.InspectAsync(BflHomologationPolicy.OwnerId, default));
+        opts.Value.PaidGenerationEnabled = false; opts.Value.RunwayRealSmokeEnabled = false;
+        repo.Setup(r => r.RunwayLedgerAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new RunwaySmokeLedger());
+        Assert.Null(await inspection.InspectAsync(BflHomologationPolicy.OwnerId, default));
+        Assert.Empty(wire.Requests);
+    }
+    [Theory]
+    [InlineData("application/octet-stream", "content_type_mismatch")]
+    [InlineData("video/mp4", "valid_mp4")]
+    public async Task OutputInspectionOnlyReadsPersistedFailedTaskAndNeverSettles(string mime, string expected)
+    {
+        var opts = Settings(); opts.Value.PaidGenerationEnabled = false; opts.Value.RunwayRealSmokeEnabled = false;
+        var job = Job(); job.Status = GenerationStatus.Failed; job.CreditState = CreditState.Refunded;
+        job.ProviderStatus = "SUCCEEDED"; job.ProviderJobId = TaskId;
+        job.PollingUrl = RunwayGenerationProvider.Origin + "/v1/tasks/" + TaskId;
+        var ledger = new RunwaySmokeLedger { State = "Failed", Halted = true, HaltReason = "invalid_provider_output",
+            AttemptCount = 1, SettlementCount = 1, JobId = job.Id, TaskId = TaskId };
+        var repo = new Mock<IGenerationRepository>(MockBehavior.Strict);
+        repo.Setup(r => r.RunwayLedgerAsync(It.IsAny<CancellationToken>())).ReturnsAsync(ledger);
+        repo.Setup(r => r.GetAsync(job.Id, job.UserId, It.IsAny<CancellationToken>())).ReturnsAsync(job);
+        var wire = new Wire("{\"id\":\""+TaskId+"\",\"status\":\"SUCCEEDED\",\"cost\":{\"credits\":16},\"output\":[\"https://dnznrvs05pmza.cloudfront.net/result.mp4\"]}");
+        var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Mp4()) };
+        response.Content.Headers.ContentType = new(mime); wire.Add(response);
+        var result = await new RunwayOutputInspection(repo.Object, new(wire), opts).InspectAsync(job.UserId, default);
+        Assert.Equal(expected, result!.Validation); Assert.Equal(mime, result.ContentType);
+        Assert.Equal(2, wire.Requests.Count); Assert.All(wire.Requests, r => Assert.Equal("GET", r.Method));
+        repo.Verify(r => r.RunwayLedgerAsync(It.IsAny<CancellationToken>()), Times.Once);
+        repo.Verify(r => r.GetAsync(job.Id, job.UserId, It.IsAny<CancellationToken>()), Times.Once);
+        repo.VerifyNoOtherCalls();
+    }
+    [Fact]
     public async Task TimeoutWithNoTaskNeverRestartsCreation()
     {
         var job = Job(); job.DeadlineAt = DateTime.UtcNow.AddSeconds(-1); var t = Processor(job);

@@ -22,6 +22,7 @@ public class AIStagingTests
             ["Jwt:Secret"] = new string('x', 32), ["Jwt:Issuer"] = "staging", ["Jwt:Audience"] = "staging",
             ["Frontend:BaseUrl"] = AIStagingConfiguration.Preview, ["Cors:AllowedOrigins:0"] = AIStagingConfiguration.Preview,
             ["Cors:AllowedOrigins:1"] = AIStagingConfiguration.WorkingStudioPreview,
+            ["Cors:AllowedOrigins:2"] = AIStagingConfiguration.CreativeHubPreview,
             ["R2Settings:BucketName"] = "imagino-images-staging", ["R2Settings:BucketNameVideos"] = "imagino-videos-staging",
             ["R2Settings:AccessKeyId"] = "test", ["R2Settings:SecretAccessKey"] = "test",
             ["R2Settings:ServiceUrl"] = "https://f3915d7185410d3a7d3a9599e22194af.r2.cloudflarestorage.com",
@@ -45,13 +46,16 @@ public class AIStagingTests
         Assert.Throws<InvalidOperationException>(() => AIStagingConfiguration.Validate(Valid(new() { [key] = value })));
 
     [Fact]
-    public void DedicatedProfileAcceptsOnlyBothKnownOriginsInEitherOrder()
+    public void DedicatedProfileAcceptsOnlyThreeKnownOriginsInAnyOrder()
     {
-        AIStagingConfiguration.Validate(Valid());
-        AIStagingConfiguration.Validate(Valid(new() {
-            ["Cors:AllowedOrigins:0"] = AIStagingConfiguration.WorkingStudioPreview,
-            ["Cors:AllowedOrigins:1"] = AIStagingConfiguration.Preview
-        }));
+        var origins = new[] { AIStagingConfiguration.Preview, AIStagingConfiguration.WorkingStudioPreview, AIStagingConfiguration.CreativeHubPreview };
+        foreach (var first in origins)
+            foreach (var second in origins.Where(origin => origin != first))
+                AIStagingConfiguration.Validate(Valid(new() {
+                    ["Cors:AllowedOrigins:0"] = first,
+                    ["Cors:AllowedOrigins:1"] = second,
+                    ["Cors:AllowedOrigins:2"] = origins.Single(origin => origin != first && origin != second)
+                }));
     }
 
     [Theory]
@@ -63,6 +67,12 @@ public class AIStagingTests
     [InlineData("Cors:AllowedOrigins:1", AIStagingConfiguration.WorkingStudioPreview + "/")]
     [InlineData("Cors:AllowedOrigins:2", "https://external.example")]
     [InlineData("Cors:AllowedOrigins:2", AIStagingConfiguration.WorkingStudioPreview)]
+    [InlineData("Cors:AllowedOrigins:2", "")]
+    [InlineData("Cors:AllowedOrigins:2", "https://*.vercel.app")]
+    [InlineData("Cors:AllowedOrigins:2", AIStagingConfiguration.CreativeHubPreview + "/")]
+    [InlineData("Cors:AllowedOrigins:2", "https://imagino-front-4mac3lml7-danitest45s-projects.vercel.app")]
+    [InlineData("Cors:AllowedOrigins:3", "https://external.example")]
+    [InlineData("Cors:AllowedOrigins:3", AIStagingConfiguration.CreativeHubPreview)]
     [InlineData("Frontend:BaseUrl", AIStagingConfiguration.WorkingStudioPreview)]
     public void DedicatedProfileRejectsMissingDuplicateOrAdditionalOriginsAndChangedBaseUrl(string key, string value) =>
         Assert.Throws<InvalidOperationException>(() => AIStagingConfiguration.Validate(Valid(new() { [key] = value })));

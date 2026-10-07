@@ -6,6 +6,7 @@ public static class AIStagingConfiguration
 {
     public const string Preview = "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app";
     public const string WorkingStudioPreview = "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app";
+    public const string CreativeHubPreview = "https://imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app";
     public static void Validate(IConfiguration config)
     {
         foreach (var section in new[] { "Stripe", "Google", "Resend", "ReplicateSettings", "GeminiSettings", "VeoSettings" })
@@ -34,9 +35,9 @@ public static class AIStagingConfiguration
         if (System.Text.Encoding.UTF8.GetByteCount(config["Jwt:Secret"] ?? "") < 32)
             throw new InvalidOperationException("AI staging JWT secret must have at least 32 bytes.");
         var allowedOrigins = config.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-        if (config["Frontend:BaseUrl"] != Preview || allowedOrigins.Length != 2 ||
-            !new HashSet<string>(allowedOrigins, StringComparer.Ordinal).SetEquals(new[] { Preview, WorkingStudioPreview }))
-            throw new InvalidOperationException("AI staging requires exactly its two authorized Preview origins and the existing frontend base URL.");
+        if (config["Frontend:BaseUrl"] != Preview || allowedOrigins.Length != 3 ||
+            !new HashSet<string>(allowedOrigins, StringComparer.Ordinal).SetEquals(new[] { Preview, WorkingStudioPreview, CreativeHubPreview }))
+            throw new InvalidOperationException("AI staging requires exactly its three authorized Preview origins and the existing frontend base URL.");
         if (config["R2Settings:PublicUrl"] != "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev" ||
             config["R2Settings:ServiceUrl"] != "https://f3915d7185410d3a7d3a9599e22194af.r2.cloudflarestorage.com")
             throw new InvalidOperationException("AI staging requires its existing R2 staging endpoint.");

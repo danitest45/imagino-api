@@ -1,6 +1,6 @@
 {
   "releasePublish": "PASS",
-  "stagingBranchDeployed": false,
+  "stagingBranchDeployed": true,
   "date": "2026-10-07",
   "productionMutations": 0,
   "readiness": "BLOCKED",

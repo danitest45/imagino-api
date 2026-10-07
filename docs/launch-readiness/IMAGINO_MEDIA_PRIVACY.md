@@ -1,5 +1,5 @@
 # Media privacy
-P0 remains BLOCKED until historical public access is removed and the new staging deployment passes.
+P0 remains BLOCKED until historical public access is removed. The new launch backend private API gate passed on 2026-10-07T21:07Z.
 
 ## Contract and choice
 Choose authenticated Imagino API proxy. New images and videos use the already-private staging bucket `imagino-videos-staging`, deterministic server-owned key `generation-v2/{owner}/{job}.{extension}`, SHA-256, byte length, MIME and OutputStored checkpoint. Views expose `/api/generation/jobs/{id}/media`, never provider/public object URLs. Anonymous 401, foreign 404, owner Completed only; private/no-store, nosniff, no-referrer; authenticated download uses a job-derived filename.
@@ -17,4 +17,5 @@ API File result supports byte Range/206. Present implementation still buffers th
 6. Production migration repeats in batches with separately approved production credentials; no production action in this phase.
 
 Historical app-level URL hiding does not revoke an old object URL. Current staging HEAD 200 proves the unresolved exposure.
+Eight Completed images from the existing synthetic owner history were copied with equal before/after SHA-256 and byte counts, preserving original objects and accepted credits. Repeating each migration succeeded without another financial transition. Owner delivery/download works; anonymous 401 and foreign 404; private/no-store and nosniff present. Existing video is 1,616,054 bytes, video/mp4, owner 200 and Range 206/16 bytes. GC dry-run found zero candidates. Wallet and eleven-job history unchanged; no generation or email. Temporary staging operator grant was removed; own operations endpoint returned 403 afterward.
 References: [Cloudflare public buckets](https://developers.cloudflare.com/r2/buckets/public-buckets/), [presigned URLs](https://developers.cloudflare.com/r2/api/s3/presigned-urls/).

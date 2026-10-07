@@ -1,0 +1,98 @@
+{
+  "atUtc": "2026-10-07T21:07:43.2905043Z",
+  "serviceId": "srv-db1tmv17lnhs73efdjp0",
+  "readiness": 200,
+  "paidGenerationEnabled": false,
+  "emergencyStop": true,
+  "migratedImages": [
+    {
+      "bytes": 1426902,
+      "mime": "image/png",
+      "repeatMigration": true,
+      "acceptedCreditsUnchanged": true,
+      "sha256": "955f0e497567dec36fa8ff84dafa39d9ae022e657c860c5f6a4ca10540580bb4",
+      "jobId": "6ac56f781375278f112d5654"
+    },
+    {
+      "bytes": 1352396,
+      "mime": "image/png",
+      "repeatMigration": true,
+      "acceptedCreditsUnchanged": true,
+      "sha256": "1180fb5b6efd81464a799a2e1fc687ab6a044b21cf0b50ea5d11f041bd36195d",
+      "jobId": "6ac4068a985c143f201d8f15"
+    },
+    {
+      "bytes": 1689642,
+      "mime": "image/png",
+      "repeatMigration": true,
+      "acceptedCreditsUnchanged": true,
+      "sha256": "db0b42583926f76948eb2720d8b12900f49aa019f9e42d49ddd741e223f109d0",
+      "jobId": "6ac40643985c143f201d8ea0"
+    },
+    {
+      "bytes": 1291844,
+      "mime": "image/png",
+      "repeatMigration": true,
+      "acceptedCreditsUnchanged": true,
+      "sha256": "7a0cb43c422caedbbf0ce924cece816855be40d675c3361e33075083e77b6b36",
+      "jobId": "6ac40507e10e977b2df88393"
+    },
+    {
+      "bytes": 40046,
+      "mime": "image/png",
+      "repeatMigration": true,
+      "acceptedCreditsUnchanged": true,
+      "sha256": "e8e38b87eb75c0c0db67283e8a3de5ca70ec9b2a9cd8e15662420c0527d0ec28",
+      "jobId": "6ac3de88b1595fac4888bd09"
+    },
+    {
+      "bytes": 40046,
+      "mime": "image/png",
+      "repeatMigration": true,
+      "acceptedCreditsUnchanged": true,
+      "sha256": "e8e38b87eb75c0c0db67283e8a3de5ca70ec9b2a9cd8e15662420c0527d0ec28",
+      "jobId": "6ac3dd40e3290e588a5a2839"
+    },
+    {
+      "bytes": 40046,
+      "mime": "image/png",
+      "repeatMigration": true,
+      "acceptedCreditsUnchanged": true,
+      "sha256": "e8e38b87eb75c0c0db67283e8a3de5ca70ec9b2a9cd8e15662420c0527d0ec28",
+      "jobId": "6ac3dd2ce3290e588a5a2828"
+    },
+    {
+      "bytes": 40046,
+      "mime": "image/png",
+      "repeatMigration": true,
+      "acceptedCreditsUnchanged": true,
+      "sha256": "e8e38b87eb75c0c0db67283e8a3de5ca70ec9b2a9cd8e15662420c0527d0ec28",
+      "jobId": "6ac3dbf5e3290e588a5a27e2"
+    }
+  ],
+  "video": {
+    "range": 206,
+    "bytes": 1616054,
+    "status": 200,
+    "rangeBytes": 16,
+    "mime": "video/mp4"
+  },
+  "anonymousImage": 401,
+  "foreignImage": 404,
+  "foreignOperations": 403,
+  "gc": {
+    "truncated": false,
+    "dryRun": true,
+    "deletionSupported": false,
+    "candidates": 0
+  },
+  "completedReconcile": 404,
+  "syntheticQuoteCredits": 1,
+  "disabledProviderCreation": 403,
+  "walletUnchanged": true,
+  "historyUnchanged": true,
+  "historicalPublicHead": 200,
+  "providerPosts": 0,
+  "newJobs": 0,
+  "emailsSent": 0
+}

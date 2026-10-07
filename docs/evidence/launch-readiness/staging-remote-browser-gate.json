@@ -1,0 +1,30 @@
+{
+  "scope": "real protected launch Preview and AI staging; existing synthetic assets only",
+  "providerPosts": 0,
+  "jobCreates": 0,
+  "blockedWrites": 0,
+  "blockedExternal": 6,
+  "checks": {
+    "loginPayload": {
+      "emailMatches": true,
+      "passwordMatches": true
+    },
+    "login": true,
+    "paidFlagsOff": true,
+    "imageDownload": {
+      "bytes": 1426902,
+      "sha256": "955f0e497567dec36fa8ff84dafa39d9ae022e657c860c5f6a4ca10540580bb4"
+    },
+    "imageDownloadMatchesPrivateCopy": true,
+    "reuse": true,
+    "animatePreparedWithoutSpending": true,
+    "videoPlayback": true,
+    "themes": true,
+    "privateRequests": true,
+    "walletAndHistoryUnchanged": true,
+    "refreshAfterReload": true,
+    "logoutAndBlobRevocation": true,
+    "refreshAfterLogout": 401
+  },
+  "atUtc": "2026-10-07T21:37:09.338Z"
+}

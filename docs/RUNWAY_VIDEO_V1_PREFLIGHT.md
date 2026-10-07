@@ -1,6 +1,6 @@
 # Imagino Video V1 — Runway single-video staging authorization
 
-Prepared 2026-10-07. Real provider smoke remains pending the user's Runway project, prepaid balance and manually installed key. No provider creation has been authorized by an enabled runtime flag during preparation.
+Prepared and executed 2026-10-07. The sole authorized Runway call succeeded at the provider for US$0.16; Imagino output validation failed before R2 and refunded once. Geometry validation was corrected and verified by read-only inspection of the same output. Spending flags are closed. See the final report linked below.
 
 ## Verified official contract
 
@@ -33,7 +33,7 @@ Synthetic owner preparation: 10 existing credits plus a once-only 44-credit gran
 
 `generation_runway_single_video_v1` holds one document and one slot. Reservation, credit debit and job insertion use one Mongo transaction. Before provider dispatch the ledger transitions Reserved → SubmissionAttempted and increments AttemptCount from 0 to 1. This transition cannot repeat after failure, cancellation, timeout, ambiguity or restart. The task ID and job binding persist atomically; retries of binding persistence reuse the received ID and never call StartAsync again. A unique partial task-ID index prevents a duplicate task binding. Restarted Processing jobs only poll the stored task. A Starting job without a persisted task is never submitted again and is settled submission_unknown after its deadline.
 
-Output requires HTTPS allowlist, `video/mp4`, bounded nonempty bytes (100 MiB maximum), structural MP4 movie/video atoms, approximately 5-second duration and 720p dimensions. Storage uses private `imagino-videos-staging` and deterministic `generation-v2/{owner}/{job}.mp4`. Completed/Charged follows successful R2 PUT. Permanent assets contain the authenticated Imagino download route, never the temporary provider output URL. Failure settlement increments the wallet and ledger settlement count only once within the existing transaction.
+Output requires HTTPS allowlist, `video/mp4`, bounded nonempty bytes (100 MiB maximum), structural MP4 movie/video atoms, approximately 5-second duration and exact 960x960 square dimensions for the authorized auto_720p input (corrected after real-output inspection). Storage uses private `imagino-videos-staging` and deterministic `generation-v2/{owner}/{job}.mp4`. Completed/Charged follows successful R2 PUT. Permanent assets contain the authenticated Imagino download route, never the temporary provider output URL. Failure settlement increments the wallet and ledger settlement count only once within the existing transaction.
 
 The authenticated owner-only proof endpoint `/api/generation/runway/single-video/proof` exposes flags, a credentialsConfigured boolean, ledger counts, task binding, state journal and measured output/latency metadata. It never exposes the key, prompt-image bytes or signed provider URL. Foreign job/download access retains the existing 404 contract.
 
@@ -53,41 +53,12 @@ The user should log into `https://dev.runway.com`, create/select the staging pro
 
 After that confirmation: reconfirm current official pricing and exact owned input, verify Available ledger/zero attempts and 54-credit balance, temporarily enable only this finite Runway gate, submit exactly one job, poll only its task, validate/store/settle, record ownership and request-count evidence, then close both spending flags on success or failure and verify health 200. If no task ID is received after an ambiguous response, stop; never recreate. No other provider/model is authorized.
 
-## Current delivery status
+## Final delivery status
 
-Adapter/mocks PASS. Real video PENDING HUMAN GATE. Imagino video job/task IDs, observed provider cost, submit/queue/processing/download/R2/total latencies, MP4 duration/dimensions/size/hash, real Working Studio/Assets playback, real owner/foreign checks and final one-settlement proof remain pending the sole real call. Preparation has made zero provider creation POSTs and spent $0.00.
+The human gate was resolved manually on 2026-10-07: Runway project Imagino, prepaid 1,000 credits, Auto-billing Off, and key installed only in the named staging service. Runtime confirmed credentialsConfigured=true without reading/copying the key.
 
-Backend staging deploy `dep-db36dsid0e5s73f9e6d0`, commit `12d53985a71cc3e23b988bffe5a1c78b12d47e54`, live. Authenticated preflight at 2026-10-07T15:38:19Z: health 200, PaidGenerationEnabled=false, RunwayRealSmokeEnabled=false, credentialsConfigured=false; catalog approval_required/54 credits; ledger Available, AttemptCount=0, SettlementCount=0, JobId=null, TaskId=null; synthetic owner balance 54. Foreign source job, source download and proof endpoint each return 404. These source checks do not substitute for ownership testing of the future generated video.
+Exactly one paid creation was executed. Provider SUCCEEDED at US$0.16. Imagino failed/refunded because the former validator assumed a literal 720px shorter edge; the real square auto_720p MP4 is 960x960, 5.042 seconds, 1,673,733 bytes. The corrected validator accepts this same output under closed flags via read-only inspection. The historical Failed/Refunded job and one-settlement ledger remain unchanged.
 
-Recommendation: retain Grok Lite as the staging Fast Video candidate until this smoke establishes identity preservation and usable output. Do not decide final quality or start WAN/Gemini/other comparisons from mocks; those require separate future authorization.
+[Final report with all 18 requested delivery items](RUNWAY_VIDEO_V1_REAL_SMOKE.md).
 
-## Entrega solicitada — estado no gate humano
-
-| Item | Evidência / estado |
-| --- | --- |
-| 1. Adapter Runway | PASS em build, mocks e deploy fechado; homologação real pendente |
-| 2. Model ID | `grok_imagine_1_5_lite` |
-| 3. Endpoint | `POST https://api.dev.runwayml.com/v1/image_to_video` |
-| 4. Asset origem | `6ac4068a985c143f201d8f15`; perfume azul do owner sintético; hash e download autenticado verificados |
-| 5. Prompt/config | Prompt controlado acima; image-to-video, 5 s, 720p, uma saída, first frame único |
-| 6. Imagino job ID de vídeo | Ainda não criado; ledger JobId=null |
-| 7. Runway task ID | Ainda não criado; ledger TaskId=null |
-| 8. Provider cost | Estimativa oficial US$0.16; custo observado pendente; gasto da preparação US$0.00 |
-| 9. Credits experimentais | 54; custo planejado US$0.186; buffer 10%, overhead US$0.01, margem alvo 65%; saldo sintético 54 |
-| 10. Latências reais | Submit/queue/processing/download/R2/total pendentes. Timestamps/journal/output metrics implementados; queue/processing serão observações por polling, com granularidade mínima de 5 s |
-| 11. Output MP4 | Duração/resolução/tamanho/hash pendentes; nenhum MP4 fabricado como evidência real |
-| 12. Working Studio/Assets | Layout e ações existentes passam nos mocks; Preview remoto carregou Assets reais do owner; vídeo em Assets/playback pendentes |
-| 13. Image → Animate | Dois mocks PASS e preparação remota do asset autorizado PASS; first frame 1/1, 5 s, 720p e Generate bloqueado. Correção adicional mantém o source selecionado no painel de resultado |
-| 14. Ownership | Source owner autenticado PASS; foreign source job/download/proof 404; ownership do futuro vídeo pendente |
-| 15. Request count | AttemptCount=0, SettlementCount=0, sem job/task; zero provider creation POSTs. A prova de exatamente uma criação/task/liquidação dependerá da chamada real |
-| 16. Bugs encontrados | Testes BFL dependiam da data atual após expiração (fixada data histórica, runtime preservado); design fixture atribuía migration_required a todo vídeo (agora segue lifecycle); Animate preparava source mas selecionava o resultado mais recente (corrigido e coberto com source fora do primeiro item) |
-| 17. Flags / health | PaidGenerationEnabled=false; RunwayRealSmokeEnabled=false; health 200; key ausente confirmada por boolean sem leitura do segredo |
-| 18. Recomendação | Manter Grok Lite como candidato Fast Video de staging; decisão de qualidade aguarda único smoke. WAN/Gemini/qualquer alternativa exigem autorização futura separada e não serão chamados nesta tarefa |
-
-Gate imposto pelo pedido do usuário, seções 3 e 18: parar quando faltar projeto/créditos/key e aguardar confirmação manual. O navegador Runway está no login, com opções email, Google, GitHub e Sign up. Não foi possível observar escolhas de compra, saldo ou estado de auto-recharge. O mínimo de US$10 vem da documentação oficial; nenhuma compra ou auto-top-up foi feita. A key deve ser inserida manualmente em `GenerationV2__RunwayApiKey` somente no serviço especificado. A autorização temporária expira em 2026-10-09T00:00Z.
-
-Preview final READY: `dpl_5QNSELRZ8qRbJwC3qgjifiP1F9kk`, commit `109c9dbbb8bbde55b93436949c1db961590ab570`. [Video Studio](https://imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app/create/video). Verificação remota em 2026-10-07T15:51:22Z: Assets → source correto → Animate → first frame preparado; 1,352,396 bytes e SHA-256 exato `1180fb5b6efd81464a799a2e1fc687ab6a044b21cf0b50ea5d11f041bd36195d`; source selecionado como Studio Image, 5 s/720p, prompt controlado preparado e Generate desabilitado. Nenhum vídeo novo criado. PRs #56 e #89 permanecem draft/unmerged.
-
-![Animate remoto com o asset autorizado e gasto bloqueado](evidence/runway-video/animate-remote.jpg)
-
-![Gate manual no login Runway](evidence/runway-video/manual-gate.jpg)
+Latest code deployed: 61489757d52112ceca873d774720bc62bc4177ed, dep-db37a03bc2fs73crm76g. Backend 372 tests PASS. Runtime health 200; PaidGenerationEnabled=false; RunwayRealSmokeEnabled=false. Ledger AttemptCount=1, SettlementCount=1, Halted=true, one JobId/TaskId. No new creation, no reset, no production or Stripe changes, no PR merge.

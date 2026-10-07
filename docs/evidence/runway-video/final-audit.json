@@ -1,0 +1,61 @@
+{
+  "checkedAtUtc": "2026-10-07T16:40:44.0252730Z",
+  "workflowResult": "FAIL: historical output validation before R2",
+  "providerResult": "SUCCEEDED",
+  "creationPosts": 1,
+  "creationRetries": 0,
+  "providerTasks": 1,
+  "providerTaskGets": 7,
+  "smokePollGets": 4,
+  "postmortemGets": 3,
+  "attemptCount": 1,
+  "settlementCount": 1,
+  "ledgerHalted": true,
+  "newJobs": [
+    {
+      "id": "6ac670a9cf3be2fa36628c2f",
+      "modelId": "runway-fast-video-20261007",
+      "mediaType": "video",
+      "status": "Failed",
+      "creditState": "Refunded",
+      "createdAt": "2026-10-07T16:17:45.792Z"
+    }
+  ],
+  "observedProviderUsd": 0.16,
+  "runwayBalanceBefore": 1000,
+  "runwayBalanceAfter": 984,
+  "autoBilling": "Off",
+  "quoteCredits": 54,
+  "syntheticCreditsBefore": 54,
+  "syntheticCreditsAfter": 54,
+  "finalCreditState": "Refunded",
+  "paidGenerationEnabled": false,
+  "runwayRealSmokeEnabled": false,
+  "health": 200,
+  "output": {
+    "jobId": "6ac670a9cf3be2fa36628c2f",
+    "taskId": "da0afad8-4265-4844-89eb-d679f1b59a34",
+    "providerStatus": "SUCCEEDED",
+    "costUsd": 0.16,
+    "contentType": "video/mp4",
+    "validation": "valid_mp4",
+    "bytes": 1673733,
+    "sha256": "8168a45788b9d13b1b62a6bcd92172f7ce2dbdcf87d7aae8e11f8359b02fe0f3",
+    "video": {
+      "width": 960,
+      "height": 960,
+      "durationSeconds": 5.042
+    },
+    "validationDetail": null
+  },
+  "checks": {
+    "foreignProof": 404,
+    "ownerJob": 200,
+    "foreignDownload": 404,
+    "ownerDownload": 404,
+    "foreignOutputInspection": 404,
+    "foreignJob": 404
+  },
+  "codeDeploy": "dep-db37a03bc2fs73crm76g",
+  "codeCommit": "61489757d52112ceca873d774720bc62bc4177ed"
+}

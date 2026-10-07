@@ -1,0 +1,16 @@
+{
+  "jobId": "6ac670a9cf3be2fa36628c2f",
+  "taskId": "da0afad8-4265-4844-89eb-d679f1b59a34",
+  "providerStatus": "SUCCEEDED",
+  "costUsd": 0.16,
+  "contentType": "video/mp4",
+  "validation": "valid_mp4",
+  "bytes": 1673733,
+  "sha256": "8168a45788b9d13b1b62a6bcd92172f7ce2dbdcf87d7aae8e11f8359b02fe0f3",
+  "video": {
+    "width": 960,
+    "height": 960,
+    "durationSeconds": 5.042
+  },
+  "validationDetail": null
+}

@@ -60,3 +60,34 @@ Adapter/mocks PASS. Real video PENDING HUMAN GATE. Imagino video job/task IDs, o
 Backend staging deploy `dep-db36dsid0e5s73f9e6d0`, commit `12d53985a71cc3e23b988bffe5a1c78b12d47e54`, live. Authenticated preflight at 2026-10-07T15:38:19Z: health 200, PaidGenerationEnabled=false, RunwayRealSmokeEnabled=false, credentialsConfigured=false; catalog approval_required/54 credits; ledger Available, AttemptCount=0, SettlementCount=0, JobId=null, TaskId=null; synthetic owner balance 54. Foreign source job, source download and proof endpoint each return 404. These source checks do not substitute for ownership testing of the future generated video.
 
 Recommendation: retain Grok Lite as the staging Fast Video candidate until this smoke establishes identity preservation and usable output. Do not decide final quality or start WAN/Gemini/other comparisons from mocks; those require separate future authorization.
+
+## Entrega solicitada — estado no gate humano
+
+| Item | Evidência / estado |
+| --- | --- |
+| 1. Adapter Runway | PASS em build, mocks e deploy fechado; homologação real pendente |
+| 2. Model ID | `grok_imagine_1_5_lite` |
+| 3. Endpoint | `POST https://api.dev.runwayml.com/v1/image_to_video` |
+| 4. Asset origem | `6ac4068a985c143f201d8f15`; perfume azul do owner sintético; hash e download autenticado verificados |
+| 5. Prompt/config | Prompt controlado acima; image-to-video, 5 s, 720p, uma saída, first frame único |
+| 6. Imagino job ID de vídeo | Ainda não criado; ledger JobId=null |
+| 7. Runway task ID | Ainda não criado; ledger TaskId=null |
+| 8. Provider cost | Estimativa oficial US$0.16; custo observado pendente; gasto da preparação US$0.00 |
+| 9. Credits experimentais | 54; custo planejado US$0.186; buffer 10%, overhead US$0.01, margem alvo 65%; saldo sintético 54 |
+| 10. Latências reais | Submit/queue/processing/download/R2/total pendentes. Timestamps/journal/output metrics implementados; queue/processing serão observações por polling, com granularidade mínima de 5 s |
+| 11. Output MP4 | Duração/resolução/tamanho/hash pendentes; nenhum MP4 fabricado como evidência real |
+| 12. Working Studio/Assets | Layout e ações existentes passam nos mocks; Preview remoto carregou Assets reais do owner; vídeo em Assets/playback pendentes |
+| 13. Image → Animate | Dois mocks PASS e preparação remota do asset autorizado PASS; first frame 1/1, 5 s, 720p e Generate bloqueado. Correção adicional mantém o source selecionado no painel de resultado |
+| 14. Ownership | Source owner autenticado PASS; foreign source job/download/proof 404; ownership do futuro vídeo pendente |
+| 15. Request count | AttemptCount=0, SettlementCount=0, sem job/task; zero provider creation POSTs. A prova de exatamente uma criação/task/liquidação dependerá da chamada real |
+| 16. Bugs encontrados | Testes BFL dependiam da data atual após expiração (fixada data histórica, runtime preservado); design fixture atribuía migration_required a todo vídeo (agora segue lifecycle); Animate preparava source mas selecionava o resultado mais recente (corrigido e coberto com source fora do primeiro item) |
+| 17. Flags / health | PaidGenerationEnabled=false; RunwayRealSmokeEnabled=false; health 200; key ausente confirmada por boolean sem leitura do segredo |
+| 18. Recomendação | Manter Grok Lite como candidato Fast Video de staging; decisão de qualidade aguarda único smoke. WAN/Gemini/qualquer alternativa exigem autorização futura separada e não serão chamados nesta tarefa |
+
+Gate imposto pelo pedido do usuário, seções 3 e 18: parar quando faltar projeto/créditos/key e aguardar confirmação manual. O navegador Runway está no login, com opções email, Google, GitHub e Sign up. Não foi possível observar escolhas de compra, saldo ou estado de auto-recharge. O mínimo de US$10 vem da documentação oficial; nenhuma compra ou auto-top-up foi feita. A key deve ser inserida manualmente em `GenerationV2__RunwayApiKey` somente no serviço especificado. A autorização temporária expira em 2026-10-09T00:00Z.
+
+Preview final READY: `dpl_5QNSELRZ8qRbJwC3qgjifiP1F9kk`, commit `109c9dbbb8bbde55b93436949c1db961590ab570`. [Video Studio](https://imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app/create/video). Verificação remota em 2026-10-07T15:51:22Z: Assets → source correto → Animate → first frame preparado; 1,352,396 bytes e SHA-256 exato `1180fb5b6efd81464a799a2e1fc687ab6a044b21cf0b50ea5d11f041bd36195d`; source selecionado como Studio Image, 5 s/720p, prompt controlado preparado e Generate desabilitado. Nenhum vídeo novo criado. PRs #56 e #89 permanecem draft/unmerged.
+
+![Animate remoto com o asset autorizado e gasto bloqueado](evidence/runway-video/animate-remote.jpg)
+
+![Gate manual no login Runway](evidence/runway-video/manual-gate.jpg)

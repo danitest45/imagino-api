@@ -1,5 +1,5 @@
 {
-  "checkedAtUtc": "2026-10-07T15:38:19.1304283Z",
+  "checkedAtUtc": "2026-10-07T15:52:27.7466525Z",
   "health": 200,
   "paidGenerationEnabled": false,
   "runwayRealSmokeEnabled": false,
@@ -74,9 +74,9 @@
     "settledAtUtc": null
   },
   "foreignChecks": {
-    "/api/generation/jobs/6ac4068a985c143f201d8f15": 404,
+    "/api/generation/jobs/6ac4068a985c143f201d8f15/download": 404,
     "/api/generation/runway/single-video/proof": 404,
-    "/api/generation/jobs/6ac4068a985c143f201d8f15/download": 404
+    "/api/generation/jobs/6ac4068a985c143f201d8f15": 404
   },
   "realProviderCreationPosts": 0,
   "realSpendUsd": 0,

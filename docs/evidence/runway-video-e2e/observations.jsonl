@@ -1,0 +1,2 @@
+{"atUtc":"2026-10-07T17:12:45.0144251Z","state":"Processing","ledgerState":"Accepted","jobId":"6ac67d7f691061807a15e6b8","taskId":"51ae20a8-b6f1-4428-91a6-2c4a6eba3909","attemptCount":1,"settlementCount":0}
+{"atUtc":"2026-10-07T17:13:06.7908784Z","state":"Completed","ledgerState":"Completed","jobId":"6ac67d7f691061807a15e6b8","taskId":"51ae20a8-b6f1-4428-91a6-2c4a6eba3909","attemptCount":1,"settlementCount":1}

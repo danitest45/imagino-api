@@ -1,0 +1,28 @@
+{
+  "paidGenerationEnabled": false,
+  "runwayRealSmokeEnabled": false,
+  "credentialsConfigured": true,
+  "ledger": {
+    "id": "runway-grok-lite-e2e-confirmation-20261007",
+    "ownerId": "6ac038cb05509cea703277eb",
+    "sourceAssetId": "6ac4068a985c143f201d8f15",
+    "sourceSha256": "1180fb5b6efd81464a799a2e1fc687ab6a044b21cf0b50ea5d11f041bd36195d",
+    "modelId": "runway-fast-video-20261007",
+    "budgetUsd": 0.25,
+    "estimatedUsd": 0.16,
+    "observedUsd": null,
+    "expiresAtUtc": "2026-10-09T00:00:00Z",
+    "halted": false,
+    "haltReason": null,
+    "state": "Available",
+    "jobId": null,
+    "taskId": null,
+    "attemptCount": 0,
+    "settlementCount": 0,
+    "attemptedAtUtc": null,
+    "acceptedAtUtc": null,
+    "settledAtUtc": null
+  },
+  "storage": null,
+  "job": null
+}

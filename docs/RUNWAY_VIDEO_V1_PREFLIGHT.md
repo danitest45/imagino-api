@@ -42,7 +42,7 @@ The authenticated owner-only proof endpoint `/api/generation/runway/single-video
 - Backend: 365 tests pass, including 33 Runway cases; build zero errors. Existing BFL authorization tests use a fixed historical date; runtime expiry remains unchanged.
 - Frontend: 41 tests pass; optimized Next.js build succeeds.
 - Animate browser mocks: two pass; first-frame bytes fetched with authentication, required owned asset, exact 5/720p settings, quote before Generate, zero automatic job submission, foreign asset blocked.
-- Existing Studio/Assets/Model Picker/layout browser checks: 33 pass on first regression run; the remaining design-review expectation is being updated for the new approval-required catalog entry.
+- Existing Studio/Assets/Model Picker/layout browser checks: all 34 pass (33 in the regression run and the updated design-review case on a focused rerun). The design fixture now preserves availability declared by the new catalog and reserves migration status for retiring models.
 - Mocks establish adapter and UX behavior; they are not evidence of a real provider response, actual MP4, real transaction concurrency, final real settlement or visual quality.
 
 ## Human gate and subsequent single call
@@ -56,5 +56,7 @@ After that confirmation: reconfirm current official pricing and exact owned inpu
 ## Current delivery status
 
 Adapter/mocks PASS. Real video PENDING HUMAN GATE. Imagino video job/task IDs, observed provider cost, submit/queue/processing/download/R2/total latencies, MP4 duration/dimensions/size/hash, real Working Studio/Assets playback, real owner/foreign checks and final one-settlement proof remain pending the sole real call. Preparation has made zero provider creation POSTs and spent $0.00.
+
+Backend staging deploy `dep-db36dsid0e5s73f9e6d0`, commit `12d53985a71cc3e23b988bffe5a1c78b12d47e54`, live. Authenticated preflight at 2026-10-07T15:38:19Z: health 200, PaidGenerationEnabled=false, RunwayRealSmokeEnabled=false, credentialsConfigured=false; catalog approval_required/54 credits; ledger Available, AttemptCount=0, SettlementCount=0, JobId=null, TaskId=null; synthetic owner balance 54. Foreign source job, source download and proof endpoint each return 404. These source checks do not substitute for ownership testing of the future generated video.
 
 Recommendation: retain Grok Lite as the staging Fast Video candidate until this smoke establishes identity preservation and usable output. Do not decide final quality or start WAN/Gemini/other comparisons from mocks; those require separate future authorization.

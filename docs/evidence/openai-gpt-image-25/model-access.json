@@ -1,0 +1,50 @@
+{
+  "observedAtUtc": "2026-10-06T21:41:28.6481268Z",
+  "serviceId": "srv-db1tmv17lnhs73efdjp0",
+  "upstreamMethod": "GET",
+  "paidPostAttempts": 0,
+  "observedOpenAiCostUsd": 0,
+  "loginStatus": 200,
+  "ownerMatchesPolicy": true,
+  "creditsBefore": 16,
+  "jobsBefore": 8,
+  "preflightStatus": 200,
+  "metadata": {
+    "checkedAtUtc": "2026-10-06T21:41:26.7425073Z",
+    "scope": "metadata_only",
+    "imageEndpointAccessVerified": false,
+    "costBoundsVerified": false,
+    "models": [
+      {
+        "model": "gpt-image-2.5-flare-2026-09-08",
+        "httpStatus": 200,
+        "status": "metadata_access_confirmed"
+      },
+      {
+        "model": "gpt-image-2.5-sunburst-2026-09-08",
+        "httpStatus": 200,
+        "status": "metadata_access_confirmed"
+      }
+    ]
+  },
+  "creditsAfter": 16,
+  "jobsAfter": 8,
+  "creditsUnchanged": true,
+  "jobIdsUnchanged": true,
+  "healthStatus": 200,
+  "catalogStatus": 200,
+  "openAiOffers": [
+    {
+      "id": "openai-fast-20261006",
+      "providerModel": "gpt-image-2.5-flare-2026-09-08",
+      "availability": "approval_required"
+    },
+    {
+      "id": "openai-studio-20261006",
+      "providerModel": "gpt-image-2.5-sunburst-2026-09-08",
+      "availability": "approval_required"
+    }
+  ],
+  "outcome": "completed",
+  "isolatedSessionLogoutStatus": 200
+}

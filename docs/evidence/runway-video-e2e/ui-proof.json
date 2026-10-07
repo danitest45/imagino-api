@@ -1,0 +1,32 @@
+{
+  "checkedAtUtc": "2026-10-07T17:19:12.5157377Z",
+  "browserDownloadFile": "C:\\Users\\USER\\Downloads\\imagino-6ac67d7f691061807a15e6b8.mp4",
+  "bytes": 1616054,
+  "sha256": "7bb98530885f772fd624cf7dbf002861af05fb3ed996b1e99e68d8456e23e3ea",
+  "matchesStoredOutput": true,
+  "downloadedAtLocal": "2026-10-07T14:16:53.1815781-03:00",
+  "playback": {
+    "durationSeconds": 5.041667,
+    "height": 960,
+    "observedPlayingTimesSeconds": [
+      0.232804,
+      2.29969
+    ],
+    "isAuthenticatedBlob": true,
+    "error": null,
+    "observedEndedTimeSeconds": 5.041667,
+    "width": 960,
+    "readyState": 4
+  },
+  "animate": {
+    "firstFrameCount": 1,
+    "duration": 5,
+    "historyCountAfter": 11,
+    "sourceAssetId": "6ac4068a985c143f201d8f15",
+    "generateDisabled": true,
+    "preparedBytes": 1352396,
+    "preparedSha256": "1180fb5b6efd81464a799a2e1fc687ab6a044b21cf0b50ea5d11f041bd36195d",
+    "resolution": "720p",
+    "clickedFromImageAssets": true
+  }
+}

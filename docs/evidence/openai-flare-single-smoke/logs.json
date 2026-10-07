@@ -1,0 +1,27 @@
+{
+  "scope": "Render app logs from 2026-10-06T22:00:15Z through query completion; request logs unavailable for this window",
+  "totalEntries": 31,
+  "hasMore": false,
+  "selected": [
+    {
+      "timestamp": "2026-10-06T22:00:25.227457214Z",
+      "message": "Generation claimed job=6ac56f781375278f112d5654 provider=openai status=Starting stage=worker_claim"
+    },
+    {
+      "timestamp": "2026-10-06T22:00:45.13181988Z",
+      "message": "Generation measured job=6ac56f781375278f112d5654 provider=openai model=gpt-image-2.5-flare-2026-09-08 textInputTokens=46 imageInputTokens=0 imageOutputTokens=439 calculatedUsd=0.0134 pricingRevision=openai-standard-2026-10-06.1-experimental providerLatencyMs=19404.7114"
+    },
+    {
+      "timestamp": "2026-10-06T22:00:47.020005579Z",
+      "message": "Generation output stored job=6ac56f781375278f112d5654 provider=openai bytes=1426902 stage=output_stored"
+    },
+    {
+      "timestamp": "2026-10-06T22:00:47.129661113Z",
+      "message": "Generation settled job=6ac56f781375278f112d5654 provider=openai model=gpt-image-2.5-flare-2026-09-08 version=2026-10-06.1 status=Completed elapsedMs=22510.259 estimatedUsd=0.01573 credits=6"
+    }
+  ],
+  "measuredCount": 1,
+  "settlementCount": 1,
+  "errorCount": 0,
+  "listedSensitiveMarkerMatches": 0
+}

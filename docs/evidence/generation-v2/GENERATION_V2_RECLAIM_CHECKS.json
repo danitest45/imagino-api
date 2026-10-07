@@ -1,0 +1,80 @@
+{
+  "id": "6ac3de88b1595fac4888bd09",
+  "owner": "6ac038cb05509cea703277eb",
+  "key": "a9818eea-b74c-48c4-92cc-f17b83717101",
+  "body": {
+    "modelId": "pipeline-demo-20261002",
+    "prompt": "Synthetic restart reclaim acceptance 2026-10-05",
+    "settings": {
+      "resolution": "1MP",
+      "outcome": "success"
+    },
+    "inputs": [],
+    "quoteId": "4c2db20643b15718d03aadcfb1fa1fd45727d9cc1098daca95a9a08bc6b9ef7f:639268187838752925"
+  },
+  "balanceBefore": 17,
+  "reservation": {
+    "id": "6ac3de88b1595fac4888bd09",
+    "modelId": "pipeline-demo-20261002",
+    "displayName": "Pipeline Demo",
+    "mediaType": "image",
+    "status": "Queued",
+    "creditState": "Reserved",
+    "credits": 1,
+    "prompt": "Synthetic restart reclaim acceptance 2026-10-05",
+    "settings": {
+      "resolution": "1MP",
+      "outcome": "success"
+    },
+    "outputUrl": null,
+    "errorCode": null,
+    "createdAt": "2026-10-05T17:29:44.15356Z",
+    "updatedAt": "2026-10-05T17:29:44.15356Z"
+  },
+  "processing": {
+    "id": "6ac3de88b1595fac4888bd09",
+    "modelId": "pipeline-demo-20261002",
+    "displayName": "Pipeline Demo",
+    "mediaType": "image",
+    "status": "Processing",
+    "creditState": "Reserved",
+    "credits": 1,
+    "prompt": "Synthetic restart reclaim acceptance 2026-10-05",
+    "settings": {
+      "resolution": "1MP",
+      "outcome": "success"
+    },
+    "outputUrl": null,
+    "errorCode": null,
+    "createdAt": "2026-10-05T17:29:44.153Z",
+    "updatedAt": "2026-10-05T17:29:45.298Z"
+  },
+  "preparedAt": "2026-10-05T17:29:45.436Z",
+  "outcome": "passed_restart_reclaim",
+  "terminal": {
+    "id": "6ac3de88b1595fac4888bd09",
+    "modelId": "pipeline-demo-20261002",
+    "displayName": "Pipeline Demo",
+    "mediaType": "image",
+    "status": "Completed",
+    "creditState": "Charged",
+    "credits": 1,
+    "prompt": "Synthetic restart reclaim acceptance 2026-10-05",
+    "settings": {
+      "resolution": "1MP",
+      "outcome": "success"
+    },
+    "outputUrl": "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev/generation-v2/6ac038cb05509cea703277eb/6ac3de88b1595fac4888bd09.png",
+    "errorCode": null,
+    "createdAt": "2026-10-05T17:29:44.153Z",
+    "updatedAt": "2026-10-05T17:32:12.547Z"
+  },
+  "balanceAfter": 16,
+  "replayNoDebit": true,
+  "download": {
+    "status": 200,
+    "bytes": 40046,
+    "sha256": "e8e38b87eb75c0c0db67283e8a3de5ca70ec9b2a9cd8e15662420c0527d0ec28"
+  },
+  "finishedAt": "2026-10-05T17:32:35.615Z"
+}

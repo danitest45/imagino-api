@@ -1,0 +1,241 @@
+{
+  "checkedAtUtc": "2026-10-07T07:45:40.234Z",
+  "armed": true,
+  "hosts": [
+    "imagino-api-ai-staging.onrender.com",
+    "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app"
+  ],
+  "responseCount": 369,
+  "nativeDownloadEvents": 1,
+  "responses": [
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "route": "/api/generation/jobs",
+      "method": "GET",
+      "type": "fetch",
+      "status": 200,
+      "count": 214
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "route": "/api/generation/jobs/[id]/download",
+      "method": "GET",
+      "type": "fetch",
+      "status": 200,
+      "count": 2
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/create/image",
+      "method": "GET",
+      "type": "document",
+      "status": 200,
+      "count": 1
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/_next/static/[asset]",
+      "method": "GET",
+      "type": "stylesheet",
+      "status": 200,
+      "count": 24
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/_next/static/[asset]",
+      "method": "GET",
+      "type": "font",
+      "status": 200,
+      "count": 3
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/_next/static/[asset]",
+      "method": "GET",
+      "type": "script",
+      "status": 200,
+      "count": 63
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/brand/favicon.svg",
+      "method": "GET",
+      "type": "other",
+      "status": 200,
+      "count": 4
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/",
+      "method": "GET",
+      "type": "fetch",
+      "status": 200,
+      "count": 3
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/login",
+      "method": "GET",
+      "type": "fetch",
+      "status": 200,
+      "count": 3
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/profile",
+      "method": "GET",
+      "type": "fetch",
+      "status": 200,
+      "count": 3
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/library",
+      "method": "GET",
+      "type": "fetch",
+      "status": 200,
+      "count": 2
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "route": "/api/auth/refresh",
+      "method": "POST",
+      "type": "fetch",
+      "status": 200,
+      "count": 3
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/create/video",
+      "method": "GET",
+      "type": "fetch",
+      "status": 200,
+      "count": 2
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "route": "/api/users/credits",
+      "method": "GET",
+      "type": "fetch",
+      "status": 200,
+      "count": 3
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/api/generation/catalog",
+      "method": "GET",
+      "type": "fetch",
+      "status": 200,
+      "count": 3
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/api/images/optimize",
+      "method": "GET",
+      "type": "image",
+      "status": 200,
+      "count": 25
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/create/video",
+      "method": "GET",
+      "type": "document",
+      "status": 200,
+      "count": 1
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/create/image",
+      "method": "GET",
+      "type": "fetch",
+      "status": 200,
+      "count": 2
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/library",
+      "method": "GET",
+      "type": "document",
+      "status": 200,
+      "count": 1
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "route": "/api/auth/logout",
+      "method": "POST",
+      "type": "fetch",
+      "status": 200,
+      "count": 1
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/_next/image",
+      "method": "GET",
+      "type": "image",
+      "status": 200,
+      "count": 3
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "route": "/pricing",
+      "method": "GET",
+      "type": "fetch",
+      "status": 200,
+      "count": 1
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "route": "/api/auth/refresh",
+      "method": "POST",
+      "type": "fetch",
+      "status": 401,
+      "count": 1
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "route": "/health",
+      "method": "GET",
+      "type": "fetch",
+      "status": 200,
+      "count": 1
+    }
+  ],
+  "blocked": [
+    {
+      "sequence": 180,
+      "host": "vercel.live",
+      "route": "/_next-live/feedback/feedback.js",
+      "method": "GET",
+      "type": "script",
+      "reason": "outside_exact_hosts"
+    },
+    {
+      "sequence": 277,
+      "host": "vercel.live",
+      "route": "/_next-live/feedback/feedback.js",
+      "method": "GET",
+      "type": "script",
+      "reason": "outside_exact_hosts"
+    },
+    {
+      "sequence": 328,
+      "host": "vercel.live",
+      "route": "/_next-live/feedback/feedback.js",
+      "method": "GET",
+      "type": "script",
+      "reason": "outside_exact_hosts"
+    }
+  ],
+  "pageErrors": 0,
+  "externalResponses": 0,
+  "providerRequests": 0,
+  "quoteRequests": 0,
+  "jobSubmissions": 0,
+  "finalHealthStatus": 200,
+  "logoutStatus": 200,
+  "refreshAfterLogoutStatus": 401,
+  "costUsd": 0,
+  "scope": "App audit armed after human SSO/login; only exact Preview/AIStaging allowed; no headers, query strings, bodies, credentials, cookies, prompts, HAR, trace or signed URLs retained",
+  "pass": true
+}

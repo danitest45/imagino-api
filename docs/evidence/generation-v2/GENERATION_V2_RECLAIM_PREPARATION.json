@@ -1,0 +1,53 @@
+{
+  "id": "6ac3dd40e3290e588a5a2839",
+  "owner": "6ac038cb05509cea703277eb",
+  "key": "635ca72c-e8f7-4481-a0c2-9116a059af5a",
+  "body": {
+    "modelId": "pipeline-demo-20261002",
+    "prompt": "Synthetic restart reclaim acceptance 2026-10-05",
+    "settings": {
+      "resolution": "1MP",
+      "outcome": "success"
+    },
+    "inputs": [],
+    "quoteId": "4c2db20643b15718d03aadcfb1fa1fd45727d9cc1098daca95a9a08bc6b9ef7f:639268184563141742"
+  },
+  "balanceBefore": 18,
+  "reservation": {
+    "id": "6ac3dd40e3290e588a5a2839",
+    "modelId": "pipeline-demo-20261002",
+    "displayName": "Pipeline Demo",
+    "mediaType": "image",
+    "status": "Queued",
+    "creditState": "Reserved",
+    "credits": 1,
+    "prompt": "Synthetic restart reclaim acceptance 2026-10-05",
+    "settings": {
+      "resolution": "1MP",
+      "outcome": "success"
+    },
+    "outputUrl": null,
+    "errorCode": null,
+    "createdAt": "2026-10-05T17:24:16.4813572Z",
+    "updatedAt": "2026-10-05T17:24:16.4813573Z"
+  },
+  "processing": {
+    "id": "6ac3dd40e3290e588a5a2839",
+    "modelId": "pipeline-demo-20261002",
+    "displayName": "Pipeline Demo",
+    "mediaType": "image",
+    "status": "Processing",
+    "creditState": "Reserved",
+    "credits": 1,
+    "prompt": "Synthetic restart reclaim acceptance 2026-10-05",
+    "settings": {
+      "resolution": "1MP",
+      "outcome": "success"
+    },
+    "outputUrl": null,
+    "errorCode": null,
+    "createdAt": "2026-10-05T17:24:16.481Z",
+    "updatedAt": "2026-10-05T17:24:17.922Z"
+  },
+  "preparedAt": "2026-10-05T17:24:17.984Z"
+}

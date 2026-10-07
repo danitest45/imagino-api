@@ -1,0 +1,11 @@
+{
+  "checkedAtUtc": "2026-10-07T06:48:20.987Z",
+  "resource": "imagino-api-ai-staging",
+  "startTime": "2026-10-07T06:37:40Z",
+  "appLogCount": 83,
+  "hasMore": false,
+  "sensitiveIndicators": 0,
+  "providerSubmissionMessages": 0,
+  "errors": 0,
+  "scope": "Counts only; no raw logs, headers, auth bodies, prompts or sensitive URLs stored"
+}

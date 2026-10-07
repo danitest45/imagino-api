@@ -1,0 +1,74 @@
+{
+  "counters": {
+    "total": 312,
+    "executed": 312,
+    "passed": 312,
+    "failed": 0,
+    "error": 0,
+    "timeout": 0,
+    "aborted": 0,
+    "inconclusive": 0,
+    "passedButRunAborted": 0,
+    "notRunnable": 0,
+    "notExecuted": 0,
+    "disconnected": 0,
+    "warning": 0,
+    "completed": 0,
+    "inProgress": 0,
+    "pending": 0
+  },
+  "singleSmokeCases": [
+    {
+      "testName": "Imagino.Api.Tests.OpenAiSingleSmokeTests.ConsumedSingleSlotCannotReopenAfterSerialization(state: \"SubmissionAttempted\")",
+      "outcome": "Passed"
+    },
+    {
+      "testName": "Imagino.Api.Tests.OpenAiSingleSmokeTests.SynchronousSingleSmokeStoresOnlyWithinObservedCeilingAndNeverPolls(exceeds: True)",
+      "outcome": "Passed"
+    },
+    {
+      "testName": "Imagino.Api.Tests.OpenAiSingleSmokeTests.SynchronousSingleSmokeStoresOnlyWithinObservedCeilingAndNeverPolls(exceeds: False)",
+      "outcome": "Passed"
+    },
+    {
+      "testName": "Imagino.Api.Tests.OpenAiSingleSmokeTests.ConsumedSingleSlotCannotReopenAfterSerialization(state: \"Completed\")",
+      "outcome": "Passed"
+    },
+    {
+      "testName": "Imagino.Api.Tests.OpenAiSingleSmokeTests.ExtraSlotHaltExpiryOwnerBudgetAndExistingAttemptRejectReservation",
+      "outcome": "Passed"
+    },
+    {
+      "testName": "Imagino.Api.Tests.OpenAiSingleSmokeTests.OnlyExactFlareRequestAndFixedKeyAreAccepted",
+      "outcome": "Passed"
+    },
+    {
+      "testName": "Imagino.Api.Tests.OpenAiSingleSmokeTests.ConsumedSingleSlotCannotReopenAfterSerialization(state: \"Reserved\")",
+      "outcome": "Passed"
+    },
+    {
+      "testName": "Imagino.Api.Tests.OpenAiSingleSmokeTests.ProjectionIsAnEstimateAndOldGuaranteedThreeCallPlanRemainsClosed",
+      "outcome": "Passed"
+    },
+    {
+      "testName": "Imagino.Api.Tests.OpenAiSingleSmokeTests.SingleSmokeConfigRequiresExplicitProviderScope",
+      "outcome": "Passed"
+    },
+    {
+      "testName": "Imagino.Api.Tests.OpenAiSingleSmokeTests.WindowBlocksEveryOtherPaidOfferAndClosureBlocksFlare",
+      "outcome": "Passed"
+    },
+    {
+      "testName": "Imagino.Api.Tests.OpenAiSingleSmokeTests.ConsumedSingleSlotCannotReopenAfterSerialization(state: \"Failed\")",
+      "outcome": "Passed"
+    },
+    {
+      "testName": "Imagino.Api.Tests.OpenAiSingleSmokeTests.ConsumedSingleSlotCannotReopenAfterSerialization(state: \"ResponseReceived\")",
+      "outcome": "Passed"
+    },
+    {
+      "testName": "Imagino.Api.Tests.OpenAiSingleSmokeTests.ClosedAuthorizationRejectsAdapterBeforeAnyHttpPost",
+      "outcome": "Passed"
+    }
+  ]
+}

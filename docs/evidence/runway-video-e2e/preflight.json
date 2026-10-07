@@ -1,0 +1,22 @@
+{
+  "checkedAtUtc": "2026-10-07T17:07:57.3293432Z",
+  "runId": "runway-grok-lite-e2e-confirmation-20261007",
+  "previousRunId": "runway-grok-lite-single-video-20261007",
+  "previousJobId": "6ac670a9cf3be2fa36628c2f",
+  "previousTaskId": "da0afad8-4265-4844-89eb-d679f1b59a34",
+  "codeCommit": "1a16c3eb4cf6629f6ad4d52ee00c72ae414e08b4",
+  "closedDeploy": "dep-db37n8ad0e5s73fdcn30",
+  "backendTestsPassed": 376,
+  "sourceAssetId": "6ac4068a985c143f201d8f15",
+  "sourceSha256": "1180fb5b6efd81464a799a2e1fc687ab6a044b21cf0b50ea5d11f041bd36195d",
+  "duration": 5,
+  "ratio": "auto_720p",
+  "model": "grok_imagine_1_5_lite",
+  "estimatedProviderUsd": 0.16,
+  "capUsd": 0.25,
+  "imaginoQuoteCredits": 54,
+  "runwayBalance": 984,
+  "autoBilling": "Off",
+  "previousUnchanged": true,
+  "newCreationPostsBefore": 0
+}

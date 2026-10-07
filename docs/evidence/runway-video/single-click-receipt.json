@@ -1,0 +1,15 @@
+{
+  "markedAtUtc": "2026-10-07T16:17:36.1049495Z",
+  "runId": "runway-grok-lite-single-video-20261007",
+  "ownerId": "6ac038cb05509cea703277eb",
+  "sourceAssetId": "6ac4068a985c143f201d8f15",
+  "sourceSha256": "1180fb5b6efd81464a799a2e1fc687ab6a044b21cf0b50ea5d11f041bd36195d",
+  "providerModel": "grok_imagine_1_5_lite",
+  "duration": 5,
+  "resolution": "720p",
+  "quoteCredits": 54,
+  "estimatedProviderUsd": 0.16,
+  "operationalCapUsd": 0.25,
+  "uiAction": "Generate video · 54 credits",
+  "maximumGenerateClicks": 1
+}

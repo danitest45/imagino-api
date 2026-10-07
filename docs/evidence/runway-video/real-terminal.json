@@ -1,0 +1,242 @@
+{
+  "checkedAtUtc": "2026-10-07T16:18:23.4926709Z",
+  "health": 200,
+  "paidGenerationEnabled": true,
+  "runwayRealSmokeEnabled": true,
+  "credentialsConfigured": true,
+  "syntheticCredits": 54,
+  "ledger": {
+    "id": "runway-grok-lite-single-video-20261007",
+    "ownerId": "6ac038cb05509cea703277eb",
+    "sourceAssetId": "6ac4068a985c143f201d8f15",
+    "sourceSha256": "1180fb5b6efd81464a799a2e1fc687ab6a044b21cf0b50ea5d11f041bd36195d",
+    "modelId": "runway-fast-video-20261007",
+    "budgetUsd": 0.25,
+    "estimatedUsd": 0.16,
+    "observedUsd": 0.16,
+    "expiresAtUtc": "2026-10-09T00:00:00Z",
+    "halted": true,
+    "haltReason": "invalid_provider_output",
+    "state": "Failed",
+    "jobId": "6ac670a9cf3be2fa36628c2f",
+    "taskId": "da0afad8-4265-4844-89eb-d679f1b59a34",
+    "attemptCount": 1,
+    "settlementCount": 1,
+    "attemptedAtUtc": "2026-10-07T16:17:48.984Z",
+    "acceptedAtUtc": "2026-10-07T16:17:50.384Z",
+    "settledAtUtc": "2026-10-07T16:18:17.487Z"
+  },
+  "job": {
+    "id": "6ac670a9cf3be2fa36628c2f",
+    "runwayRunId": "runway-grok-lite-single-video-20261007",
+    "sourceAssetId": "6ac4068a985c143f201d8f15",
+    "providerJobId": "da0afad8-4265-4844-89eb-d679f1b59a34",
+    "status": "Failed",
+    "creditState": "Refunded",
+    "providerStatus": "SUCCEEDED",
+    "providerReportedCostUsd": 0.16,
+    "providerAcceptanceLatencyMs": 1045.1651,
+    "providerRunningAtUtc": "2026-10-07T16:17:57.488Z",
+    "providerReadyAtUtc": "2026-10-07T16:18:16.779Z",
+    "providerPollCount": 4,
+    "outputMetrics": null,
+    "journal": [
+      {
+        "stage": "QueuedReserved",
+        "atUtc": "2026-10-07T16:17:45.792Z"
+      },
+      {
+        "stage": "WorkerClaim",
+        "atUtc": "2026-10-07T16:17:48.378Z"
+      },
+      {
+        "stage": "RunwayPostAttemptAuthorized",
+        "atUtc": "2026-10-07T16:17:48.984Z"
+      },
+      {
+        "stage": "ProviderBound",
+        "atUtc": "2026-10-07T16:17:50.335Z"
+      },
+      {
+        "stage": "WorkerClaim",
+        "atUtc": "2026-10-07T16:17:56.481Z"
+      },
+      {
+        "stage": "RunwayState_RUNNING",
+        "atUtc": "2026-10-07T16:17:57.488Z"
+      },
+      {
+        "stage": "WorkerClaim",
+        "atUtc": "2026-10-07T16:18:03.781Z"
+      },
+      {
+        "stage": "WorkerClaim",
+        "atUtc": "2026-10-07T16:18:10.088Z"
+      },
+      {
+        "stage": "WorkerClaim",
+        "atUtc": "2026-10-07T16:18:16.581Z"
+      },
+      {
+        "stage": "RunwayState_SUCCEEDED",
+        "atUtc": "2026-10-07T16:18:16.779Z"
+      },
+      {
+        "stage": "FailedRefunded",
+        "atUtc": "2026-10-07T16:18:17.483Z"
+      }
+    ],
+    "createdAt": "2026-10-07T16:17:45.792Z",
+    "updatedAt": "2026-10-07T16:18:17.483Z",
+    "quote": {
+      "quoteId": "4878f00bb4bca287d85d6086d9e68d4c12f84ed4a90460932008054df99f8ec9:639269872657819426",
+      "modelId": "runway-fast-video-20261007",
+      "version": "2026-10-07.1",
+      "credits": 54,
+      "providerCostEstimateUsd": 0.16,
+      "imaginoCostEstimateUsd": 0.186,
+      "pricingRevision": "2026-10-07.1",
+      "expiresAt": "2026-10-07T16:27:45.781Z",
+      "settings": {
+        "duration": "5",
+        "resolution": "720p"
+      }
+    }
+  },
+  "checks": {
+    "foreignJob": 404,
+    "foreignDownload": 404,
+    "ownerJob": 200,
+    "foreignProof": 404
+  },
+  "download": null,
+  "history": [
+    {
+      "id": "6ac670a9cf3be2fa36628c2f",
+      "modelId": "runway-fast-video-20261007",
+      "mediaType": "video",
+      "status": "Failed",
+      "creditState": "Refunded",
+      "createdAt": "2026-10-07T16:17:45.792Z"
+    },
+    {
+      "id": "6ac56f781375278f112d5654",
+      "modelId": "openai-fast-20261006",
+      "mediaType": "image",
+      "status": "Completed",
+      "creditState": "Charged",
+      "createdAt": "2026-10-06T22:00:24.619Z"
+    },
+    {
+      "id": "6ac4068a985c143f201d8f15",
+      "modelId": "flux-studio-20261002",
+      "mediaType": "image",
+      "status": "Completed",
+      "creditState": "Charged",
+      "createdAt": "2026-10-05T20:20:26.144Z"
+    },
+    {
+      "id": "6ac40643985c143f201d8ea0",
+      "modelId": "flux-studio-20261002",
+      "mediaType": "image",
+      "status": "Completed",
+      "creditState": "Charged",
+      "createdAt": "2026-10-05T20:19:15.141Z"
+    },
+    {
+      "id": "6ac40507e10e977b2df88393",
+      "modelId": "flux-fast-20261002",
+      "mediaType": "image",
+      "status": "Completed",
+      "creditState": "Charged",
+      "createdAt": "2026-10-05T20:13:59.764Z"
+    },
+    {
+      "id": "6ac3de88b1595fac4888bd09",
+      "modelId": "pipeline-demo-20261002",
+      "mediaType": "image",
+      "status": "Completed",
+      "creditState": "Charged",
+      "createdAt": "2026-10-05T17:29:44.153Z"
+    },
+    {
+      "id": "6ac3dd40e3290e588a5a2839",
+      "modelId": "pipeline-demo-20261002",
+      "mediaType": "image",
+      "status": "Completed",
+      "creditState": "Charged",
+      "createdAt": "2026-10-05T17:24:16.481Z"
+    },
+    {
+      "id": "6ac3dd2ce3290e588a5a2828",
+      "modelId": "pipeline-demo-20261002",
+      "mediaType": "image",
+      "status": "Completed",
+      "creditState": "Charged",
+      "createdAt": "2026-10-05T17:23:56.003Z"
+    },
+    {
+      "id": "6ac3dbf7e3290e588a5a27e7",
+      "modelId": "pipeline-demo-20261002",
+      "mediaType": "image",
+      "status": "Failed",
+      "creditState": "Refunded",
+      "createdAt": "2026-10-05T17:18:47.116Z"
+    },
+    {
+      "id": "6ac3dbf5e3290e588a5a27e2",
+      "modelId": "pipeline-demo-20261002",
+      "mediaType": "image",
+      "status": "Completed",
+      "creditState": "Charged",
+      "createdAt": "2026-10-05T17:18:45.857Z"
+    }
+  ],
+  "catalogModel": {
+    "id": "runway-fast-video-20261007",
+    "version": "2026-10-07.1",
+    "displayName": "Fast Video (experimental)",
+    "category": "Motion",
+    "description": "Animate an owned image with subtle motion. Runway Dev · Grok Imagine Video 1.5 Lite. Experimental staging authorization required.",
+    "mediaType": "video",
+    "providerModel": "grok_imagine_1_5_lite",
+    "capabilities": [
+      "imageToVideo",
+      "firstFrame"
+    ],
+    "fields": [
+      {
+        "key": "duration",
+        "label": "Duration (seconds)",
+        "type": "integer",
+        "defaultValue": "5",
+        "options": [
+          "5"
+        ]
+      },
+      {
+        "key": "resolution",
+        "label": "Resolution",
+        "type": "enum",
+        "defaultValue": "720p",
+        "options": [
+          "720p"
+        ]
+      }
+    ],
+    "inputs": [
+      {
+        "role": "firstFrame",
+        "label": "First frame",
+        "maxCount": 1,
+        "required": true,
+        "ownedAssetOnly": true
+      }
+    ],
+    "rules": [],
+    "lifecycle": "ACTIVE",
+    "retirementAt": null,
+    "availability": "ready",
+    "startingCredits": 54
+  }
+}

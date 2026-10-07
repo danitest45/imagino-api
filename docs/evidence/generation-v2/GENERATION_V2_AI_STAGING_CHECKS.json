@@ -1,0 +1,261 @@
+{
+  "startedAt": "2026-10-05T17:18:34.177Z",
+  "api": "https://imagino-api-ai-staging.onrender.com",
+  "providerCalls": 0,
+  "checks": [
+    {
+      "name": "health",
+      "detail": 200
+    },
+    {
+      "name": "catalog",
+      "detail": 200
+    },
+    {
+      "name": "synthetic_login",
+      "detail": [
+        "gen-v2-owner-20261002@example.invalid",
+        "gen-v2-foreign-20261002@example.invalid",
+        "gen-v2-empty-20261002@example.invalid"
+      ]
+    },
+    {
+      "name": "paid_gate_before_debit",
+      "detail": 403
+    },
+    {
+      "name": "fixture_quote",
+      "detail": {
+        "quoteId": "7be9ba86c5efd7564aab748b444c60ff89a83c327634131e7d3955a90c017e33:639268181250044470",
+        "modelId": "pipeline-demo-20261002",
+        "version": "2026-10-02.1",
+        "credits": 1,
+        "providerCostEstimateUsd": 0,
+        "imaginoCostEstimateUsd": 0,
+        "pricingRevision": "2026-10-02.1",
+        "expiresAt": "2026-10-05T17:28:45.004447Z",
+        "settings": {
+          "resolution": "1MP",
+          "outcome": "success"
+        }
+      }
+    },
+    {
+      "name": "insufficient_credits",
+      "detail": 402
+    },
+    {
+      "name": "fixture_quote",
+      "detail": {
+        "quoteId": "7be9ba86c5efd7564aab748b444c60ff89a83c327634131e7d3955a90c017e33:639268181256872005",
+        "modelId": "pipeline-demo-20261002",
+        "version": "2026-10-02.1",
+        "credits": 1,
+        "providerCostEstimateUsd": 0,
+        "imaginoCostEstimateUsd": 0,
+        "pricingRevision": "2026-10-02.1",
+        "expiresAt": "2026-10-05T17:28:45.6872005Z",
+        "settings": {
+          "resolution": "1MP",
+          "outcome": "success"
+        }
+      }
+    },
+    {
+      "name": "transactional_reservation",
+      "detail": {
+        "job": {
+          "id": "6ac3dbf5e3290e588a5a27e2",
+          "modelId": "pipeline-demo-20261002",
+          "displayName": "Pipeline Demo",
+          "mediaType": "image",
+          "status": "Queued",
+          "creditState": "Reserved",
+          "credits": 1,
+          "prompt": "Synthetic staging pipeline validation",
+          "settings": {
+            "resolution": "1MP",
+            "outcome": "success"
+          },
+          "outputUrl": null,
+          "errorCode": null,
+          "createdAt": "2026-10-05T17:18:45.8578934Z",
+          "updatedAt": "2026-10-05T17:18:45.8578935Z"
+        },
+        "balance": 19
+      }
+    },
+    {
+      "name": "concurrent_idempotency",
+      "detail": "6ac3dbf5e3290e588a5a27e2"
+    },
+    {
+      "name": "key_collision",
+      "detail": 409
+    },
+    {
+      "name": "fixture_quote",
+      "detail": {
+        "quoteId": "9edd2da39e6a93f78845b3d8dbcfdeb84cf22d9a408379e1c83dad387d217590:639268181269467726",
+        "modelId": "pipeline-demo-20261002",
+        "version": "2026-10-02.1",
+        "credits": 1,
+        "providerCostEstimateUsd": 0,
+        "imaginoCostEstimateUsd": 0,
+        "pricingRevision": "2026-10-02.1",
+        "expiresAt": "2026-10-05T17:28:46.9467726Z",
+        "settings": {
+          "resolution": "1MP",
+          "outcome": "failure"
+        }
+      }
+    },
+    {
+      "name": "failure_reservation",
+      "detail": {
+        "job": {
+          "id": "6ac3dbf7e3290e588a5a27e7",
+          "modelId": "pipeline-demo-20261002",
+          "displayName": "Pipeline Demo",
+          "mediaType": "image",
+          "status": "Queued",
+          "creditState": "Reserved",
+          "credits": 1,
+          "prompt": "Synthetic staging pipeline validation",
+          "settings": {
+            "resolution": "1MP",
+            "outcome": "failure"
+          },
+          "outputUrl": null,
+          "errorCode": null,
+          "createdAt": "2026-10-05T17:18:47.1162154Z",
+          "updatedAt": "2026-10-05T17:18:47.1162154Z"
+        },
+        "balance": 18
+      }
+    },
+    {
+      "name": "charge_and_single_refund",
+      "detail": {
+        "success": "6ac3dbf5e3290e588a5a27e2",
+        "failed": "6ac3dbf7e3290e588a5a27e7",
+        "balance": 19
+      }
+    },
+    {
+      "name": "terminal_jobs",
+      "detail": {
+        "success": {
+          "id": "6ac3dbf5e3290e588a5a27e2",
+          "modelId": "pipeline-demo-20261002",
+          "displayName": "Pipeline Demo",
+          "mediaType": "image",
+          "status": "Completed",
+          "creditState": "Charged",
+          "credits": 1,
+          "prompt": "Synthetic staging pipeline validation",
+          "settings": {
+            "resolution": "1MP",
+            "outcome": "success"
+          },
+          "outputUrl": "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev/generation-v2/6ac038cb05509cea703277eb/6ac3dbf5e3290e588a5a27e2.png",
+          "errorCode": null,
+          "createdAt": "2026-10-05T17:18:45.857Z",
+          "updatedAt": "2026-10-05T17:18:53.591Z"
+        },
+        "failure": {
+          "id": "6ac3dbf7e3290e588a5a27e7",
+          "modelId": "pipeline-demo-20261002",
+          "displayName": "Pipeline Demo",
+          "mediaType": "image",
+          "status": "Failed",
+          "creditState": "Refunded",
+          "credits": 1,
+          "prompt": "Synthetic staging pipeline validation",
+          "settings": {
+            "resolution": "1MP",
+            "outcome": "failure"
+          },
+          "outputUrl": null,
+          "errorCode": "synthetic_provider_failure",
+          "createdAt": "2026-10-05T17:18:47.116Z",
+          "updatedAt": "2026-10-05T17:18:53.699Z"
+        }
+      }
+    },
+    {
+      "name": "owner_history",
+      "detail": [
+        {
+          "id": "6ac3dbf7e3290e588a5a27e7",
+          "modelId": "pipeline-demo-20261002",
+          "displayName": "Pipeline Demo",
+          "mediaType": "image",
+          "status": "Failed",
+          "creditState": "Refunded",
+          "credits": 1,
+          "prompt": "Synthetic staging pipeline validation",
+          "settings": {
+            "resolution": "1MP",
+            "outcome": "failure"
+          },
+          "outputUrl": null,
+          "errorCode": "synthetic_provider_failure",
+          "createdAt": "2026-10-05T17:18:47.116Z",
+          "updatedAt": "2026-10-05T17:18:53.699Z"
+        },
+        {
+          "id": "6ac3dbf5e3290e588a5a27e2",
+          "modelId": "pipeline-demo-20261002",
+          "displayName": "Pipeline Demo",
+          "mediaType": "image",
+          "status": "Completed",
+          "creditState": "Charged",
+          "credits": 1,
+          "prompt": "Synthetic staging pipeline validation",
+          "settings": {
+            "resolution": "1MP",
+            "outcome": "success"
+          },
+          "outputUrl": "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev/generation-v2/6ac038cb05509cea703277eb/6ac3dbf5e3290e588a5a27e2.png",
+          "errorCode": null,
+          "createdAt": "2026-10-05T17:18:45.857Z",
+          "updatedAt": "2026-10-05T17:18:53.591Z"
+        }
+      ]
+    },
+    {
+      "name": "foreign_owner_hidden",
+      "detail": 404
+    },
+    {
+      "name": "download_requires_auth",
+      "detail": 401
+    },
+    {
+      "name": "stored_png_download",
+      "detail": {
+        "bytes": 40046,
+        "sha256": "e8e38b87eb75c0c0db67283e8a3de5ca70ec9b2a9cd8e15662420c0527d0ec28"
+      }
+    },
+    {
+      "name": "terminal_replay_no_second_charge",
+      "detail": "6ac3dbf5e3290e588a5a27e2"
+    }
+  ],
+  "balances": {
+    "ownerBefore": 20,
+    "foreignBefore": 20,
+    "emptyBefore": 0,
+    "ownerAfter": 19,
+    "foreignAfter": 20,
+    "emptyAfter": 0
+  },
+  "jobs": {
+    "success": "6ac3dbf5e3290e588a5a27e2",
+    "failed": "6ac3dbf7e3290e588a5a27e7"
+  },
+  "outcome": "passed_synthetic_only",
+  "finishedAt": "2026-10-05T17:18:58.078Z"
+}

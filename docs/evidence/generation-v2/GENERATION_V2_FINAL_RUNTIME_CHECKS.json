@@ -1,0 +1,487 @@
+{
+  "api": "https://imagino-api-ai-staging.onrender.com",
+  "checkedAt": "2026-10-05T17:36:22.030Z",
+  "checks": [
+    {
+      "gate": "health",
+      "status": 200
+    },
+    {
+      "gate": "cors",
+      "origin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "status": 204,
+      "allowed": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app"
+    },
+    {
+      "gate": "cors",
+      "origin": "https://foreign.example",
+      "status": 204,
+      "allowed": null
+    },
+    {
+      "gate": "replay_after_restart",
+      "id": "6ac3de88b1595fac4888bd09",
+      "status": 202,
+      "balance": 16
+    },
+    {
+      "gate": "foreign_owner_hidden",
+      "path": "",
+      "status": 404
+    },
+    {
+      "gate": "foreign_owner_hidden",
+      "path": "/download",
+      "status": 404
+    }
+  ],
+  "paidProviderCalls": 0,
+  "catalog": {
+    "revision": "2026-10-02.2",
+    "models": [
+      {
+        "id": "flux-fast-20261002",
+        "version": "2026-10-02.1",
+        "displayName": "Fast Image",
+        "category": "Explore",
+        "description": "Quick concepts and variations. FLUX.2 klein 4B.",
+        "mediaType": "image",
+        "providerModel": "flux-2-klein-4b",
+        "capabilities": [
+          "textToImage"
+        ],
+        "fields": [
+          {
+            "key": "aspectRatio",
+            "label": "Aspect ratio",
+            "type": "enum",
+            "defaultValue": "1:1",
+            "options": [
+              "1:1",
+              "16:9",
+              "9:16"
+            ]
+          },
+          {
+            "key": "resolution",
+            "label": "Output size",
+            "type": "enum",
+            "defaultValue": "1MP",
+            "options": [
+              "1MP",
+              "4MP"
+            ]
+          }
+        ],
+        "inputs": [],
+        "rules": [],
+        "lifecycle": "ACTIVE",
+        "retirementAt": null,
+        "availability": "approval_required",
+        "startingCredits": 5
+      },
+      {
+        "id": "flux-studio-20261002",
+        "version": "2026-10-02.1",
+        "displayName": "Studio Image",
+        "category": "Create",
+        "description": "Production images and product or character references. FLUX.2 pro, fixed endpoint.",
+        "mediaType": "image",
+        "providerModel": "flux-2-pro",
+        "capabilities": [
+          "textToImage",
+          "imageEditing",
+          "referenceImages"
+        ],
+        "fields": [
+          {
+            "key": "aspectRatio",
+            "label": "Aspect ratio",
+            "type": "enum",
+            "defaultValue": "1:1",
+            "options": [
+              "1:1",
+              "16:9",
+              "9:16"
+            ]
+          },
+          {
+            "key": "resolution",
+            "label": "Output size",
+            "type": "enum",
+            "defaultValue": "1MP",
+            "options": [
+              "1MP",
+              "4MP"
+            ]
+          }
+        ],
+        "inputs": [
+          {
+            "role": "reference",
+            "label": "Reference images",
+            "maxCount": 4
+          }
+        ],
+        "rules": [],
+        "lifecycle": "ACTIVE",
+        "retirementAt": null,
+        "availability": "approval_required",
+        "startingCredits": 10
+      },
+      {
+        "id": "gemini-edit-20261002",
+        "version": "2026-10-02.1",
+        "displayName": "Edit & Design",
+        "category": "Refine",
+        "description": "Natural-language edits, references and layouts. Gemini 3.1 Flash Image.",
+        "mediaType": "image",
+        "providerModel": "gemini-3.1-flash-image",
+        "capabilities": [
+          "textToImage",
+          "imageEditing",
+          "referenceImages"
+        ],
+        "fields": [
+          {
+            "key": "aspectRatio",
+            "label": "Aspect ratio",
+            "type": "enum",
+            "defaultValue": "1:1",
+            "options": [
+              "1:1",
+              "16:9",
+              "9:16"
+            ]
+          },
+          {
+            "key": "resolution",
+            "label": "Resolution",
+            "type": "enum",
+            "defaultValue": "1K",
+            "options": [
+              "1K",
+              "2K",
+              "4K"
+            ]
+          }
+        ],
+        "inputs": [
+          {
+            "role": "reference",
+            "label": "Reference images",
+            "maxCount": 4
+          }
+        ],
+        "rules": [],
+        "lifecycle": "ACTIVE",
+        "retirementAt": null,
+        "availability": "approval_required",
+        "startingCredits": 24
+      },
+      {
+        "id": "veo-fast-20261002",
+        "version": "2026-10-02.2",
+        "displayName": "Fast Video",
+        "category": "Motion",
+        "description": "Short clips with native audio. Veo 3.1 Lite. Compatibility preview; endpoint retires October 22. Migration required before activation.",
+        "mediaType": "video",
+        "providerModel": "veo-3.1-lite-generate-preview",
+        "capabilities": [
+          "textToVideo",
+          "imageToVideo",
+          "firstFrame",
+          "lastFrame",
+          "nativeAudio"
+        ],
+        "fields": [
+          {
+            "key": "aspectRatio",
+            "label": "Aspect ratio",
+            "type": "enum",
+            "defaultValue": "16:9",
+            "options": [
+              "16:9",
+              "9:16"
+            ]
+          },
+          {
+            "key": "resolution",
+            "label": "Resolution",
+            "type": "enum",
+            "defaultValue": "720p",
+            "options": [
+              "720p",
+              "1080p"
+            ]
+          },
+          {
+            "key": "duration",
+            "label": "Duration (seconds)",
+            "type": "integer",
+            "defaultValue": "4",
+            "options": [
+              "4",
+              "6",
+              "8"
+            ]
+          }
+        ],
+        "inputs": [
+          {
+            "role": "firstFrame",
+            "label": "First frame",
+            "maxCount": 1
+          },
+          {
+            "role": "lastFrame",
+            "label": "Last frame",
+            "maxCount": 1
+          }
+        ],
+        "rules": [
+          {
+            "whenKey": "resolution",
+            "whenValue": "1080p",
+            "requireKey": "duration",
+            "allowedValues": [
+              "8"
+            ]
+          }
+        ],
+        "lifecycle": "COMPATIBILITY",
+        "retirementAt": "2026-10-22T00:00:00Z",
+        "availability": "migration_required",
+        "startingCredits": 66
+      },
+      {
+        "id": "veo-cinema-20261002",
+        "version": "2026-10-02.2",
+        "displayName": "Cinema Video",
+        "category": "Motion",
+        "description": "Cinematic clips with native audio. Veo 3.1. Compatibility preview; endpoint retires October 22. Migration required before activation.",
+        "mediaType": "video",
+        "providerModel": "veo-3.1-generate-preview",
+        "capabilities": [
+          "textToVideo",
+          "imageToVideo",
+          "firstFrame",
+          "lastFrame",
+          "nativeAudio"
+        ],
+        "fields": [
+          {
+            "key": "aspectRatio",
+            "label": "Aspect ratio",
+            "type": "enum",
+            "defaultValue": "16:9",
+            "options": [
+              "16:9",
+              "9:16"
+            ]
+          },
+          {
+            "key": "resolution",
+            "label": "Resolution",
+            "type": "enum",
+            "defaultValue": "720p",
+            "options": [
+              "720p",
+              "1080p"
+            ]
+          },
+          {
+            "key": "duration",
+            "label": "Duration (seconds)",
+            "type": "integer",
+            "defaultValue": "4",
+            "options": [
+              "4",
+              "6",
+              "8"
+            ]
+          }
+        ],
+        "inputs": [
+          {
+            "role": "firstFrame",
+            "label": "First frame",
+            "maxCount": 1
+          },
+          {
+            "role": "lastFrame",
+            "label": "Last frame",
+            "maxCount": 1
+          }
+        ],
+        "rules": [
+          {
+            "whenKey": "resolution",
+            "whenValue": "1080p",
+            "requireKey": "duration",
+            "allowedValues": [
+              "8"
+            ]
+          }
+        ],
+        "lifecycle": "COMPATIBILITY",
+        "retirementAt": "2026-10-22T00:00:00Z",
+        "availability": "migration_required",
+        "startingCredits": 506
+      },
+      {
+        "id": "pipeline-demo-20261002",
+        "version": "2026-10-02.1",
+        "displayName": "Pipeline Demo",
+        "category": "Staging",
+        "description": "Synthetic test image. Exercises jobs, credits and storage; no AI model is called.",
+        "mediaType": "image",
+        "providerModel": "synthetic-png-v1",
+        "capabilities": [
+          "textToImage"
+        ],
+        "fields": [
+          {
+            "key": "resolution",
+            "label": "Output size",
+            "type": "enum",
+            "defaultValue": "1MP",
+            "options": [
+              "1MP"
+            ]
+          },
+          {
+            "key": "outcome",
+            "label": "Test outcome",
+            "type": "enum",
+            "defaultValue": "success",
+            "options": [
+              "success",
+              "failure"
+            ]
+          }
+        ],
+        "inputs": [],
+        "rules": [],
+        "lifecycle": "ACTIVE",
+        "retirementAt": null,
+        "availability": "synthetic_demo",
+        "startingCredits": 1
+      }
+    ]
+  },
+  "balances": [
+    {
+      "email": "gen-v2-owner-20261002@example.invalid",
+      "credits": 16
+    },
+    {
+      "email": "gen-v2-foreign-20261002@example.invalid",
+      "credits": 20
+    },
+    {
+      "email": "gen-v2-empty-20261002@example.invalid",
+      "credits": 0
+    }
+  ],
+  "history": [
+    {
+      "id": "6ac3de88b1595fac4888bd09",
+      "modelId": "pipeline-demo-20261002",
+      "displayName": "Pipeline Demo",
+      "mediaType": "image",
+      "status": "Completed",
+      "creditState": "Charged",
+      "credits": 1,
+      "prompt": "Synthetic restart reclaim acceptance 2026-10-05",
+      "settings": {
+        "resolution": "1MP",
+        "outcome": "success"
+      },
+      "outputUrl": "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev/generation-v2/6ac038cb05509cea703277eb/6ac3de88b1595fac4888bd09.png",
+      "errorCode": null,
+      "createdAt": "2026-10-05T17:29:44.153Z",
+      "updatedAt": "2026-10-05T17:32:12.547Z"
+    },
+    {
+      "id": "6ac3dd40e3290e588a5a2839",
+      "modelId": "pipeline-demo-20261002",
+      "displayName": "Pipeline Demo",
+      "mediaType": "image",
+      "status": "Completed",
+      "creditState": "Charged",
+      "credits": 1,
+      "prompt": "Synthetic restart reclaim acceptance 2026-10-05",
+      "settings": {
+        "resolution": "1MP",
+        "outcome": "success"
+      },
+      "outputUrl": "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev/generation-v2/6ac038cb05509cea703277eb/6ac3dd40e3290e588a5a2839.png",
+      "errorCode": null,
+      "createdAt": "2026-10-05T17:24:16.481Z",
+      "updatedAt": "2026-10-05T17:24:22.155Z"
+    },
+    {
+      "id": "6ac3dd2ce3290e588a5a2828",
+      "modelId": "pipeline-demo-20261002",
+      "displayName": "Pipeline Demo",
+      "mediaType": "image",
+      "status": "Completed",
+      "creditState": "Charged",
+      "credits": 1,
+      "prompt": "Synthetic UI acceptance — Generation V2 Core Staging 2026-10-05",
+      "settings": {
+        "resolution": "1MP",
+        "outcome": "success"
+      },
+      "outputUrl": "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev/generation-v2/6ac038cb05509cea703277eb/6ac3dd2ce3290e588a5a2828.png",
+      "errorCode": null,
+      "createdAt": "2026-10-05T17:23:56.003Z",
+      "updatedAt": "2026-10-05T17:24:01.871Z"
+    },
+    {
+      "id": "6ac3dbf7e3290e588a5a27e7",
+      "modelId": "pipeline-demo-20261002",
+      "displayName": "Pipeline Demo",
+      "mediaType": "image",
+      "status": "Failed",
+      "creditState": "Refunded",
+      "credits": 1,
+      "prompt": "Synthetic staging pipeline validation",
+      "settings": {
+        "resolution": "1MP",
+        "outcome": "failure"
+      },
+      "outputUrl": null,
+      "errorCode": "synthetic_provider_failure",
+      "createdAt": "2026-10-05T17:18:47.116Z",
+      "updatedAt": "2026-10-05T17:18:53.699Z"
+    },
+    {
+      "id": "6ac3dbf5e3290e588a5a27e2",
+      "modelId": "pipeline-demo-20261002",
+      "displayName": "Pipeline Demo",
+      "mediaType": "image",
+      "status": "Completed",
+      "creditState": "Charged",
+      "credits": 1,
+      "prompt": "Synthetic staging pipeline validation",
+      "settings": {
+        "resolution": "1MP",
+        "outcome": "success"
+      },
+      "outputUrl": "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev/generation-v2/6ac038cb05509cea703277eb/6ac3dbf5e3290e588a5a27e2.png",
+      "errorCode": null,
+      "createdAt": "2026-10-05T17:18:45.857Z",
+      "updatedAt": "2026-10-05T17:18:53.591Z"
+    }
+  ],
+  "r2": {
+    "objectUrl": "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev/generation-v2/6ac038cb05509cea703277eb/6ac3de88b1595fac4888bd09.png",
+    "status": 200,
+    "bytes": 40046,
+    "sha256": "e8e38b87eb75c0c0db67283e8a3de5ca70ec9b2a9cd8e15662420c0527d0ec28",
+    "accessPolicy": "Existing staging images bucket is public; owner authorization applies to API job/history/download endpoints."
+  },
+  "outcome": "passed_final_runtime"
+}

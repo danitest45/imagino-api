@@ -1,0 +1,239 @@
+{
+  "outcome": "PASS",
+  "chrome": "154.0.8037.98",
+  "appStartedAt": "2026-10-06T05:17:33.032Z",
+  "finishedAt": "2026-10-06T05:25:45.193Z",
+  "observationEndedAt": "2026-10-06T05:29:32.588Z",
+  "checks": [
+    {
+      "gate": "system_default_without_preference",
+      "saved": null,
+      "preference": "system",
+      "resolved": "light"
+    },
+    {
+      "gate": "password_login_owner",
+      "status": 200,
+      "theme": {
+        "saved": null,
+        "preference": "system",
+        "resolved": "light"
+      }
+    },
+    {
+      "gate": "authenticated_browser_reads",
+      "login": 200,
+      "me": 200,
+      "syntheticOwner": true,
+      "detail": 200,
+      "detailIdMatches": true
+    },
+    {
+      "gate": "refresh_reload_session",
+      "refresh": 200,
+      "signedIn": true,
+      "ownerCredits": 16,
+      "catalogStatus": 200,
+      "catalogSource": "live",
+      "catalogCount": 6
+    },
+    {
+      "gate": "manual_theme_reload",
+      "saved": "dark",
+      "resolved": "dark",
+      "refresh": 200,
+      "signedIn": true
+    },
+    {
+      "gate": "theme_preserves_prompt_form_and_blocked_quote",
+      "promptPreserved": true,
+      "aspectRatio": "16:9",
+      "lightDarkWork": true,
+      "createDisabled": true,
+      "quoteRequests": 0,
+      "jobSubmissions": 0,
+      "customSelectOpened": true
+    },
+    {
+      "gate": "owner_library_detail",
+      "historyStatus": 200,
+      "ownerJobs": 8,
+      "completed": 7,
+      "failed": 1,
+      "customFiltersWork": true,
+      "detailLightDarkOpened": true,
+      "imagesLoaded": true
+    },
+    {
+      "gate": "authenticated_existing_output_download",
+      "status": 200,
+      "jobId": "6ac4068a985c143f201d8f15",
+      "browserDownloadEvent": true,
+      "filename": "imagino-6ac4068a985c143f201d8f15.png",
+      "bytes": 1352396,
+      "width": 1024,
+      "height": 1024,
+      "sha256": "1180fb5b6efd81464a799a2e1fc687ab6a044b21cf0b50ea5d11f041bd36195d",
+      "identicalToPreviouslyGeneratedOutput": true
+    },
+    {
+      "gate": "use_as_reference_without_generation",
+      "downloadStatus": 200,
+      "existingJobId": "6ac4068a985c143f201d8f15",
+      "preparedAssets": 1,
+      "model": "Studio Image",
+      "themePreservesAssetAndPrompt": true,
+      "createDisabled": true,
+      "quoteRequests": 0,
+      "jobSubmissions": 0
+    },
+    {
+      "gate": "logout_owner",
+      "logout": 200,
+      "postLogoutRefresh": 401,
+      "reloadRefresh": 401,
+      "reloadSignedOut": true,
+      "privateAssetsCleared": true,
+      "themePreserved": "dark"
+    },
+    {
+      "gate": "password_login_foreign",
+      "status": 200,
+      "theme": {
+        "saved": "dark",
+        "preference": "dark",
+        "resolved": "dark"
+      }
+    },
+    {
+      "gate": "foreign_ownership",
+      "login": 200,
+      "me": 200,
+      "syntheticForeign": true,
+      "foreignDetail": 404,
+      "foreignDownload": 404,
+      "libraryStatus": 200,
+      "visibleOwnerJobs": 0,
+      "foreignHistoryEmpty": true
+    },
+    {
+      "gate": "logout_foreign",
+      "logout": 200,
+      "postLogoutRefresh": 401,
+      "reloadRefresh": 401,
+      "reloadSignedOut": true,
+      "privateAssetsCleared": true,
+      "themePreserved": "dark"
+    },
+    {
+      "gate": "password_login_owner",
+      "status": 200,
+      "theme": {
+        "saved": "dark",
+        "preference": "dark",
+        "resolved": "dark"
+      }
+    },
+    {
+      "gate": "owner_inventory_and_balance_unchanged",
+      "ownerJobs": 8,
+      "ownerCredits": 16,
+      "newJobs": 0,
+      "themeSurvivesLogin": "dark"
+    },
+    {
+      "gate": "logout_owner_final",
+      "logout": 200,
+      "postLogoutRefresh": 401,
+      "reloadRefresh": 401,
+      "reloadSignedOut": true,
+      "privateAssetsCleared": true,
+      "themePreserved": "dark"
+    },
+    {
+      "gate": "browser_network_and_no_generation",
+      "hosts": [
+        "imagino-api-ai-staging.onrender.com",
+        "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+        "vercel.live"
+      ],
+      "unexpectedHosts": [],
+      "quoteRequests": 0,
+      "jobSubmissions": 0,
+      "providerRequests": 0,
+      "stripeRequests": 0,
+      "productionRequests": 0,
+      "pageErrors": 0,
+      "costUsd": 0
+    }
+  ],
+  "pageErrors": [],
+  "ssoHosts": [
+    "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+    "vercel.com",
+    "accounts.google.com",
+    "o205439.ingest.sentry.io",
+    "google.com",
+    "github.com",
+    "github.githubassets.com",
+    "avatars.githubusercontent.com",
+    "collector.github.com",
+    "api.github.com",
+    "vercel.live",
+    "imagino-api-ai-staging.onrender.com"
+  ],
+  "ownerBaseline": [
+    {
+      "id": "6ac4068a985c143f201d8f15",
+      "status": "Completed",
+      "credits": 15,
+      "creditState": "Charged"
+    },
+    {
+      "id": "6ac40643985c143f201d8ea0",
+      "status": "Completed",
+      "credits": 10,
+      "creditState": "Charged"
+    },
+    {
+      "id": "6ac40507e10e977b2df88393",
+      "status": "Completed",
+      "credits": 5,
+      "creditState": "Charged"
+    },
+    {
+      "id": "6ac3de88b1595fac4888bd09",
+      "status": "Completed",
+      "credits": 1,
+      "creditState": "Charged"
+    },
+    {
+      "id": "6ac3dd40e3290e588a5a2839",
+      "status": "Completed",
+      "credits": 1,
+      "creditState": "Charged"
+    },
+    {
+      "id": "6ac3dd2ce3290e588a5a2828",
+      "status": "Completed",
+      "credits": 1,
+      "creditState": "Charged"
+    },
+    {
+      "id": "6ac3dbf7e3290e588a5a27e7",
+      "status": "Failed",
+      "credits": 1,
+      "creditState": "Refunded"
+    },
+    {
+      "id": "6ac3dbf5e3290e588a5a27e2",
+      "status": "Completed",
+      "credits": 1,
+      "creditState": "Charged"
+    }
+  ],
+  "sockets": [],
+  "healthPostSmoke": 200,
+  "generationApiPostCount": 0,
+  "noCredentialsOrPayloadsPersisted": true
+}

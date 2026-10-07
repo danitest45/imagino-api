@@ -1,0 +1,46 @@
+{
+  "checkedAt": "2026-10-05T17:40:51.899Z",
+  "services": [
+    {
+      "id": "srv-db1tmv17lnhs73efdjp0",
+      "name": "imagino-api-ai-staging",
+      "branch": "codex/imagino-ai-revival-v2",
+      "autoDeploy": "no",
+      "createdAt": "2026-10-05T17:16:44.617915Z",
+      "updatedAt": "2026-10-05T17:33:34.123635Z",
+      "url": "https://imagino-api-ai-staging.onrender.com",
+      "plan": "free"
+    },
+    {
+      "id": "srv-dauhp20u01pc73fa8ctg",
+      "name": "imagino-api-staging",
+      "branch": "codex/imagino-ai-revival-v2",
+      "autoDeploy": "no",
+      "createdAt": "2026-09-30T14:28:25.487895Z",
+      "updatedAt": "2026-10-02T23:03:00.361809Z",
+      "url": "https://imagino-api-staging.onrender.com",
+      "plan": "free"
+    }
+  ],
+  "deploy": {
+    "commit": {
+      "createdAt": "2026-10-05T17:27:40Z",
+      "id": "789fb3f00fefbe5e9de9970f6d440ad9c7c3ab1b",
+      "message": "Exercise fixture shutdown and capture core staging evidence"
+    },
+    "createdAt": "2026-10-05T17:33:04.110175Z",
+    "finishedAt": "2026-10-05T17:33:33.906525Z",
+    "id": "dep-db1tuk6k1f9s73d4ipmg",
+    "startedAt": "2026-10-05T17:33:04.081432Z",
+    "status": "live",
+    "trigger": "api",
+    "updatedAt": "2026-10-05T17:34:06.841676Z"
+  },
+  "frontend": {
+    "branch": "codex/imagino-ai-revival-v2",
+    "id": "dpl_DjL5dP24pco5VNgxCfomFYCMjYY7",
+    "state": "READY",
+    "sha": "c57f923d533ce92b92525a2e9f963958dd0c8b0a",
+    "codeVerifiedSha": "0a68674e7980ca06a74e6671b9e4feef246badb4"
+  }
+}

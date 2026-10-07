@@ -1,0 +1,126 @@
+{
+  "paidGenerationEnabled": false,
+  "runwayRealSmokeEnabled": false,
+  "credentialsConfigured": true,
+  "ledger": {
+    "id": "runway-grok-lite-e2e-confirmation-20261007",
+    "ownerId": "6ac038cb05509cea703277eb",
+    "sourceAssetId": "6ac4068a985c143f201d8f15",
+    "sourceSha256": "1180fb5b6efd81464a799a2e1fc687ab6a044b21cf0b50ea5d11f041bd36195d",
+    "modelId": "runway-fast-video-20261007",
+    "budgetUsd": 0.25,
+    "estimatedUsd": 0.16,
+    "observedUsd": 0.16,
+    "expiresAtUtc": "2026-10-09T00:00:00Z",
+    "halted": true,
+    "haltReason": "single_video_completed",
+    "state": "Completed",
+    "jobId": "6ac67d7f691061807a15e6b8",
+    "taskId": "51ae20a8-b6f1-4428-91a6-2c4a6eba3909",
+    "attemptCount": 1,
+    "settlementCount": 1,
+    "attemptedAtUtc": "2026-10-07T17:12:34.639Z",
+    "acceptedAtUtc": "2026-10-07T17:12:36.248Z",
+    "settledAtUtc": "2026-10-07T17:13:05.542Z"
+  },
+  "storage": {
+    "bucket": "imagino-videos-staging",
+    "key": "generation-v2/6ac038cb05509cea703277eb/6ac67d7f691061807a15e6b8.mp4",
+    "contentType": "video/mp4",
+    "outputUrl": "/api/generation/jobs/6ac67d7f691061807a15e6b8/download"
+  },
+  "job": {
+    "id": "6ac67d7f691061807a15e6b8",
+    "runwayRunId": "runway-grok-lite-e2e-confirmation-20261007",
+    "sourceAssetId": "6ac4068a985c143f201d8f15",
+    "providerJobId": "51ae20a8-b6f1-4428-91a6-2c4a6eba3909",
+    "status": "Completed",
+    "creditState": "Charged",
+    "providerStatus": "SUCCEEDED",
+    "providerReportedCostUsd": 0.16,
+    "providerAcceptanceLatencyMs": 1006.3532,
+    "providerRunningAtUtc": "2026-10-07T17:12:43.435Z",
+    "providerReadyAtUtc": "2026-10-07T17:13:02.611Z",
+    "providerPollCount": 4,
+    "outputMetrics": {
+      "providerReadyAtUtc": "2026-10-07T17:13:02.611Z",
+      "downloadStartedAtUtc": "2026-10-07T17:13:02.64Z",
+      "downloadFinishedAtUtc": "2026-10-07T17:13:04.833Z",
+      "storedAtUtc": "2026-10-07T17:13:05.248Z",
+      "bytes": 1616054,
+      "format": "mp4",
+      "width": 960,
+      "height": 960,
+      "validationLatencyMs": 2.703,
+      "storageLatencyMs": 412.9541,
+      "durationSeconds": 5.042,
+      "sha256": "7bb98530885f772fd624cf7dbf002861af05fb3ed996b1e99e68d8456e23e3ea"
+    },
+    "journal": [
+      {
+        "stage": "QueuedReserved",
+        "atUtc": "2026-10-07T17:12:31.833Z"
+      },
+      {
+        "stage": "WorkerClaim",
+        "atUtc": "2026-10-07T17:12:34.228Z"
+      },
+      {
+        "stage": "RunwayPostAttemptAuthorized",
+        "atUtc": "2026-10-07T17:12:34.639Z"
+      },
+      {
+        "stage": "ProviderBound",
+        "atUtc": "2026-10-07T17:12:36.131Z"
+      },
+      {
+        "stage": "WorkerClaim",
+        "atUtc": "2026-10-07T17:12:42.34Z"
+      },
+      {
+        "stage": "RunwayState_RUNNING",
+        "atUtc": "2026-10-07T17:12:43.435Z"
+      },
+      {
+        "stage": "WorkerClaim",
+        "atUtc": "2026-10-07T17:12:49.742Z"
+      },
+      {
+        "stage": "WorkerClaim",
+        "atUtc": "2026-10-07T17:12:56.034Z"
+      },
+      {
+        "stage": "WorkerClaim",
+        "atUtc": "2026-10-07T17:13:02.341Z"
+      },
+      {
+        "stage": "RunwayState_SUCCEEDED",
+        "atUtc": "2026-10-07T17:13:02.611Z"
+      },
+      {
+        "stage": "OutputStored",
+        "atUtc": "2026-10-07T17:13:05.534Z"
+      },
+      {
+        "stage": "CompletedCharged",
+        "atUtc": "2026-10-07T17:13:05.534Z"
+      }
+    ],
+    "createdAt": "2026-10-07T17:12:31.833Z",
+    "updatedAt": "2026-10-07T17:13:05.534Z",
+    "quote": {
+      "quoteId": "4878f00bb4bca287d85d6086d9e68d4c12f84ed4a90460932008054df99f8ec9:639269905516428858",
+      "modelId": "runway-fast-video-20261007",
+      "version": "2026-10-07.1",
+      "credits": 54,
+      "providerCostEstimateUsd": 0.16,
+      "imaginoCostEstimateUsd": 0.186,
+      "pricingRevision": "2026-10-07.1",
+      "expiresAt": "2026-10-07T17:22:31.642Z",
+      "settings": {
+        "duration": "5",
+        "resolution": "720p"
+      }
+    }
+  }
+}

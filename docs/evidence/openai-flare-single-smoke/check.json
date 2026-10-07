@@ -1,0 +1,155 @@
+{
+  "mode": "Check",
+  "startedAtUtc": "2026-10-06T22:00:47.4928116Z",
+  "imaginoJobPostAttempts": 0,
+  "creditsBefore": 10,
+  "jobsBefore": 9,
+  "proof": {
+    "paidGenerationEnabled": true,
+    "openAiSingleSmokeEnabled": true,
+    "hardRequestCostCap": false,
+    "ledger": {
+      "id": "openai-flare-single-smoke-20261006",
+      "ownerId": "6ac038cb05509cea703277eb",
+      "expiresAtUtc": "2026-10-08T00:00:00Z",
+      "budgetUsd": 0.1,
+      "committedUsd": 0.0134,
+      "observedUsd": 0.0134,
+      "halted": true,
+      "haltReason": "single_call_completed",
+      "calls": {
+        "1": {
+          "state": "Completed",
+          "jobId": "6ac56f781375278f112d5654",
+          "maximumUsd": 0,
+          "projectedUsd": 0.01573,
+          "observedUsd": 0.0134,
+          "usage": {
+            "textInputTokens": 46,
+            "imageInputTokens": 0,
+            "imageOutputTokens": 439,
+            "inputTokens": 46,
+            "outputTokens": 439,
+            "totalTokens": 485,
+            "cachedInputTokens": 0,
+            "pricingRevision": "openai-standard-2026-10-06.1-experimental"
+          },
+          "reconciled": true,
+          "attemptedAtUtc": "2026-10-06T22:00:25.326Z",
+          "responseAtUtc": "2026-10-06T22:00:45.124Z"
+        }
+      }
+    },
+    "job": {
+      "id": "6ac56f781375278f112d5654",
+      "openAiRunId": "openai-flare-single-smoke-20261006",
+      "status": "Completed",
+      "creditState": "Charged",
+      "providerHttpStatus": 200,
+      "providerUsage": {
+        "textInputTokens": 46,
+        "imageInputTokens": 0,
+        "imageOutputTokens": 439,
+        "inputTokens": 46,
+        "outputTokens": 439,
+        "totalTokens": 485,
+        "cachedInputTokens": 0,
+        "pricingRevision": "openai-standard-2026-10-06.1-experimental"
+      },
+      "providerReportedCostUsd": 0.0134,
+      "providerAcceptanceLatencyMs": 19404.7114,
+      "providerDecodeLatencyMs": 96.712,
+      "synchronousResponseAtUtc": "2026-10-06T22:00:45.024Z",
+      "outputMetrics": {
+        "providerReadyAtUtc": "2026-10-06T22:00:45.132Z",
+        "downloadStartedAtUtc": "2026-10-06T22:00:45.132Z",
+        "downloadFinishedAtUtc": "2026-10-06T22:00:45.132Z",
+        "storedAtUtc": "2026-10-06T22:00:47.019Z",
+        "bytes": 1426902,
+        "format": "png",
+        "width": 1024,
+        "height": 1024,
+        "validationLatencyMs": 0.2378,
+        "storageLatencyMs": 1886.7941
+      },
+      "createdAt": "2026-10-06T22:00:24.619Z",
+      "updatedAt": "2026-10-06T22:00:47.031Z",
+      "journal": [
+        {
+          "stage": "QueuedReserved",
+          "atUtc": "2026-10-06T22:00:24.619Z"
+        },
+        {
+          "stage": "WorkerClaim",
+          "atUtc": "2026-10-06T22:00:24.826Z"
+        },
+        {
+          "stage": "OpenAiPostAttemptAuthorized",
+          "atUtc": "2026-10-06T22:00:25.326Z"
+        },
+        {
+          "stage": "SynchronousResponseReceived",
+          "atUtc": "2026-10-06T22:00:45.025Z"
+        },
+        {
+          "stage": "OutputStored",
+          "atUtc": "2026-10-06T22:00:47.031Z"
+        },
+        {
+          "stage": "CompletedCharged",
+          "atUtc": "2026-10-06T22:00:47.031Z"
+        }
+      ],
+      "reservedCredits": 6,
+      "experimentalCreditsFromActual": 5
+    }
+  },
+  "offers": [
+    {
+      "id": "flux-fast-20261002",
+      "providerModel": "flux-2-klein-4b",
+      "availability": "approval_required"
+    },
+    {
+      "id": "openai-fast-20261006",
+      "providerModel": "gpt-image-2.5-flare-2026-09-08",
+      "availability": "ready"
+    },
+    {
+      "id": "flux-studio-20261002",
+      "providerModel": "flux-2-pro",
+      "availability": "approval_required"
+    },
+    {
+      "id": "openai-studio-20261006",
+      "providerModel": "gpt-image-2.5-sunburst-2026-09-08",
+      "availability": "approval_required"
+    },
+    {
+      "id": "gemini-edit-20261002",
+      "providerModel": "gemini-3.1-flash-image",
+      "availability": "approval_required"
+    },
+    {
+      "id": "veo-fast-20261002",
+      "providerModel": "veo-3.1-lite-generate-preview",
+      "availability": "migration_required"
+    },
+    {
+      "id": "veo-cinema-20261002",
+      "providerModel": "veo-3.1-generate-preview",
+      "availability": "migration_required"
+    },
+    {
+      "id": "pipeline-demo-20261002",
+      "providerModel": "synthetic-png-v1",
+      "availability": "synthetic_demo"
+    }
+  ],
+  "healthStatus": 200,
+  "creditsAfter": 10,
+  "jobsAfter": 9,
+  "outcome": "completed",
+  "isolatedLogoutStatus": 200,
+  "finishedAtUtc": "2026-10-06T22:00:51.7370485Z"
+}

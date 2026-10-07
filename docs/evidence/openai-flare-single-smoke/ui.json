@@ -1,0 +1,22 @@
+{
+  "jobId": "6ac56f781375278f112d5654",
+  "workingStudio": {
+    "completed": true,
+    "chargedCredits": 6,
+    "imagesLoaded": 2,
+    "width": 1024,
+    "height": 1024
+  },
+  "library": {
+    "creationCount": 9,
+    "completed": true,
+    "chargedCredits": 6,
+    "images": [
+      {
+        "complete": true,
+        "height": 1024,
+        "width": 1024
+      }
+    ]
+  }
+}

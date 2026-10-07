@@ -1,0 +1,422 @@
+{
+  "database": "imagino_staging",
+  "checkedAt": "2026-10-05T17:38:29.183Z",
+  "indexes": {
+    "classicIndexes": [
+      {
+        "name": "_id_",
+        "key": {
+          "_id": 1
+        }
+      },
+      {
+        "name": "owner_idempotency",
+        "key": {
+          "UserId": 1,
+          "IdempotencyKey": 1
+        }
+      },
+      {
+        "name": "worker_due",
+        "key": {
+          "Status": 1,
+          "NextPollAt": 1,
+          "LeaseUntil": 1
+        }
+      },
+      {
+        "name": "owner_history",
+        "key": {
+          "UserId": 1,
+          "CreatedAt": -1
+        }
+      }
+    ],
+    "searchIndexes": [],
+    "classicIndexesCount": 4,
+    "searchIndexesCount": 0
+  },
+  "jobs": {
+    "documents": [
+      {
+        "_id": {
+          "$oid": "6ac3dd2ce3290e588a5a2828"
+        },
+        "UserId": "6ac038cb05509cea703277eb",
+        "IdempotencyKey": "2fa6187f-22fc-4783-85a0-5312070e8f0c",
+        "Model": {
+          "Provider": "fixture"
+        },
+        "Quote": {
+          "Credits": 1,
+          "ProviderCostEstimateUsd": {
+            "$numberDecimal": "0"
+          },
+          "ImaginoCostEstimateUsd": {
+            "$numberDecimal": "0"
+          }
+        },
+        "Status": "Completed",
+        "CreditState": "Charged",
+        "ProviderJobId": "fixture-6ac3dd2ce3290e588a5a2828",
+        "LeaseUntil": null,
+        "CreatedAt": {
+          "$date": "2026-10-05T17:23:56.003Z"
+        },
+        "UpdatedAt": {
+          "$date": "2026-10-05T17:24:01.871Z"
+        },
+        "OutputUrl": "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev/generation-v2/6ac038cb05509cea703277eb/6ac3dd2ce3290e588a5a2828.png",
+        "Journal": [
+          {
+            "Stage": "QueuedReserved",
+            "AtUtc": {
+              "$date": "2026-10-05T17:23:56.003Z"
+            }
+          },
+          {
+            "Stage": "WorkerClaim",
+            "AtUtc": {
+              "$date": "2026-10-05T17:23:56.351Z"
+            }
+          },
+          {
+            "Stage": "ProviderBound",
+            "AtUtc": {
+              "$date": "2026-10-05T17:23:56.364Z"
+            }
+          },
+          {
+            "Stage": "WorkerClaim",
+            "AtUtc": {
+              "$date": "2026-10-05T17:24:00.373Z"
+            }
+          },
+          {
+            "Stage": "OutputStored",
+            "AtUtc": {
+              "$date": "2026-10-05T17:24:01.871Z"
+            }
+          },
+          {
+            "Stage": "CompletedCharged",
+            "AtUtc": {
+              "$date": "2026-10-05T17:24:01.871Z"
+            }
+          }
+        ]
+      },
+      {
+        "_id": {
+          "$oid": "6ac3dd40e3290e588a5a2839"
+        },
+        "UserId": "6ac038cb05509cea703277eb",
+        "IdempotencyKey": "635ca72c-e8f7-4481-a0c2-9116a059af5a",
+        "Model": {
+          "Provider": "fixture"
+        },
+        "Quote": {
+          "Credits": 1,
+          "ProviderCostEstimateUsd": {
+            "$numberDecimal": "0"
+          },
+          "ImaginoCostEstimateUsd": {
+            "$numberDecimal": "0"
+          }
+        },
+        "Status": "Completed",
+        "CreditState": "Charged",
+        "ProviderJobId": "fixture-6ac3dd40e3290e588a5a2839",
+        "LeaseUntil": null,
+        "CreatedAt": {
+          "$date": "2026-10-05T17:24:16.481Z"
+        },
+        "UpdatedAt": {
+          "$date": "2026-10-05T17:24:22.155Z"
+        },
+        "OutputUrl": "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev/generation-v2/6ac038cb05509cea703277eb/6ac3dd40e3290e588a5a2839.png",
+        "Journal": [
+          {
+            "Stage": "QueuedReserved",
+            "AtUtc": {
+              "$date": "2026-10-05T17:24:16.481Z"
+            }
+          },
+          {
+            "Stage": "WorkerClaim",
+            "AtUtc": {
+              "$date": "2026-10-05T17:24:17.910Z"
+            }
+          },
+          {
+            "Stage": "ProviderBound",
+            "AtUtc": {
+              "$date": "2026-10-05T17:24:17.922Z"
+            }
+          },
+          {
+            "Stage": "WorkerClaim",
+            "AtUtc": {
+              "$date": "2026-10-05T17:24:21.931Z"
+            }
+          },
+          {
+            "Stage": "OutputStored",
+            "AtUtc": {
+              "$date": "2026-10-05T17:24:22.155Z"
+            }
+          },
+          {
+            "Stage": "CompletedCharged",
+            "AtUtc": {
+              "$date": "2026-10-05T17:24:22.155Z"
+            }
+          }
+        ]
+      },
+      {
+        "_id": {
+          "$oid": "6ac3de88b1595fac4888bd09"
+        },
+        "UserId": "6ac038cb05509cea703277eb",
+        "IdempotencyKey": "a9818eea-b74c-48c4-92cc-f17b83717101",
+        "Model": {
+          "Provider": "fixture"
+        },
+        "Quote": {
+          "Credits": 1,
+          "ProviderCostEstimateUsd": {
+            "$numberDecimal": "0"
+          },
+          "ImaginoCostEstimateUsd": {
+            "$numberDecimal": "0"
+          }
+        },
+        "Status": "Completed",
+        "CreditState": "Charged",
+        "ProviderJobId": "fixture-6ac3de88b1595fac4888bd09",
+        "LeaseUntil": null,
+        "CreatedAt": {
+          "$date": "2026-10-05T17:29:44.153Z"
+        },
+        "UpdatedAt": {
+          "$date": "2026-10-05T17:32:12.547Z"
+        },
+        "OutputUrl": "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev/generation-v2/6ac038cb05509cea703277eb/6ac3de88b1595fac4888bd09.png",
+        "Journal": [
+          {
+            "Stage": "QueuedReserved",
+            "AtUtc": {
+              "$date": "2026-10-05T17:29:44.153Z"
+            }
+          },
+          {
+            "Stage": "WorkerClaim",
+            "AtUtc": {
+              "$date": "2026-10-05T17:29:45.277Z"
+            }
+          },
+          {
+            "Stage": "ProviderBound",
+            "AtUtc": {
+              "$date": "2026-10-05T17:29:45.298Z"
+            }
+          },
+          {
+            "Stage": "WorkerClaim",
+            "AtUtc": {
+              "$date": "2026-10-05T17:29:49.367Z"
+            }
+          },
+          {
+            "Stage": "WorkerClaim",
+            "AtUtc": {
+              "$date": "2026-10-05T17:31:10.965Z"
+            }
+          },
+          {
+            "Stage": "OutputStored",
+            "AtUtc": {
+              "$date": "2026-10-05T17:32:12.548Z"
+            }
+          },
+          {
+            "Stage": "CompletedCharged",
+            "AtUtc": {
+              "$date": "2026-10-05T17:32:12.548Z"
+            }
+          }
+        ]
+      },
+      {
+        "_id": {
+          "$oid": "6ac3dbf5e3290e588a5a27e2"
+        },
+        "UserId": "6ac038cb05509cea703277eb",
+        "IdempotencyKey": "e035266b-eee6-44c2-a191-46815f0e1cc3",
+        "Model": {
+          "Provider": "fixture"
+        },
+        "Quote": {
+          "Credits": 1,
+          "ProviderCostEstimateUsd": {
+            "$numberDecimal": "0"
+          },
+          "ImaginoCostEstimateUsd": {
+            "$numberDecimal": "0"
+          }
+        },
+        "Status": "Completed",
+        "CreditState": "Charged",
+        "ProviderJobId": "fixture-6ac3dbf5e3290e588a5a27e2",
+        "LeaseUntil": null,
+        "CreatedAt": {
+          "$date": "2026-10-05T17:18:45.857Z"
+        },
+        "UpdatedAt": {
+          "$date": "2026-10-05T17:18:53.591Z"
+        },
+        "OutputUrl": "https://pub-56f86851d1884a3b8e7a73f1624e4239.r2.dev/generation-v2/6ac038cb05509cea703277eb/6ac3dbf5e3290e588a5a27e2.png",
+        "Journal": [
+          {
+            "Stage": "QueuedReserved",
+            "AtUtc": {
+              "$date": "2026-10-05T17:18:45.857Z"
+            }
+          },
+          {
+            "Stage": "WorkerClaim",
+            "AtUtc": {
+              "$date": "2026-10-05T17:18:47.597Z"
+            }
+          },
+          {
+            "Stage": "ProviderBound",
+            "AtUtc": {
+              "$date": "2026-10-05T17:18:47.619Z"
+            }
+          },
+          {
+            "Stage": "WorkerClaim",
+            "AtUtc": {
+              "$date": "2026-10-05T17:18:51.788Z"
+            }
+          },
+          {
+            "Stage": "OutputStored",
+            "AtUtc": {
+              "$date": "2026-10-05T17:18:53.591Z"
+            }
+          },
+          {
+            "Stage": "CompletedCharged",
+            "AtUtc": {
+              "$date": "2026-10-05T17:18:53.591Z"
+            }
+          }
+        ]
+      },
+      {
+        "_id": {
+          "$oid": "6ac3dbf7e3290e588a5a27e7"
+        },
+        "UserId": "6ac038cb05509cea703277eb",
+        "IdempotencyKey": "e61c89e5-4cf7-40cf-8811-63a5dc7e78ba",
+        "Model": {
+          "Provider": "fixture"
+        },
+        "Quote": {
+          "Credits": 1,
+          "ProviderCostEstimateUsd": {
+            "$numberDecimal": "0"
+          },
+          "ImaginoCostEstimateUsd": {
+            "$numberDecimal": "0"
+          }
+        },
+        "Status": "Failed",
+        "CreditState": "Refunded",
+        "ProviderJobId": "fixture-6ac3dbf7e3290e588a5a27e7",
+        "LeaseUntil": null,
+        "CreatedAt": {
+          "$date": "2026-10-05T17:18:47.116Z"
+        },
+        "UpdatedAt": {
+          "$date": "2026-10-05T17:18:53.699Z"
+        },
+        "OutputUrl": null,
+        "Journal": [
+          {
+            "Stage": "QueuedReserved",
+            "AtUtc": {
+              "$date": "2026-10-05T17:18:47.116Z"
+            }
+          },
+          {
+            "Stage": "WorkerClaim",
+            "AtUtc": {
+              "$date": "2026-10-05T17:18:47.625Z"
+            }
+          },
+          {
+            "Stage": "ProviderBound",
+            "AtUtc": {
+              "$date": "2026-10-05T17:18:47.696Z"
+            }
+          },
+          {
+            "Stage": "WorkerClaim",
+            "AtUtc": {
+              "$date": "2026-10-05T17:18:53.690Z"
+            }
+          },
+          {
+            "Stage": "FailedRefunded",
+            "AtUtc": {
+              "$date": "2026-10-05T17:18:53.699Z"
+            }
+          }
+        ]
+      }
+    ],
+    "queryResultsCount": 5,
+    "appliedLimits": []
+  },
+  "users": {
+    "documents": [
+      {
+        "_id": {
+          "$oid": "6ac038cb05509cea703277eb"
+        },
+        "Email": "gen-v2-owner-20261002@example.invalid",
+        "Credits": 16
+      },
+      {
+        "_id": {
+          "$oid": "6ac038cb05509cea703277ec"
+        },
+        "Email": "gen-v2-foreign-20261002@example.invalid",
+        "Credits": 20
+      },
+      {
+        "_id": {
+          "$oid": "6ac038cb05509cea703277ed"
+        },
+        "Email": "gen-v2-empty-20261002@example.invalid",
+        "Credits": 0
+      }
+    ],
+    "queryResultsCount": 3,
+    "appliedLimits": []
+  },
+  "emptyAccountJobs": {
+    "count": 0
+  },
+  "reclaimLeaseExpiry": {
+    "database": "imagino_staging",
+    "collection": "generation_jobs_v2",
+    "matchedCount": 1,
+    "modifiedCount": 1,
+    "upsertedCount": 0
+  }
+}

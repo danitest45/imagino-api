@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <Folder Include="Utils\\" />
+    <Content Include="Fixtures/generation-demo.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Fixtures/bfl-reference-20261005.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

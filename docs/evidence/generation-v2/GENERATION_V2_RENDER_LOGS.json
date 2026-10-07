@@ -1,0 +1,718 @@
+{
+  "service": "srv-db1tmv17lnhs73efdjp0",
+  "logs": [
+    {
+      "id": "c525ff44-a5d6-4dad-bd2c-ccf519b9a641",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation claimed job=6ac3dbf5e3290e588a5a27e2 provider=fixture status=Starting stage=worker_claim",
+      "timestamp": "2026-10-05T17:18:47.611606182Z"
+    },
+    {
+      "id": "c56667ea-fbab-4498-90e7-49945839d795",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation provider bound job=6ac3dbf5e3290e588a5a27e2 provider=fixture stage=provider_bound",
+      "timestamp": "2026-10-05T17:18:47.62577315Z"
+    },
+    {
+      "id": "b09c034d-9567-42d8-bb78-4ad508c3396f",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation claimed job=6ac3dbf7e3290e588a5a27e7 provider=fixture status=Starting stage=worker_claim",
+      "timestamp": "2026-10-05T17:18:47.694197543Z"
+    },
+    {
+      "id": "4dfc3fbb-b676-4017-afd1-0ca53b8e7233",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation provider bound job=6ac3dbf7e3290e588a5a27e7 provider=fixture stage=provider_bound",
+      "timestamp": "2026-10-05T17:18:47.702293438Z"
+    },
+    {
+      "id": "36d7332b-d3ea-400f-b083-6afa82db1271",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation claimed job=6ac3dbf5e3290e588a5a27e2 provider=fixture status=Processing stage=worker_claim",
+      "timestamp": "2026-10-05T17:18:51.794371119Z"
+    },
+    {
+      "id": "a67f497a-5d84-48e2-b716-d6e70b0c6136",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation output stored job=6ac3dbf5e3290e588a5a27e2 provider=fixture bytes=40046 stage=output_stored",
+      "timestamp": "2026-10-05T17:18:53.495125993Z"
+    },
+    {
+      "id": "af4c8d4b-453c-4f13-9122-000b60328b21",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation settled job=6ac3dbf5e3290e588a5a27e2 provider=fixture model=synthetic-png-v1 version=2026-10-02.1 status=Completed elapsedMs=7744.1456 estimatedUsd=0 credits=1",
+      "timestamp": "2026-10-05T17:18:53.690266114Z"
+    },
+    {
+      "id": "7ccd5b0b-0197-47a9-b092-1d7e4ebbdd2b",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation claimed job=6ac3dbf7e3290e588a5a27e7 provider=fixture status=Processing stage=worker_claim",
+      "timestamp": "2026-10-05T17:18:53.697095437Z"
+    },
+    {
+      "id": "91d9316b-015f-4691-929d-59167cc0d4d4",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation settled job=6ac3dbf7e3290e588a5a27e7 provider=fixture model=synthetic-png-v1 version=2026-10-02.1 status=Failed elapsedMs=6590.858 estimatedUsd=0 credits=1",
+      "timestamp": "2026-10-05T17:18:53.707036058Z"
+    },
+    {
+      "id": "c508f478-91df-4469-b969-88750b6dd6eb",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation claimed job=6ac3dd2ce3290e588a5a2828 provider=fixture status=Starting stage=worker_claim",
+      "timestamp": "2026-10-05T17:23:56.362775123Z"
+    },
+    {
+      "id": "cf0ae0f4-4690-4432-91ba-d19b7861c06a",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation provider bound job=6ac3dd2ce3290e588a5a2828 provider=fixture stage=provider_bound",
+      "timestamp": "2026-10-05T17:23:56.369699938Z"
+    },
+    {
+      "id": "c89f49dd-63fa-40e0-8efb-f53c744d7afa",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation claimed job=6ac3dd2ce3290e588a5a2828 provider=fixture status=Processing stage=worker_claim",
+      "timestamp": "2026-10-05T17:24:00.37888194Z"
+    },
+    {
+      "id": "d4b015b5-b374-4c8c-ae8e-28d8ad318bc8",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation output stored job=6ac3dd2ce3290e588a5a2828 provider=fixture bytes=40046 stage=output_stored",
+      "timestamp": "2026-10-05T17:24:01.868863597Z"
+    },
+    {
+      "id": "7994e30a-15a2-411b-98cf-48037e60dd1b",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation settled job=6ac3dd2ce3290e588a5a2828 provider=fixture model=synthetic-png-v1 version=2026-10-02.1 status=Completed elapsedMs=5873.5884 estimatedUsd=0 credits=1",
+      "timestamp": "2026-10-05T17:24:01.876761087Z"
+    },
+    {
+      "id": "944d099c-a98e-484e-8600-f9f7879bcb9f",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation claimed job=6ac3dd40e3290e588a5a2839 provider=fixture status=Starting stage=worker_claim",
+      "timestamp": "2026-10-05T17:24:17.920639566Z"
+    },
+    {
+      "id": "8962a5be-068b-4666-9304-f2a1bdfad070",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation provider bound job=6ac3dd40e3290e588a5a2839 provider=fixture stage=provider_bound",
+      "timestamp": "2026-10-05T17:24:17.927009457Z"
+    },
+    {
+      "id": "15809b19-885d-49f1-8fc1-9328ee601203",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation claimed job=6ac3dd40e3290e588a5a2839 provider=fixture status=Processing stage=worker_claim",
+      "timestamp": "2026-10-05T17:24:21.937292842Z"
+    },
+    {
+      "id": "c23a44f9-4e18-433b-9864-2abe02078cee",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation output stored job=6ac3dd40e3290e588a5a2839 provider=fixture bytes=40046 stage=output_stored",
+      "timestamp": "2026-10-05T17:24:22.153161184Z"
+    },
+    {
+      "id": "16326b68-f027-415a-b872-5cac9c54efa2",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-bvk57"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation settled job=6ac3dd40e3290e588a5a2839 provider=fixture model=synthetic-png-v1 version=2026-10-02.1 status=Completed elapsedMs=5680.5967 estimatedUsd=0 credits=1",
+      "timestamp": "2026-10-05T17:24:22.161791752Z"
+    },
+    {
+      "id": "8eafdecf-6d13-4d36-b0ce-66842316aeb0",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-qbn72"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation claimed job=6ac3de88b1595fac4888bd09 provider=fixture status=Starting stage=worker_claim",
+      "timestamp": "2026-10-05T17:29:45.291862827Z"
+    },
+    {
+      "id": "df8b0404-f9b0-4893-b9aa-29d8842646df",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-qbn72"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation provider bound job=6ac3de88b1595fac4888bd09 provider=fixture stage=provider_bound",
+      "timestamp": "2026-10-05T17:29:45.363524776Z"
+    },
+    {
+      "id": "f6c1043d-cbbc-4d6c-82d6-48809a1cfb20",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-qbn72"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation claimed job=6ac3de88b1595fac4888bd09 provider=fixture status=Processing stage=worker_claim",
+      "timestamp": "2026-10-05T17:29:49.373302966Z"
+    },
+    {
+      "id": "aede7f84-ed92-4c10-ba9d-1f002b776598",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-7qqd7"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Application started. Press Ctrl+C to shut down.",
+      "timestamp": "2026-10-05T17:30:14.753752962Z"
+    },
+    {
+      "id": "c289571f-e0c8-49c0-8d48-89d8c651a64a",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-7qqd7"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Hosting environment: AIStaging",
+      "timestamp": "2026-10-05T17:30:14.847765487Z"
+    },
+    {
+      "id": "0009ccda-86ed-407d-a5b6-db9e06eb3864",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-qbn72"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Application is shutting down...",
+      "timestamp": "2026-10-05T17:30:17.506721774Z"
+    },
+    {
+      "id": "056b0790-2249-4c6b-bdd8-c830bef65da1",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-7qqd7"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation claimed job=6ac3de88b1595fac4888bd09 provider=fixture status=Processing stage=worker_claim",
+      "timestamp": "2026-10-05T17:31:10.974386896Z"
+    },
+    {
+      "id": "2dceafc1-90ad-4a2c-bec8-8fc5781c6d82",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-7qqd7"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation output stored job=6ac3de88b1595fac4888bd09 provider=fixture bytes=40046 stage=output_stored",
+      "timestamp": "2026-10-05T17:32:12.44871617Z"
+    },
+    {
+      "id": "a2cfff7a-365a-4d97-9c0d-a4125a3d304a",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-7qqd7"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Generation settled job=6ac3de88b1595fac4888bd09 provider=fixture model=synthetic-png-v1 version=2026-10-02.1 status=Completed elapsedMs=148501.4148 estimatedUsd=0 credits=1",
+      "timestamp": "2026-10-05T17:32:12.655410524Z"
+    },
+    {
+      "id": "ccae7884-9a73-4d75-a535-256a3ae99bb5",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-fhx9l"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Application started. Press Ctrl+C to shut down.",
+      "timestamp": "2026-10-05T17:33:29.108291567Z"
+    },
+    {
+      "id": "4e50893d-7c13-4b89-8004-86e77797e0c6",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-fhx9l"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Hosting environment: AIStaging",
+      "timestamp": "2026-10-05T17:33:29.108943944Z"
+    },
+    {
+      "id": "a6959ce4-062d-4ae9-97e5-ff81ac5fd0cf",
+      "labels": [
+        {
+          "name": "resource",
+          "value": "srv-db1tmv17lnhs73efdjp0"
+        },
+        {
+          "name": "instance",
+          "value": "srv-db1tmv17lnhs73efdjp0-7qqd7"
+        },
+        {
+          "name": "level",
+          "value": "info"
+        },
+        {
+          "name": "type",
+          "value": "app"
+        }
+      ],
+      "message": "      Application is shutting down...",
+      "timestamp": "2026-10-05T17:33:33.47306145Z"
+    }
+  ]
+}

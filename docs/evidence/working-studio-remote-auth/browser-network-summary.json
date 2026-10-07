@@ -1,0 +1,614 @@
+{
+  "metadataOnly": true,
+  "queryStringsExcluded": true,
+  "headersExcluded": true,
+  "payloadsExcluded": true,
+  "hosts": [
+    "imagino-api-ai-staging.onrender.com",
+    "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+    "vercel.live"
+  ],
+  "requestCount": 487,
+  "responseCount": 479,
+  "failedRequests": [
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/.well-known/vercel/jwe",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "OPTIONS",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "HEAD",
+      "path": "/login",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/create/image",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/api/generation/catalog",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/.well-known/vercel/jwe",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "OPTIONS",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "HEAD",
+      "path": "/create/image",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/.well-known/vercel/jwe",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/api/generation/catalog",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "OPTIONS",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "HEAD",
+      "path": "/create/image",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/.well-known/vercel/jwe",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/.well-known/vercel/jwe",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "OPTIONS",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "HEAD",
+      "path": "/login",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/create/image",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/api/generation/catalog",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "GET",
+      "path": "/api/generation/jobs",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/.well-known/vercel/jwe",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/.well-known/vercel/jwe",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/api/generation/catalog",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "OPTIONS",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "HEAD",
+      "path": "/create/image",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/api/generation/catalog",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/.well-known/vercel/jwe",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "OPTIONS",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "HEAD",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "responses": [
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "GET",
+      "path": "/api/generation/jobs",
+      "status": 200,
+      "count": 95
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "GET",
+      "path": "/api/generation/jobs/6ac4068a985c143f201d8f15",
+      "status": 200,
+      "count": 1
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "GET",
+      "path": "/api/generation/jobs/6ac4068a985c143f201d8f15",
+      "status": 404,
+      "count": 1
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "GET",
+      "path": "/api/generation/jobs/6ac4068a985c143f201d8f15/download",
+      "status": 200,
+      "count": 2
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "GET",
+      "path": "/api/generation/jobs/6ac4068a985c143f201d8f15/download",
+      "status": 404,
+      "count": 1
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "GET",
+      "path": "/api/users/credits",
+      "status": 200,
+      "count": 5
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "GET",
+      "path": "/api/users/me",
+      "status": 200,
+      "count": 2
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "GET",
+      "path": "/health",
+      "status": 200,
+      "count": 1
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "status": 200,
+      "count": 5
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "status": 200,
+      "count": 3
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "status": 200,
+      "count": 2
+    },
+    {
+      "host": "imagino-api-ai-staging.onrender.com",
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "status": 401,
+      "count": 9
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/",
+      "status": 200,
+      "count": 9
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/image",
+      "status": 200,
+      "count": 9
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/image",
+      "status": 304,
+      "count": 9
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/356-ad1afcfca620a302.js",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/390-04a4a5c6d6f22861.js",
+      "status": 200,
+      "count": 5
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/431-6d37c3d3463b9048.js",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/463-21526ead0125e347.js",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/493-3a7ee7f79f79ae9a.js",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/4bd1b696-c023c6e3521b1417.js",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/619-ba102abea3e3d0e4.js",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/702-115686bda1173399.js",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/760-14d2291febcfc41c.js",
+      "status": 200,
+      "count": 5
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/960-bb08d02dee675149.js",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/app/create/%5Bkind%5D/page-8e916d598a45e025.js",
+      "status": 200,
+      "count": 5
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/app/layout-a865954ca5cf611b.js",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/app/library/page-a6e600f9aa6e1639.js",
+      "status": 200,
+      "count": 5
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/app/login/page-e3acb11571985cd6.js",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/app/page-7c715baece5e7e50.js",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/app/pricing/page-792f2356002ed712.js",
+      "status": 200,
+      "count": 6
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/app/profile/page-a4b372d954851f3a.js",
+      "status": 200,
+      "count": 5
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/main-app-76bd8c52cbf0e045.js",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/chunks/webpack-0b8df42d2fd1ed20.js",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/css/22bb08fa0e61e2f8.css",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/css/82fd38cae0ed2743.css",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/css/87dbf2ccb6a91694.css",
+      "status": 200,
+      "count": 5
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/css/a5719ecec855d618.css",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/css/b3de478501fb101d.css",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/css/d2a82d4b050a505b.css",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/_next/static/media/e4af272ccee01ff0-s.p.woff2",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/.well-known/vercel/jwe",
+      "status": 204,
+      "count": 8
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/api/generation/catalog",
+      "status": 200,
+      "count": 6
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/api/images/optimize",
+      "status": 200,
+      "count": 33
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/brand/favicon.svg",
+      "status": 200,
+      "count": 18
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/create/image",
+      "status": 200,
+      "count": 13
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/library",
+      "status": 200,
+      "count": 6
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/login",
+      "status": 200,
+      "count": 9
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/pricing",
+      "status": 200,
+      "count": 6
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "GET",
+      "path": "/profile",
+      "status": 200,
+      "count": 5
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "HEAD",
+      "path": "/",
+      "status": 204,
+      "count": 1
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "HEAD",
+      "path": "/create/image",
+      "status": 204,
+      "count": 2
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "HEAD",
+      "path": "/login",
+      "status": 204,
+      "count": 2
+    },
+    {
+      "host": "imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "method": "OPTIONS",
+      "path": "/",
+      "status": 204,
+      "count": 6
+    },
+    {
+      "host": "vercel.live",
+      "method": "GET",
+      "path": "/_next-live/feedback/feedback.html",
+      "status": 200,
+      "count": 8
+    },
+    {
+      "host": "vercel.live",
+      "method": "GET",
+      "path": "/_next-live/feedback/feedback.js",
+      "status": 304,
+      "count": 8
+    },
+    {
+      "host": "vercel.live",
+      "method": "POST",
+      "path": "/login/validate",
+      "status": 200,
+      "count": 6
+    }
+  ]
+}

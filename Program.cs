@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Imagino.Api.Security;
+using Imagino.Api.Services.Generation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,17 +23,29 @@ if (builder.Environment.IsDevelopment())
     builder.Configuration.AddUserSecrets<Program>();
 }
 
-StartupConfiguration.Validate(builder.Configuration, builder.Environment.IsDevelopment());
+var aiStaging = builder.Environment.IsEnvironment("AIStaging");
+if (aiStaging)
+{
+    // Dedicated host: load only its allowlisted profile, never the main app settings.
+    builder.Configuration.Sources.Clear();
+    builder.Configuration.AddJsonFile("appsettings.AIStaging.json", optional: false)
+        .AddEnvironmentVariables().AddCommandLine(args);
+    AIStagingConfiguration.Validate(builder.Configuration);
+}
+else StartupConfiguration.Validate(builder.Configuration, builder.Environment.IsDevelopment());
 
 // Configurações
 builder.Services.Configure<ImageGeneratorSettings>(builder.Configuration.GetSection("ImageGeneratorSettings"));
-builder.Services.Configure<ReplicateSettings>(builder.Configuration.GetSection("ReplicateSettings"));
+if (!aiStaging) builder.Services.Configure<ReplicateSettings>(builder.Configuration.GetSection("ReplicateSettings"));
 builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("Frontend"));
 builder.Services.Configure<RefreshTokenCookieSettings>(builder.Configuration.GetSection("RefreshTokenCookie"));
-builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
+if (!aiStaging) builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
 
-builder.Services.AddSingleton<ImageJobRepository>();
-builder.Services.AddScoped<WebhookImageService>();
+if (!aiStaging)
+{
+    builder.Services.AddSingleton<ImageJobRepository>();
+    builder.Services.AddScoped<WebhookImageService>();
+}
 
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
@@ -60,7 +73,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(corsPolicyName, policy =>
     {
         policy
-            .SetIsOriginAllowed(origin => CorsOrigins.Matches(origin, allowedPatterns))
+            .SetIsOriginAllowed(origin => CorsOrigins.Matches(origin, allowedPatterns, exact: aiStaging))
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -69,11 +82,16 @@ builder.Services.AddCors(options =>
 
 
 // Adicionar serviços do projeto
-builder.Services.AddAppServices(builder.Configuration);
+if (aiStaging) builder.Services.AddAIStagingServices(builder.Configuration);
+else builder.Services.AddAppServices(builder.Configuration);
+builder.Services.AddGenerationV2(builder.Configuration, fixtureOnly: aiStaging);
 builder.Services.AddMemoryCache();
 
 // Controllers, Swagger, Endpoints
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    if (aiStaging) options.Conventions.Add(new AIStagingControllerConvention());
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();

@@ -148,6 +148,7 @@ public interface IGenerationProvider
 public interface IGenerationRepository
 {
     Task<RunwaySmokeLedger?> RunwayLedgerAsync(CancellationToken ct) => Task.FromResult<RunwaySmokeLedger?>(null);
+    Task<RunwaySmokeLedger?> RunwayE2eLedgerAsync(CancellationToken ct) => Task.FromResult<RunwaySmokeLedger?>(null);
     Task<bool> BeginRunwaySubmissionAsync(GenerationJob job, CancellationToken ct) => Task.FromResult(false);
     Task RecordRunwayPollAsync(GenerationJob job, ProviderResult result, CancellationToken ct) => Task.CompletedTask;
     Task<OpenAiHomologationLedger?> SingleSmokeLedgerAsync(CancellationToken ct) => Task.FromResult<OpenAiHomologationLedger?>(null);

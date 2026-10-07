@@ -76,7 +76,7 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
         }
         else if (model.Provider == "runway")
         {
-            job.RunwayRunId = RunwaySmokePolicy.RunId;
+            job.RunwayRunId = RunwaySmokePolicy.E2eRunId;
             job.SourceAssetId = input.Inputs.Single().SourceAssetId;
             RunwaySmokePolicy.ValidateJob(job);
         }

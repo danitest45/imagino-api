@@ -40,7 +40,8 @@ public sealed partial class MongoGenerationRepository : IGenerationRepository
         if (runwayIntegration)
         {
             var initial = new RunwaySmokeLedger().ToBsonDocument(); initial.Remove("_id");
-            await runwayLedger.UpdateOneAsync(l => l.Id == RunwaySmokePolicy.RunId,
+            // Only create the newly authorized ledger. Never update or reset the first smoke.
+            await runwayLedger.UpdateOneAsync(l => l.Id == RunwaySmokePolicy.E2eRunId,
                 new BsonDocument("$setOnInsert", initial), new UpdateOptions { IsUpsert = true }, ct);
             await jobs.Indexes.CreateOneAsync(new CreateIndexModel<GenerationJob>(Builders<GenerationJob>.IndexKeys.Ascending(j => j.ProviderJobId),
                 new CreateIndexOptions<GenerationJob> { Unique = true, Name = "runway_task_unique", PartialFilterExpression =
@@ -377,7 +378,7 @@ public sealed partial class MongoGenerationRepository : IGenerationRepository
             if (changed.ModifiedCount != 1) return false;
             if (job.Model.Provider == "runway")
             {
-                var settledRunway = await runwayLedger.UpdateOneAsync(s, l => l.Id == RunwaySmokePolicy.RunId && l.JobId == job.Id && l.SettlementCount == 0,
+                var settledRunway = await runwayLedger.UpdateOneAsync(s, l => l.Id == RunwaySmokePolicy.E2eRunId && l.JobId == job.Id && l.SettlementCount == 0,
                     Builders<RunwaySmokeLedger>.Update.Set(l => l.State, status.ToString()).Set(l => l.Halted, true)
                         .Set(l => l.HaltReason, charged ? "single_video_completed" : error ?? "generation_failed")
                         .Set(l => l.SettledAtUtc, DateTime.UtcNow).Inc(l => l.SettlementCount, 1), cancellationToken: token);

@@ -41,7 +41,7 @@ public class RunwayVideoTests
         var m = Model(); var v = GenerationPolicy.Validate(m, Request());
         return new() { Model = m, Prompt = v.Prompt, Inputs = v.Inputs, Settings = v.Settings, UserId = BflHomologationPolicy.OwnerId,
             RequestHash = GenerationPolicy.Fingerprint(m, v), Quote = GenerationPolicy.Quote(m, v, DateTime.UtcNow),
-            RunwayRunId = RunwaySmokePolicy.RunId, SourceAssetId = RunwaySmokePolicy.SourceAssetId, IdempotencyKey = "runway-single-video-only-slot",
+            RunwayRunId = RunwaySmokePolicy.E2eRunId, SourceAssetId = RunwaySmokePolicy.SourceAssetId, IdempotencyKey = "runway-e2e-video-only-slot",
             Lease = "unit-lease", Status = GenerationStatus.Starting, DeadlineAt = DateTime.UtcNow.AddMinutes(10) };
     }
     sealed class Wire : HttpMessageHandler, IHttpClientFactory
@@ -57,6 +57,50 @@ public class RunwayVideoTests
                 request.Content == null ? "" : await request.Content.ReadAsStringAsync(ct)));
             return replies.Dequeue();
         }
+    }
+    [Fact]
+    public async Task NewE2eAuthorizationRejectsOriginalRunBeforeAnyCreation()
+    {
+        Assert.NotEqual(RunwaySmokePolicy.RunId, RunwaySmokePolicy.E2eRunId);
+        Assert.False(RunwaySmokePolicy.CanReserve(new RunwaySmokeLedger { Id = RunwaySmokePolicy.RunId }, WithinAuthorization));
+        var old = Job(); old.RunwayRunId = RunwaySmokePolicy.RunId;
+        var wire = new Wire();
+        await Assert.ThrowsAsync<ForbiddenFeatureException>(() => new RunwayGenerationProvider(new(wire), Settings()).StartAsync(old, default));
+        Assert.Empty(wire.Requests);
+    }
+    [Fact]
+    public async Task E2eCreateBindsNewRunAndOwnedSourceBeforeReservation()
+    {
+        var model = Model(); var request = Request(false); var input = GenerationPolicy.Validate(model, Request());
+        request.QuoteId = GenerationPolicy.Quote(model, input, DateTime.UtcNow).QuoteId;
+        var source = new GenerationJob { Id = RunwaySmokePolicy.SourceAssetId, UserId = BflHomologationPolicy.OwnerId,
+            Model = new() { MediaType = "image" }, Status = GenerationStatus.Completed, CreditState = CreditState.Charged };
+        var repo = new Mock<IGenerationRepository>(); var store = new Mock<IGenerationOutputStore>();
+        repo.Setup(r => r.CatalogAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new List<GenerationModel> { model });
+        repo.Setup(r => r.GetAsync(source.Id, source.UserId, It.IsAny<CancellationToken>())).ReturnsAsync(source);
+        repo.Setup(r => r.ReserveAsync(It.IsAny<GenerationJob>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((GenerationJob job, CancellationToken _) => job);
+        store.Setup(s => s.DownloadAsync(source, It.IsAny<CancellationToken>())).ReturnsAsync((Source(), "image/png"));
+        var wire = new Wire(); var provider = new RunwayGenerationProvider(new(wire), Settings());
+        var created = await new GenerationService(repo.Object, new[] { provider }, Settings(), store.Object)
+            .CreateAsync(source.UserId, "runway-e2e-new-single-slot", request, default);
+        Assert.Equal(RunwaySmokePolicy.E2eRunId, created.RunwayRunId);
+        Assert.Equal(source.Id, created.SourceAssetId); Assert.Equal(54, created.Quote.Credits);
+        Assert.Empty(wire.Requests);
+    }
+    [Theory]
+    [InlineData("foreign", false)][InlineData(BflHomologationPolicy.OwnerId, true)]
+    public async Task E2eProofHidesForeignAndReadsOnlyNewLedger(string owner, bool allowed)
+    {
+        var repo = new Mock<IGenerationRepository>(MockBehavior.Strict);
+        repo.Setup(r => r.RunwayE2eLedgerAsync(It.IsAny<CancellationToken>())).ReturnsAsync(new RunwaySmokeLedger());
+        var controller = new GenerationController(repo.Object, null!, Mock.Of<IGenerationOutputStore>(), Settings()) {
+            ControllerContext = new() { HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("sub", owner) }, "unit")) } }
+        };
+        var result = await controller.RunwayE2eProof(default);
+        if (allowed) Assert.IsType<OkObjectResult>(result); else Assert.IsType<NotFoundResult>(result);
+        repo.Verify(r => r.RunwayE2eLedgerAsync(It.IsAny<CancellationToken>()), allowed ? Times.Once() : Times.Never());
+        repo.VerifyNoOtherCalls();
     }
     [Fact]
     public void ExactConfigUsesExistingFormulaAndKeepsOnlyRealCapabilities()
@@ -252,10 +296,11 @@ public class RunwayVideoTests
     {
         var opts = Settings(); opts.Value.PaidGenerationEnabled = false; opts.Value.RunwayRealSmokeEnabled = false;
         var job = Job(); job.Status = GenerationStatus.Failed; job.CreditState = CreditState.Refunded;
+        job.RunwayRunId = RunwaySmokePolicy.RunId;
         job.ProviderStatus = "SUCCEEDED"; job.ProviderJobId = TaskId;
         job.PollingUrl = RunwayGenerationProvider.Origin + "/v1/tasks/" + TaskId;
         var ledger = new RunwaySmokeLedger { State = "Failed", Halted = true, HaltReason = "invalid_provider_output",
-            AttemptCount = 1, SettlementCount = 1, JobId = job.Id, TaskId = TaskId };
+            Id = RunwaySmokePolicy.RunId, AttemptCount = 1, SettlementCount = 1, JobId = job.Id, TaskId = TaskId };
         var repo = new Mock<IGenerationRepository>(MockBehavior.Strict);
         repo.Setup(r => r.RunwayLedgerAsync(It.IsAny<CancellationToken>())).ReturnsAsync(ledger);
         repo.Setup(r => r.GetAsync(job.Id, job.UserId, It.IsAny<CancellationToken>())).ReturnsAsync(job);

@@ -23,14 +23,20 @@ public sealed class GenerationController(IGenerationRepository repository, Gener
         return result == null ? NotFound() : Ok(result);
     }
     [HttpGet("runway/single-video/proof"), Authorize]
-    public async Task<IActionResult> RunwayProof(CancellationToken ct)
+    public Task<IActionResult> RunwayProof(CancellationToken ct) => RunwayProofFor(false, ct);
+    [HttpGet("runway/e2e-video/proof"), Authorize]
+    public Task<IActionResult> RunwayE2eProof(CancellationToken ct) => RunwayProofFor(true, ct);
+    private async Task<IActionResult> RunwayProofFor(bool e2e, CancellationToken ct)
     {
         Response.Headers.CacheControl = "private, no-store";
         if (!options.Value.Enabled || !options.Value.RunwayIntegrationEnabled || Owner != BflHomologationPolicy.OwnerId) return NotFound();
-        var ledger = await repository.RunwayLedgerAsync(ct);
+        var ledger = e2e ? await repository.RunwayE2eLedgerAsync(ct) : await repository.RunwayLedgerAsync(ct);
         var job = ledger?.JobId == null ? null : await repository.GetAsync(ledger.JobId, Owner, ct);
         return Ok(new { options.Value.PaidGenerationEnabled, options.Value.RunwayRealSmokeEnabled,
             credentialsConfigured = !string.IsNullOrWhiteSpace(options.Value.RunwayApiKey), ledger,
+            storage = job?.Status != GenerationStatus.Completed ? null : new {
+                bucket = "imagino-videos-staging", key = $"generation-v2/{job.UserId}/{job.Id}.mp4",
+                contentType = "video/mp4", job.OutputUrl },
             job = job == null ? null : new { job.Id, job.RunwayRunId, job.SourceAssetId, job.ProviderJobId,
                 status = job.Status.ToString(), creditState = job.CreditState.ToString(), job.ProviderStatus, job.ProviderReportedCostUsd,
                 job.ProviderAcceptanceLatencyMs, job.ProviderRunningAtUtc, job.ProviderReadyAtUtc, job.ProviderPollCount,

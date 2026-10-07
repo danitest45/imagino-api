@@ -8,6 +8,7 @@ namespace Imagino.Api.Services.Generation;
 public static class RunwaySmokePolicy
 {
     public const string RunId = "runway-grok-lite-single-video-20261007";
+    public const string E2eRunId = "runway-grok-lite-e2e-confirmation-20261007";
     public const string ModelId = "runway-fast-video-20261007";
     public const string NativeModel = "grok_imagine_1_5_lite";
     public const string Version = "2026-10-07.1";
@@ -43,12 +44,12 @@ public static class RunwaySmokePolicy
     public static void ValidateJob(GenerationJob job, DateTime? now = null)
     {
         ValidateRequest(job.UserId, job.Model, new(job.Prompt, job.Settings, job.Inputs), now);
-        if (job.RunwayRunId != RunId || job.SourceAssetId != SourceAssetId ||
+        if (job.RunwayRunId != E2eRunId || job.SourceAssetId != SourceAssetId ||
             job.RequestHash != GenerationPolicy.Fingerprint(job.Model, new(job.Prompt, job.Settings, job.Inputs)) ||
             job.Quote.ProviderCostEstimateUsd != CostUsd || job.Quote.Credits != 54)
             throw new ForbiddenFeatureException("Runway job binding differs from its authorization.");
     }
-    public static bool CanReserve(RunwaySmokeLedger l, DateTime now) => l.Id == RunId &&
+    public static bool CanReserve(RunwaySmokeLedger l, DateTime now) => l.Id == E2eRunId &&
         l.OwnerId == BflHomologationPolicy.OwnerId && l.SourceAssetId == SourceAssetId && l.SourceSha256 == SourceSha256 &&
         l.ModelId == ModelId && l.BudgetUsd == CeilingUsd && l.EstimatedUsd == CostUsd && now < l.ExpiresAtUtc &&
         !l.Halted && l.State == "Available" && l.JobId == null && l.TaskId == null && l.AttemptCount == 0 && l.SettlementCount == 0;
@@ -56,7 +57,7 @@ public static class RunwaySmokePolicy
 [BsonIgnoreExtraElements]
 public sealed class RunwaySmokeLedger
 {
-    [BsonId] public string Id { get; set; } = RunwaySmokePolicy.RunId;
+    [BsonId] public string Id { get; set; } = RunwaySmokePolicy.E2eRunId;
     public string OwnerId { get; set; } = BflHomologationPolicy.OwnerId;
     public string SourceAssetId { get; set; } = RunwaySmokePolicy.SourceAssetId;
     public string SourceSha256 { get; set; } = RunwaySmokePolicy.SourceSha256;

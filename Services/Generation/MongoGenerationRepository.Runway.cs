@@ -11,14 +11,16 @@ public sealed partial class MongoGenerationRepository
     private readonly bool runwaySmoke;
     public Task<RunwaySmokeLedger?> RunwayLedgerAsync(CancellationToken ct) =>
         runwayLedger.Find(l => l.Id == RunwaySmokePolicy.RunId).FirstOrDefaultAsync(ct)!;
+    public Task<RunwaySmokeLedger?> RunwayE2eLedgerAsync(CancellationToken ct) =>
+        runwayLedger.Find(l => l.Id == RunwaySmokePolicy.E2eRunId).FirstOrDefaultAsync(ct)!;
     private async Task ReserveRunwayAsync(IClientSessionHandle s, GenerationJob job, CancellationToken ct)
     {
         if (!runwaySmoke) throw new ForbiddenFeatureException("Runway authorization is closed.");
         RunwaySmokePolicy.ValidateJob(job);
-        var ledger = await runwayLedger.Find(s, l => l.Id == RunwaySmokePolicy.RunId).FirstOrDefaultAsync(ct);
+        var ledger = await runwayLedger.Find(s, l => l.Id == RunwaySmokePolicy.E2eRunId).FirstOrDefaultAsync(ct);
         if (ledger == null || !RunwaySmokePolicy.CanReserve(ledger, DateTime.UtcNow))
             throw new ForbiddenFeatureException("The only Runway slot is unavailable.");
-        var changed = await runwayLedger.UpdateOneAsync(s, l => l.Id == RunwaySmokePolicy.RunId && !l.Halted &&
+        var changed = await runwayLedger.UpdateOneAsync(s, l => l.Id == RunwaySmokePolicy.E2eRunId && !l.Halted &&
             l.State == "Available" && l.JobId == null && l.AttemptCount == 0 && l.SettlementCount == 0,
             Builders<RunwaySmokeLedger>.Update.Set(l => l.State, "Reserved").Set(l => l.JobId, job.Id), cancellationToken: ct);
         if (changed.ModifiedCount != 1) throw new ConflictAppException("Runway reservation changed.");
@@ -30,7 +32,7 @@ public sealed partial class MongoGenerationRepository
         using var session = await client.StartSessionAsync(cancellationToken: ct);
         return await session.WithTransactionAsync(async (s, token) => {
             var now = DateTime.UtcNow;
-            var changed = await runwayLedger.UpdateOneAsync(s, l => l.Id == RunwaySmokePolicy.RunId &&
+            var changed = await runwayLedger.UpdateOneAsync(s, l => l.Id == RunwaySmokePolicy.E2eRunId &&
                 l.OwnerId == job.UserId && l.SourceAssetId == job.SourceAssetId && l.BudgetUsd == RunwaySmokePolicy.CeilingUsd &&
                 !l.Halted && l.ExpiresAtUtc > now && l.State == "Reserved" && l.JobId == job.Id && l.AttemptCount == 0 && l.TaskId == null,
                 Builders<RunwaySmokeLedger>.Update.Set(l => l.State, "SubmissionAttempted").Set(l => l.AttemptedAtUtc, now)
@@ -57,7 +59,7 @@ public sealed partial class MongoGenerationRepository
                 j.Status == GenerationStatus.Processing).FirstOrDefaultAsync(token);
             if (existing != null)
             {
-                var accepted = await runwayLedger.Find(s, l => l.Id == RunwaySmokePolicy.RunId &&
+                var accepted = await runwayLedger.Find(s, l => l.Id == RunwaySmokePolicy.E2eRunId &&
                     l.JobId == job.Id && l.TaskId == result.JobId && l.AttemptCount == 1 && l.State == "Accepted").FirstOrDefaultAsync(token);
                 if (accepted == null) throw new InvalidOperationException("Runway durable binding is inconsistent.");
                 return true;
@@ -69,7 +71,7 @@ public sealed partial class MongoGenerationRepository
                 .Set(l => l.AcceptedAtUtc, DateTime.UtcNow);
             if (result.EstimatedCostUsd != RunwaySmokePolicy.CostUsd)
                 u = u.Set(l => l.Halted, true).Set(l => l.HaltReason, "provider_estimate_changed");
-            var b = await runwayLedger.UpdateOneAsync(s, l => l.Id == RunwaySmokePolicy.RunId && l.JobId == job.Id &&
+            var b = await runwayLedger.UpdateOneAsync(s, l => l.Id == RunwaySmokePolicy.E2eRunId && l.JobId == job.Id &&
                 l.State == "SubmissionAttempted" && l.AttemptCount == 1 && l.TaskId == null, u, cancellationToken: token);
             if (b.ModifiedCount != 1) throw new InvalidOperationException("Runway task ledger lost.");
             return true;
@@ -96,7 +98,7 @@ public sealed partial class MongoGenerationRepository
                 l = l.Set(x => x.Halted, true).Set(x => x.HaltReason, "cost_ceiling_exceeded");
             if (result.CostUsd != null || result.EstimatedCostUsd > RunwaySmokePolicy.CeilingUsd)
             {
-                var changed = await runwayLedger.UpdateOneAsync(s, x => x.Id == RunwaySmokePolicy.RunId &&
+                var changed = await runwayLedger.UpdateOneAsync(s, x => x.Id == RunwaySmokePolicy.E2eRunId &&
                     x.JobId == job.Id && x.TaskId == result.JobId && x.AttemptCount == 1, l, cancellationToken: token);
                 if (changed.MatchedCount != 1) throw new InvalidOperationException("Runway poll ledger binding lost.");
             }

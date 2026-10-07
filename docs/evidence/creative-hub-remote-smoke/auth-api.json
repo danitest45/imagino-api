@@ -1,0 +1,222 @@
+{
+  "startedAtUtc": "2026-10-07T07:05:29.6933704Z",
+  "finishedAtUtc": "2026-10-07T07:05:39.9520814Z",
+  "pass": true,
+  "failureType": null,
+  "checks": [
+    {
+      "check": "owner_login",
+      "method": "POST",
+      "route": "/api/auth/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "owner_users_me",
+      "method": "GET",
+      "route": "/api/users/me",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "owner_refresh",
+      "method": "POST",
+      "route": "/api/auth/refresh",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "users_me_after_refresh",
+      "method": "GET",
+      "route": "/api/users/me",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "owner_assets",
+      "method": "GET",
+      "route": "/api/generation/jobs",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "owner_detail",
+      "method": "GET",
+      "route": "/api/generation/jobs/[id]",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "closed_single_smoke_proof",
+      "method": "GET",
+      "route": "/api/generation/openai/single-smoke/proof",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "owner_download",
+      "method": "GET",
+      "route": "/api/generation/jobs/[id]/download",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "foreign_login",
+      "method": "POST",
+      "route": "/api/auth/login",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "foreign_users_me",
+      "method": "GET",
+      "route": "/api/users/me",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "foreign_assets",
+      "method": "GET",
+      "route": "/api/generation/jobs",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "foreign_owner_detail",
+      "method": "GET",
+      "route": "/api/generation/jobs/[id]",
+      "status": 404,
+      "expected": 404,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "foreign_owner_download",
+      "method": "GET",
+      "route": "/api/generation/jobs/[id]/download",
+      "status": 404,
+      "expected": 404,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "foreign_operator_proof",
+      "method": "GET",
+      "route": "/api/generation/openai/single-smoke/proof",
+      "status": 404,
+      "expected": 404,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "owner_balance_unchanged",
+      "method": "GET",
+      "route": "/api/users/me",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "owner_assets_unchanged",
+      "method": "GET",
+      "route": "/api/generation/jobs",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "owner_logout",
+      "method": "POST",
+      "route": "/api/auth/logout",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "owner_refresh_after_logout",
+      "method": "POST",
+      "route": "/api/auth/refresh",
+      "status": 401,
+      "expected": 401,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "foreign_logout",
+      "method": "POST",
+      "route": "/api/auth/logout",
+      "status": 200,
+      "expected": 200,
+      "pass": true,
+      "corsExact": true
+    },
+    {
+      "check": "foreign_refresh_after_logout",
+      "method": "POST",
+      "route": "/api/auth/refresh",
+      "status": 401,
+      "expected": 401,
+      "pass": true,
+      "corsExact": true
+    }
+  ],
+  "cookie": {
+    "present": true,
+    "secure": true,
+    "httpOnly": true,
+    "sameSiteNone": true,
+    "hostOnly": true
+  },
+  "refreshRotated": true,
+  "gates": {
+    "paidGenerationEnabled": false,
+    "openAiSingleSmokeEnabled": false,
+    "openAiLedgerHalted": true,
+    "openAiSlotState": "Completed"
+  },
+  "download": {
+    "status": 200,
+    "bytes": 1426902,
+    "png": true,
+    "privateNoStore": true
+  },
+  "balancesAndAssets": {
+    "creditsBefore": 10,
+    "creditsAfter": 10,
+    "assetsBefore": 9,
+    "assetsAfter": 9,
+    "foreignAssets": 0,
+    "ownerSameAfterRefresh": true,
+    "unchanged": true
+  },
+  "quoteRequests": 0,
+  "jobSubmissions": 0,
+  "providerRequests": 0,
+  "costUsd": 0,
+  "scope": "Independent ephemeral API sessions for two existing synthetic accounts; no browser cookie extraction or raw response persistence"
+}

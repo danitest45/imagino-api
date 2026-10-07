@@ -1,0 +1,68 @@
+{
+  "checkedAtUtc": "2026-10-07T07:44:37.002Z",
+  "checks": [
+    {
+      "check": "owner_ui_download",
+      "status": 200,
+      "nativeDownloadEvent": true,
+      "pass": true
+    },
+    {
+      "check": "reload_preserves_owner_session",
+      "pass": true
+    },
+    {
+      "check": "image_generation_unavailable",
+      "pass": true
+    },
+    {
+      "check": "model_picker",
+      "pass": true
+    },
+    {
+      "check": "use_as_reference_without_generation",
+      "pass": true
+    },
+    {
+      "check": "light_theme",
+      "pass": true,
+      "resolved": "light"
+    },
+    {
+      "check": "dark_theme",
+      "pass": true,
+      "resolved": "dark"
+    },
+    {
+      "check": "system_theme",
+      "pass": true,
+      "resolved": "light"
+    },
+    {
+      "check": "video_unavailable",
+      "pass": true
+    },
+    {
+      "check": "assets_existing_jobs",
+      "pass": true
+    },
+    {
+      "check": "asset_detail",
+      "pass": true,
+      "source": "existing job loaded in Assets; API detail 200 independently proven"
+    },
+    {
+      "check": "ui_logout",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "check": "browser_refresh_after_logout",
+      "status": 401,
+      "pass": true
+    }
+  ],
+  "pass": true,
+  "costUsd": 0,
+  "scope": "Human authenticated isolated Chrome session; metadata and UI states only; no secrets, prompts, queries or browser storage copied"
+}

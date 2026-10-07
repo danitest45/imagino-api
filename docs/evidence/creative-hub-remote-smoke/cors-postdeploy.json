@@ -1,0 +1,175 @@
+{
+  "checkedAtUtc": "2026-10-07T06:43:48.6747829Z",
+  "backendCommit": "4f634ce755b303b2d363ea460f3073eda7b2670b",
+  "deployId": "dep-db2ujlqjnfac7383nar0",
+  "healthStatus": 200,
+  "catalogStatus": 200,
+  "catalogCorsExact": true,
+  "models": [
+    {
+      "id": "flux-fast-20261002",
+      "mediaType": "image",
+      "availability": "approval_required"
+    },
+    {
+      "id": "openai-fast-20261006",
+      "mediaType": "image",
+      "availability": "approval_required"
+    },
+    {
+      "id": "flux-studio-20261002",
+      "mediaType": "image",
+      "availability": "approval_required"
+    },
+    {
+      "id": "openai-studio-20261006",
+      "mediaType": "image",
+      "availability": "approval_required"
+    },
+    {
+      "id": "gemini-edit-20261002",
+      "mediaType": "image",
+      "availability": "approval_required"
+    },
+    {
+      "id": "veo-fast-20261002",
+      "mediaType": "video",
+      "availability": "migration_required"
+    },
+    {
+      "id": "veo-cinema-20261002",
+      "mediaType": "video",
+      "availability": "migration_required"
+    },
+    {
+      "id": "pipeline-demo-20261002",
+      "mediaType": "image",
+      "availability": "synthetic_demo"
+    }
+  ],
+  "noPaidModelReady": true,
+  "cors": [
+    {
+      "origin": "https://imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 204,
+      "expectedAllowed": true,
+      "exactOriginAllowed": true,
+      "credentialsAllowed": true,
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "path": "/api/auth/refresh",
+      "method": "POST",
+      "status": 204,
+      "expectedAllowed": true,
+      "exactOriginAllowed": true,
+      "credentialsAllowed": true,
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "path": "/api/auth/logout",
+      "method": "POST",
+      "status": 204,
+      "expectedAllowed": true,
+      "exactOriginAllowed": true,
+      "credentialsAllowed": true,
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "path": "/api/users/me",
+      "method": "GET",
+      "status": 204,
+      "expectedAllowed": true,
+      "exactOriginAllowed": true,
+      "credentialsAllowed": true,
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "path": "/api/generation/catalog",
+      "method": "GET",
+      "status": 204,
+      "expectedAllowed": true,
+      "exactOriginAllowed": true,
+      "credentialsAllowed": true,
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app",
+      "path": "/api/generation/jobs",
+      "method": "GET",
+      "status": 204,
+      "expectedAllowed": true,
+      "exactOriginAllowed": true,
+      "credentialsAllowed": true,
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-codex-imagino-ai-776a34-danitest45s-projects.vercel.app",
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 204,
+      "expectedAllowed": true,
+      "exactOriginAllowed": true,
+      "credentialsAllowed": true,
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-feat-imagino-work-16a0f7-danitest45s-projects.vercel.app",
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 204,
+      "expectedAllowed": true,
+      "exactOriginAllowed": true,
+      "credentialsAllowed": true,
+      "pass": true
+    },
+    {
+      "origin": "https://external.example",
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 204,
+      "expectedAllowed": false,
+      "exactOriginAllowed": false,
+      "credentialsAllowed": false,
+      "pass": true
+    },
+    {
+      "origin": "https://unrelated-preview.vercel.app",
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 204,
+      "expectedAllowed": false,
+      "exactOriginAllowed": false,
+      "credentialsAllowed": false,
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-4mac3lml7-danitest45s-projects.vercel.app",
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 204,
+      "expectedAllowed": false,
+      "exactOriginAllowed": false,
+      "credentialsAllowed": false,
+      "pass": true
+    },
+    {
+      "origin": "https://imagino-front-git-feat-imagino-crea-9cdb36-danitest45s-projects.vercel.app/",
+      "path": "/api/auth/login",
+      "method": "POST",
+      "status": 204,
+      "expectedAllowed": false,
+      "exactOriginAllowed": false,
+      "credentialsAllowed": false,
+      "pass": true
+    }
+  ],
+  "pass": true,
+  "scope": "Health, public catalog and OPTIONS only; no credentials, quote, job creation or provider call"
+}

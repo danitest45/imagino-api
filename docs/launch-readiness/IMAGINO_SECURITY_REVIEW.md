@@ -4,7 +4,7 @@ Reference: 2026-10-07. Scope: isolated launch worktrees and authorized AI stagin
 ## Findings
 | Priority | Finding | Response |
 |---|---|---|
-| P0 | Historical image objects publicly readable | New private storage/API/blob contract; migration tool; access removal still blocked |
+| P0 | Historical image objects publicly readable through staging r2.dev | B1 resolved for all eight known URLs: Cloudflare HEAD/GET 401 after operator disabled Public Development URL; private owner media/download hashes and authorization negatives passed. Other custom-domain/Worker inventory remains unverified in B7 |
 | P0 | Provider price/config drift and concurrent budget overspend | Fail-closed reviewed-cost metadata, atomic reservations, emergency stop default true |
 | P0 | Backend Git history contains credential candidates | Names/blob identifiers only in evidence; review and approved rotation required |
 | P1 | Cookie refresh/logout relied on CORS alone | Exact Origin check when refresh cookie is present; missing/evil Origin rejected |

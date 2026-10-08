@@ -1,0 +1,15 @@
+{
+  "atUtc": "2026-10-07T21:39:29.043Z",
+  "scope": "AI staging app logs after protected real browser gate; pattern sample only",
+  "entries": 14,
+  "hasMore": false,
+  "patterns": {
+    "jwt": 0,
+    "bearer": 0,
+    "credentialUri": 0,
+    "secretAssignment": 0,
+    "base64": 0,
+    "signedUrl": 0,
+    "privatePrompt": 0
+  }
+}

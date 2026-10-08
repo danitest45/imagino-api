@@ -116,6 +116,7 @@ public class OperationalSecurityTests
             .ReturnsAsync(new User { Id = "user-a", Email = "a@example.test" });
         using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
         client.DefaultRequestHeaders.Add("Cookie", "refreshToken=legacy-token");
+        client.DefaultRequestHeaders.Add("Origin", "https://app.example.test");
         var response = await client.PostAsync("/api/auth/refresh", null);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var cookie = response.Headers.GetValues("Set-Cookie").Single();
@@ -149,6 +150,7 @@ public class OperationalSecurityTests
             .ReturnsAsync(new RefreshToken { UserId = "user-a", ExpiresAt = DateTime.UtcNow.AddDays(1) });
         using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
         client.DefaultRequestHeaders.Add("Cookie", "refreshToken=legacy-token");
+        client.DefaultRequestHeaders.Add("Origin", "https://app.example.test");
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsync("/api/auth/refresh", null)).StatusCode);
         factory.RefreshTokens.Verify(r => r.CreateAsync(It.IsAny<RefreshToken>()), Times.Never);
     }

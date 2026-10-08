@@ -1,0 +1,9 @@
+{
+  "referenceDate": "2026-10-07",
+  "base": "codex/imagino-ai-revival-v2",
+  "baseSha": "841248051a6ce79d1adf5d2f28c842b9782590fb",
+  "branch": "feat/imagino-launch-readiness",
+  "dependencyPr": "https://github.com/danitest45/imagino-api/pull/56",
+  "worktree": "work/imagino-api-launch-readiness",
+  "paidCallsAuthorized": false
+}

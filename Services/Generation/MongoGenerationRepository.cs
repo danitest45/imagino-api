@@ -19,10 +19,14 @@ public sealed partial class MongoGenerationRepository : IGenerationRepository
     private readonly IMongoCollection<OpenAiHomologationLedger> openAiLedger;
     private readonly bool openAiHomologation;
     private readonly bool singleSmoke;
-    public MongoGenerationRepository(IMongoClient client, IOptions<ImageGeneratorSettings> options, IOptions<GenerationSettings> generation)
+    public MongoGenerationRepository(IMongoClient client, IOptions<ImageGeneratorSettings> options, IOptions<GenerationSettings> generation,
+        GenerationCostGuard? costGuard = null)
     {
         this.client = client;
         var db = client.GetDatabase(options.Value.MongoDatabase);
+        this.costGuard = costGuard;
+        budgetCounters = db.GetCollection<GenerationBudgetCounter>("generation_budget_counters_v1");
+        budgetReservations = db.GetCollection<GenerationBudgetReservation>("generation_budget_reservations_v1");
         jobs = db.GetCollection<GenerationJob>("generation_jobs_v2");
         models = db.GetCollection<GenerationModel>("generation_catalog_v2");
         users = db.GetCollection<User>("Users");
@@ -100,6 +104,7 @@ public sealed partial class MongoGenerationRepository : IGenerationRepository
             {
                 var existing = await jobs.Find(s, j => j.UserId == job.UserId && j.IdempotencyKey == job.IdempotencyKey).FirstOrDefaultAsync(token);
                 if (existing != null) return Match(existing, job);
+                await ReserveLaunchBudgetsAsync(s, job, token);
                 if (job.Model.Provider == "runway") await ReserveRunwayAsync(s, job, token);
                 if (job.Model.Provider == "openai")
                 {
@@ -285,7 +290,7 @@ public sealed partial class MongoGenerationRepository : IGenerationRepository
         var available = f.Eq(j => j.Lease, null) | f.Lte(j => j.LeaseUntil, now);
         var due = available & (f.Eq(j => j.Status, GenerationStatus.Queued) |
             (f.Eq(j => j.Status, GenerationStatus.Processing) & f.Lte(j => j.NextPollAt, now)) |
-            (f.Eq(j => j.Status, GenerationStatus.Starting) & f.Lte(j => j.DeadlineAt, now)));
+            (f.Eq(j => j.Status, GenerationStatus.Starting) & (f.Lte(j => j.DeadlineAt, now) | f.Ne(j => j.StoredOutput, null))));
         var job = await jobs.FindOneAndUpdateAsync(due,
             Builders<GenerationJob>.Update.Set(j => j.Lease, Guid.NewGuid().ToString("N")).Set(j => j.LeaseUntil, now.AddMinutes(5))
                 .Push(j => j.Journal, new GenerationJournalEntry("WorkerClaim", now)),
@@ -347,6 +352,15 @@ public sealed partial class MongoGenerationRepository : IGenerationRepository
     }
     public Task<bool> SettleAsync(GenerationJob job, GenerationStatus status, string? url, string? error, CancellationToken ct) =>
         SettleTransactionAsync(job.Id, job.UserId, job.Lease, false, status, url, error, job.OutputMetrics, ct);
+    public async Task RecordOutputAsync(GenerationJob job, CancellationToken ct)
+    {
+        if (job.StoredOutput == null) return;
+        var changed = await jobs.UpdateOneAsync(j => j.Id == job.Id && j.Lease == job.Lease && j.CreditState == CreditState.Reserved,
+            Builders<GenerationJob>.Update.Set(j => j.StoredOutput, job.StoredOutput).Set(j => j.OutputStoredAtUtc, job.OutputStoredAtUtc)
+                .Set(j => j.OutputMetrics, job.OutputMetrics).Set(j => j.NextPollAt, DateTime.UtcNow)
+                .Push(j => j.Journal, new GenerationJournalEntry("OutputCheckpoint", DateTime.UtcNow)), cancellationToken: ct);
+        if (changed.MatchedCount != 1) throw new ConflictAppException("Output checkpoint lease lost.");
+    }
     public Task<bool> CancelAsync(string id, string userId, CancellationToken ct) =>
         !ObjectId.TryParse(id, out _) ? Task.FromResult(false) : SettleTransactionAsync(id, userId, null, true, GenerationStatus.Cancelled, null, "cancelled", null, ct);
 
@@ -376,6 +390,7 @@ public sealed partial class MongoGenerationRepository : IGenerationRepository
             update = update.PushEach(j => j.Journal, events);
             var changed = await jobs.UpdateOneAsync(s, filter, update, cancellationToken: token);
             if (changed.ModifiedCount != 1) return false;
+            await CloseLaunchBudgetAsync(s, job, token);
             if (job.Model.Provider == "runway")
             {
                 var settledRunway = await runwayLedger.UpdateOneAsync(s, l => l.Id == RunwaySmokePolicy.E2eRunId && l.JobId == job.Id && l.SettlementCount == 0,

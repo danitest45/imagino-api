@@ -1,0 +1,13 @@
+{
+  "atUtc": "2026-10-07T21:39:11.3895023Z",
+  "serviceId": "srv-db1tmv17lnhs73efdjp0",
+  "attempts": 31,
+  "quoteAccepted": 30,
+  "rateLimited": 429,
+  "retryAfterSeconds": "60",
+  "walletUnchanged": true,
+  "historyUnchanged": true,
+  "newJobs": 0,
+  "providerPosts": 0,
+  "emailsSent": 0
+}

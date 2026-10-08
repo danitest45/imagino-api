@@ -1,0 +1,48 @@
+{
+  "scope": "read-only aggregation; no media, prompts, keys or provider payloads",
+  "atUtc": "2026-10-07T21:21:29.171Z",
+  "documents": [
+    {
+      "_id": {
+        "status": "Completed",
+        "credit": "Charged",
+        "type": "image"
+      },
+      "jobs": 8,
+      "storedPrivate": 8,
+      "maximumBytes": 4031
+    },
+    {
+      "_id": {
+        "status": "Failed",
+        "credit": "Refunded",
+        "type": "image"
+      },
+      "jobs": 1,
+      "storedPrivate": 0,
+      "maximumBytes": 2306
+    },
+    {
+      "_id": {
+        "status": "Completed",
+        "credit": "Charged",
+        "type": "video"
+      },
+      "jobs": 1,
+      "storedPrivate": 0,
+      "maximumBytes": 4054
+    },
+    {
+      "_id": {
+        "status": "Failed",
+        "credit": "Refunded",
+        "type": "video"
+      },
+      "jobs": 1,
+      "storedPrivate": 0,
+      "maximumBytes": 3645
+    }
+  ],
+  "count": 4,
+  "appliedLimits": []
+}

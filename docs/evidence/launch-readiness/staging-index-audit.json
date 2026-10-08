@@ -1,0 +1,55 @@
+{
+  "atUtc": "2026-10-07T21:21:14.269Z",
+  "database": "imagino_staging",
+  "jobs": [
+    {
+      "name": "_id_",
+      "key": {
+        "_id": 1
+      }
+    },
+    {
+      "name": "owner_idempotency",
+      "key": {
+        "UserId": 1,
+        "IdempotencyKey": 1
+      }
+    },
+    {
+      "name": "worker_due",
+      "key": {
+        "Status": 1,
+        "NextPollAt": 1,
+        "LeaseUntil": 1
+      }
+    },
+    {
+      "name": "owner_history",
+      "key": {
+        "UserId": 1,
+        "CreatedAt": -1
+      }
+    },
+    {
+      "name": "runway_task_unique",
+      "key": {
+        "ProviderJobId": 1
+      }
+    }
+  ],
+  "requestLimits": [
+    {
+      "name": "_id_",
+      "key": {
+        "_id": 1
+      }
+    },
+    {
+      "name": "request_limit_expiry",
+      "key": {
+        "ExpiresAtUtc": 1
+      }
+    }
+  ],
+  "costCollections": "not instantiated while all paid admission is disabled; deterministic _id indexes are created on first bounded reservation; concurrency covered in isolated replica-set tests"
+}

@@ -1,0 +1,24 @@
+{
+  "atUtc": "2026-10-07T21:11:33.5787238Z",
+  "serviceId": "srv-db1tmv17lnhs73efdjp0",
+  "checks": {
+    "foreignImage": 404,
+    "logout": true,
+    "realSmokeEnabled": false,
+    "refresh": true,
+    "health": 200,
+    "imageDownload": 200,
+    "anonymousImage": 401,
+    "newMediaEndpoint": 200,
+    "historicalImageStillPublicUrl": false,
+    "walletUnchanged": true,
+    "videoDownload": 200,
+    "historicalPublicHead": null,
+    "paidGenerationEnabled": false
+  },
+  "historyCount": 11,
+  "providerPosts": 0,
+  "jobCreates": 0,
+  "emailsSent": 0,
+  "newMediaEndpointAvailable": true
+}

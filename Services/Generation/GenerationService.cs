@@ -5,7 +5,8 @@ using Microsoft.Extensions.Options;
 namespace Imagino.Api.Services.Generation;
 
 public sealed class GenerationService(IGenerationRepository repository, IEnumerable<IGenerationProvider> providers,
-    IOptions<GenerationSettings> options, IGenerationOutputStore? storage = null, TimeProvider? clock = null)
+    IOptions<GenerationSettings> options, IGenerationOutputStore? storage = null, TimeProvider? clock = null,
+    GenerationCostGuard? costGuard = null, GenerationQuoteAuthorization? quotes = null, IGenerationInputStore? inputStore = null)
 {
     public async Task<GenerationModel> ModelAsync(string id, CancellationToken ct) =>
         (await repository.CatalogAsync(ct)).FirstOrDefault(m => m.Id == id) ?? throw new ValidationAppException("Unknown model.");
@@ -16,6 +17,11 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
         if (GenerationLifecycle.RequiresMigration(model, currentTime)) return "migration_required";
         if (!model.Enabled || model.Lifecycle != "ACTIVE" || !model.ProviderEnabled) return "disabled";
         if (model.Provider == "fixture") return options.Value.StagingFixtureEnabled ? "synthetic_demo" : "disabled";
+        if (costGuard != null)
+        {
+            try { costGuard.Validate(model, null, currentTime); }
+            catch (ForbiddenFeatureException) { return "disabled"; }
+        }
         if (options.Value.RunwayRealSmokeEnabled && model.Provider != "runway") return "approval_required";
         if (model.Provider == "runway")
             return options.Value.RunwayIntegrationEnabled && options.Value.RunwayRealSmokeEnabled && options.Value.PaidGenerationEnabled &&
@@ -48,23 +54,33 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
         var quote = GenerationPolicy.Quote(model, input, DateTime.UtcNow, options.Value.OpenAiSingleSmokeEnabled);
         if (options.Value.BflHomologationEnabled && model.Provider != "fixture" && model.Provider != "openai" && model.Provider != "runway")
             BflHomologationPolicy.Validate(owner ?? "", model, input, quote, DateTime.UtcNow);
-        return quote;
+        return quotes == null ? quote : quote with { QuoteId = quotes.Issue(owner ?? "", quote.QuoteId) };
     }
     public async Task<GenerationJob> CreateAsync(string userId, string? key, GenerationRequest request, CancellationToken ct)
     {
         if (key == null || !Regex.IsMatch(key, "^[A-Za-z0-9_-]{16,100}$")) throw new ValidationAppException("A 16–100 character Idempotency-Key header is required.");
+        var existing = await repository.FindByKeyAsync(userId, key, ct);
+        var payloadHash = GenerationPolicy.PayloadFingerprint(request);
+        if (existing?.PayloadHash != null)
+            return existing.PayloadHash == payloadHash ? existing : throw new ConflictAppException("Idempotency key already belongs to another request.");
+        if (existing != null)
+        {
+            var historicalRequest = await ResolveOwnedInputsAsync(userId, existing.Model, request, ct);
+            var historicalInput = GenerationPolicy.Validate(existing.Model, historicalRequest);
+            return existing.RequestHash == GenerationPolicy.Fingerprint(existing.Model, historicalInput) ? existing :
+                throw new ConflictAppException("Idempotency key already belongs to another request.");
+        }
         var model = await ModelAsync(request.ModelId, ct);
         request = await ResolveOwnedInputsAsync(userId, model, request, ct);
         var input = GenerationPolicy.Validate(model, request);
         var hash = GenerationPolicy.Fingerprint(model, input);
-        var existing = await repository.FindByKeyAsync(userId, key, ct);
-        if (existing != null) return existing.RequestHash == hash ? existing : throw new ConflictAppException("Idempotency key already belongs to another request.");
         if (Availability(model) is not ("ready" or "synthetic_demo"))
             throw new ForbiddenFeatureException("Generation requires provider credentials and explicit spending approval.");
-        GenerationPolicy.ValidateQuote(request.QuoteId, hash, DateTime.UtcNow);
+        GenerationPolicy.ValidateQuote(quotes?.Verify(userId, request.QuoteId) ?? request.QuoteId, hash, DateTime.UtcNow);
         var quote = GenerationPolicy.Quote(model, input, DateTime.UtcNow, options.Value.OpenAiSingleSmokeEnabled);
         var job = new GenerationJob {
             UserId = userId, IdempotencyKey = key, RequestHash = hash, Model = model, Prompt = input.Prompt,
+            PayloadHash = payloadHash, AcceptedAtUtc = DateTime.UtcNow, AcceptedQuoteId = request.QuoteId,
             Settings = input.Settings, Inputs = input.Inputs, Quote = quote,
             Journal = new() { new("QueuedReserved", DateTime.UtcNow) },
             DeadlineAt = DateTime.UtcNow.AddSeconds(model.TimeoutSeconds)
@@ -81,6 +97,8 @@ public sealed class GenerationService(IGenerationRepository repository, IEnumera
             RunwaySmokePolicy.ValidateJob(job);
         }
         else if (options.Value.BflHomologationEnabled && model.Provider != "fixture") BflHomologationPolicy.ValidateJob(job);
+        if (job.Model.Provider != "fixture" && costGuard != null) costGuard.Validate(job.Model, job.Quote, DateTime.UtcNow);
+        if (inputStore != null && job.Inputs.Count > 0) await inputStore.StoreAsync(job, ct);
         return await repository.ReserveAsync(job, ct);
     }
     private async Task<GenerationRequest> ResolveOwnedInputsAsync(string owner, GenerationModel model, GenerationRequest request, CancellationToken ct)
